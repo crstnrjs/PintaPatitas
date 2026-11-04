@@ -290,6 +290,19 @@ export default function RequestDetail() {
   const saldoPaid = sumAmount(approved.filter((p) => p.type === "saldo"));
   const pending = Math.max(order.total_amount - abonoPaid - saldoPaid, 0);
 
+  // Comisiones sobre el precio total
+  const MP_PCT = 3.8;    // Mercado Pago cobra 3.8% por transacción
+  const CHRIS_PCT = 6.2; // Christian cobra 6.2% sobre el total
+
+  // MP cobra su comisión dos veces: una al cobrar el abono y otra al cobrar el saldo
+  const abonoRef         = Number(order.deposit_amount) || 0;
+  const saldoRef         = Math.max(Number(order.total_amount) - abonoRef, 0);
+  const comisionMpAbono  = Math.round(abonoRef * MP_PCT / 100);
+  const comisionMpSaldo  = Math.round(saldoRef * MP_PCT / 100);
+  const comisionMpTotal  = comisionMpAbono + comisionMpSaldo;
+  const comisionChris    = Math.round(Number(order.total_amount) * CHRIS_PCT / 100);
+  const recibeAmiga      = Math.max(Number(order.total_amount) - comisionMpTotal - comisionChris, 0);
+
   const saldoPayment = payments.find((p) => p.type === "saldo");
   const abonoPayment = payments.find((p) => p.type === "abono");
   const saldoApproved = saldoPaid > 0;
@@ -512,6 +525,45 @@ export default function RequestDetail() {
             <Row label="Saldo pagado" value={money(saldoPaid)} />
             <Row label="Pendiente" value={money(pending)} />
           </dl>
+
+          {/* Desglose de comisiones */}
+          <div className="mt-4 rounded-xl bg-slate-50 border border-slate-200 p-4 space-y-2 text-sm">
+            <p className="text-xs font-bold uppercase tracking-wide text-slate-500 mb-3">Distribución del cobro</p>
+
+            <div className="flex justify-between text-slate-600">
+              <span className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-blue-400 shrink-0" />
+                Mercado Pago (3.8% × 2 cobros)
+              </span>
+              <span className="font-medium text-slate-800">−{money(comisionMpTotal)}</span>
+            </div>
+            <div className="pl-4 text-xs text-slate-400 -mt-1 space-y-0.5">
+              <div className="flex justify-between">
+                <span>Abono ({money(abonoRef)})</span>
+                <span>−{money(comisionMpAbono)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Saldo ({money(saldoRef)})</span>
+                <span>−{money(comisionMpSaldo)}</span>
+              </div>
+            </div>
+
+            <div className="flex justify-between text-slate-600 border-t border-slate-200 pt-2">
+              <span className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-violet-400 shrink-0" />
+                Christian (6.2% del total)
+              </span>
+              <span className="font-medium text-slate-800">−{money(comisionChris)}</span>
+            </div>
+
+            <div className="flex justify-between font-semibold text-emerald-700 border-t border-slate-200 pt-2">
+              <span className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
+                Recibe tu amiga
+              </span>
+              <span>{money(recibeAmiga)}</span>
+            </div>
+          </div>
         </section>
       </div>
 

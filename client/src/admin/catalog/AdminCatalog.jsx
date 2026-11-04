@@ -316,6 +316,23 @@ export default function AdminCatalog() {
                   <h3 className="mt-2 text-lg text-slate-800">Retrato de {mascotas(p.pet_count)}</h3>
                   <p className="text-xs text-slate-500">{p.size_label ?? "Sin medidas"}</p>
                   <strong className="mt-3 text-lg text-slate-900">${clp(p.price)}</strong>
+
+                  {/* Proyección de lo que recibe la amiga */}
+                  {(() => {
+                    const MP_PCT = 3.8, CHRIS_PCT = 6.2, ABONO_PCT = 50;
+                    const abono = Math.round(p.price * ABONO_PCT / 100);
+                    const saldo = p.price - abono;
+                    const mpTotal = Math.round(abono * MP_PCT / 100) + Math.round(saldo * MP_PCT / 100);
+                    const chris  = Math.round(p.price * CHRIS_PCT / 100);
+                    const amiga  = Math.max(p.price - mpTotal - chris, 0);
+                    return (
+                      <p className="text-[11px] text-slate-400 leading-tight">
+                        Recibes <span className="font-semibold text-emerald-600">${clp(amiga)}</span>
+                        <span className="ml-1 text-slate-400">(MP −${clp(mpTotal)} · Chris −${clp(chris)})</span>
+                      </p>
+                    );
+                  })()}
+
                   <small className="text-sm text-slate-500">Actualizado {hace(p.updated_at)}</small>
 
                   <div className="relative mt-auto flex gap-2 pt-3">

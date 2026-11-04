@@ -186,6 +186,23 @@ export default function ProductModal({ tecnicas, producto, onClose, onSaved }) {
   }
 
   const price = parseInt(precio, 10);
+
+  // Proyección de comisiones para que la amiga decida el precio
+  const MP_PCT    = 3.8;
+  const CHRIS_PCT = 6.2;
+  let proyeccion = null;
+  if (price > 0) {
+    const abonoPct   = 50; // porcentaje de abono configurado en el servidor
+    const abonoMonto = Math.round(price * abonoPct / 100);
+    const saldoMonto = price - abonoMonto;
+    const mpAbono    = Math.round(abonoMonto * MP_PCT / 100);
+    const mpSaldo    = Math.round(saldoMonto * MP_PCT / 100);
+    const mpTotal    = mpAbono + mpSaldo;
+    const chris      = Math.round(price * CHRIS_PCT / 100);
+    const amiga      = Math.max(price - mpTotal - chris, 0);
+    proyeccion = { mpTotal, chris, amiga };
+  }
+
   const resumen = [
     tecnica?.name,
     mascotas(cantidad),
@@ -338,6 +355,24 @@ export default function ProductModal({ tecnicas, producto, onClose, onSaved }) {
               </div>
               {price > 0 && <span className="text-sm text-slate-500">${clp(price)} CLP</span>}
             </div>
+
+            {proyeccion && (
+              <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs space-y-1.5">
+                <p className="font-semibold text-slate-500 uppercase tracking-wide mb-2">Distribución estimada</p>
+                <div className="flex justify-between text-slate-500">
+                  <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-blue-400" />Mercado Pago (3.8% × 2)</span>
+                  <span className="font-medium text-slate-700">−${clp(proyeccion.mpTotal)}</span>
+                </div>
+                <div className="flex justify-between text-slate-500">
+                  <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-violet-400" />Christian (6.2%)</span>
+                  <span className="font-medium text-slate-700">−${clp(proyeccion.chris)}</span>
+                </div>
+                <div className="flex justify-between font-semibold text-emerald-700 border-t border-slate-200 pt-1.5">
+                  <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-emerald-500" />Recibes tú</span>
+                  <span>${clp(proyeccion.amiga)}</span>
+                </div>
+              </div>
+            )}
           </Paso>
 
           <Paso

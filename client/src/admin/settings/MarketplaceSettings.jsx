@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ExternalLink, Link2, RefreshCw } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { apiUrl } from "@/lib/api";
 
 export default function MarketplaceSettings() {
   const [status, setStatus] = useState(null);
@@ -16,7 +17,7 @@ export default function MarketplaceSettings() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Tu sesión de administrador venció. Vuelve a iniciar sesión.");
 
-      const response = await fetch("/api/oauth/mercadopago/status", {
+      const response = await fetch(apiUrl("/api/oauth/mercadopago/status"), {
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
       const result = await response.json().catch(() => ({}));
@@ -40,7 +41,7 @@ export default function MarketplaceSettings() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Tu sesión de administrador venció. Vuelve a iniciar sesión.");
 
-      const response = await fetch("/api/oauth/mercadopago/start", {
+      const response = await fetch(apiUrl("/api/oauth/mercadopago/start"), {
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
       const result = await response.json().catch(() => ({}));

@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { StatusBadge, formatDate, money, orderCode } from "@/admin/shared/ui";
+import { apiUrl } from "@/lib/api";
 
 const sumAmount = (list) => list.reduce((acc, p) => acc + p.amount, 0);
 
@@ -167,7 +168,7 @@ export default function RequestDetail() {
       const {
         data: { session },
       } = await supabase.auth.getSession();
-      const res = await fetch(`/api/orders/${id}/accept`, {
+      const res = await fetch(apiUrl(`/api/orders/${id}/accept`), {
         method: "POST",
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
@@ -225,7 +226,7 @@ export default function RequestDetail() {
       const {
         data: { session },
       } = await supabase.auth.getSession();
-      const res = await fetch(`/api/orders/${id}/request-balance`, {
+      const res = await fetch(apiUrl(`/api/orders/${id}/request-balance`), {
         method: "POST",
         headers: { Authorization: `Bearer ${session.access_token}` },
       });

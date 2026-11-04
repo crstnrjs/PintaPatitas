@@ -1,4 +1,5 @@
 import { normalizarTelefono } from "./StepContacto";
+import { apiUrl } from "@/lib/api";
 
 // Arma lo que recibirá el servidor. NO se envía el precio: lo calcula el servidor.
 export function armarFormData(datos, estilo) {
@@ -29,7 +30,7 @@ export function armarFormData(datos, estilo) {
 }
 
 export async function enviarPedido(formData) {
-  const res = await fetch("/api/pedidos", { method: "POST", body: formData });
+  const res = await fetch(apiUrl("/api/pedidos"), { method: "POST", body: formData });
   const json = await res.json().catch(() => ({}));
   if (!res.ok) {
     if (json.detalle) console.error("Detalle del servidor:", json.detalle);

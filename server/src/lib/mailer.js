@@ -38,26 +38,39 @@ function clp(v) {
   return "$" + n.toLocaleString("es-CL");
 }
 
-function fila(etiqueta, valor) {
+function filaItem(etiqueta, valor, esUltimo = false) {
   return `
-      <tr>
-        <td style="padding:6px 0;color:#64748b;font-size:13px;width:150px;vertical-align:top;">${esc(etiqueta)}</td>
-        <td style="padding:6px 0;color:#0f172a;font-size:14px;">${valor ? esc(valor) : "—"}</td>
-      </tr>`;
+    <tr>
+      <td style="padding:7px 0;color:#64748b;font-size:13px;width:38%;vertical-align:top;border-bottom:${esUltimo ? "none" : "1px solid #f1f5f9"};">${esc(etiqueta)}</td>
+      <td style="padding:7px 0;color:#0f172a;font-size:14px;font-weight:500;text-align:right;border-bottom:${esUltimo ? "none" : "1px solid #f1f5f9"};">${valor ? esc(valor) : "—"}</td>
+    </tr>`;
 }
 
-function filaHTML(etiqueta, valorHTML) {
+function filaItemHTML(etiqueta, valorHTML, esUltimo = false) {
   return `
-      <tr>
-        <td style="padding:6px 0;color:#64748b;font-size:13px;width:150px;vertical-align:top;">${esc(etiqueta)}</td>
-        <td style="padding:6px 0;color:#0f172a;font-size:14px;">${valorHTML || "—"}</td>
-      </tr>`;
+    <tr>
+      <td style="padding:7px 0;color:#64748b;font-size:13px;width:38%;vertical-align:top;border-bottom:${esUltimo ? "none" : "1px solid #f1f5f9"};">${esc(etiqueta)}</td>
+      <td style="padding:7px 0;color:#0f172a;font-size:14px;font-weight:500;text-align:right;border-bottom:${esUltimo ? "none" : "1px solid #f1f5f9"};">${valorHTML || "—"}</td>
+    </tr>`;
 }
 
-function seccion(titulo, filas) {
+function tarjetaSeccion(titulo, icono, contenido) {
   return `
-    <tr><td colspan="2" style="padding:18px 0 4px;font-size:12px;font-weight:bold;letter-spacing:.06em;text-transform:uppercase;color:#2d6583;">${esc(titulo)}</td></tr>
-    ${filas}`;
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#ffffff;border:1px solid #e2e8f0;border-radius:14px;margin-bottom:14px;overflow:hidden;">
+      <tr>
+        <td style="background:#f8fafc;padding:10px 16px;border-bottom:1px solid #e2e8f0;">
+          <span style="font-size:14px;margin-right:6px;">${icono}</span>
+          <strong style="color:#1d4e68;font-size:13px;letter-spacing:.02em;text-transform:uppercase;">${esc(titulo)}</strong>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:10px 16px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+            ${contenido}
+          </table>
+        </td>
+      </tr>
+    </table>`;
 }
 
 /**
@@ -67,81 +80,174 @@ export async function enviarCorreoNuevaSolicitud({ pedido, fotos }) {
   const destino = process.env.ADMIN_NOTIFY_EMAIL;
   if (!destino) throw new Error("Falta ADMIN_NOTIFY_EMAIL en server/.env");
 
-  const base = (process.env.FRONTEND_URL || "").replace(/\/+$/, "");
+  const base = (process.env.FRONTEND_URL || "https://pintapatitas.com").replace(/\/+$/, "");
   const enlace = `${base}/admin/solicitudes/${pedido.id}`;
 
   const n = pedido.pet_count ?? 1;
-  const asunto = `Nueva solicitud #PP-${pedido.order_number} — Retrato de ${n} ${
-    n === 1 ? "mascota" : "mascotas"
-  } (${pedido.style ?? "estilo"})`;
+  const asunto = `🐾 ¡Nueva Solicitud #PP-${pedido.order_number}! — Retrato de ${esc(pedido.pet_name || (n === 1 ? "1 mascota" : `${n} mascotas`))}`;
 
   const direccion = [pedido.street, pedido.street_number].filter(Boolean).join(" ");
   const direccionCompleta = [direccion, pedido.apartment].filter(Boolean).join(" · ");
 
-  const filas = [
-    seccion(
-      "Cliente",
-      fila("Nombre", pedido.customer_name) +
-        filaHTML(
-          "Correo",
-          pedido.customer_email
-            ? `<a href="mailto:${esc(pedido.customer_email)}" style="color:#2d6583;">${esc(
-                pedido.customer_email,
-              )}</a>`
-            : "",
-        ) +
-        fila("Celular", pedido.customer_phone),
-    ),
-    seccion(
-      "Obra",
-      fila("Producto", pedido.product) +
-        fila("Estilo", pedido.style) +
-        fila("Tamaño", pedido.size) +
-        fila("Mascotas", String(n)) +
-        fila("Nombre de la mascota", pedido.pet_name) +
-        fila("Indicaciones", pedido.description),
-    ),
-    seccion(
-      "Pago",
-      fila("Precio total", clp(pedido.total_amount)) +
-        fila("Abono a cobrar", clp(pedido.deposit_amount)),
-    ),
-    seccion(
-      "Dirección de envío",
-      fila("Dirección", direccionCompleta) +
-        fila("Comuna", pedido.commune) +
-        fila("Región", pedido.region),
-    ),
-    seccion("Envío", fila("Fecha", new Date(pedido.created_at).toLocaleString("es-CL"))),
-  ].join("");
+  // Normalizar teléfono para WhatsApp
+  const telDigits = (pedido.customer_phone || "").replace(/\D/g, "");
+  const waNumero = telDigits.startsWith("56") ? telDigits : `56${telDigits}`;
+  const enlaceWhatsApp = telDigits.length >= 8 ? `https://wa.me/${waNumero}` : null;
 
   const html = `<!doctype html>
-<html>
-  <body style="margin:0;background:#e8f0f3;font-family:Arial,Helvetica,sans-serif;">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#e8f0f3;padding:24px 0;">
-      <tr><td align="center">
-        <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background:#ffffff;border-radius:20px;border:1px solid #dbe7ee;overflow:hidden;">
-          <tr>
-            <td style="background:#2d6583;padding:22px 28px;">
-              <p style="margin:0;color:#ffffff;font-size:18px;font-weight:bold;">PintaPatitas</p>
-              <p style="margin:4px 0 0;color:#cfe3ec;font-size:13px;">Nueva solicitud #PP-${esc(
-                pedido.order_number,
-              )}</p>
-            </td>
-          </tr>
-          <tr><td style="padding:8px 28px 0;">${filas}</td></tr>
-          <tr>
-            <td style="padding:22px 28px 28px;">
-              <a href="${esc(
-                enlace,
-              )}" style="display:inline-block;background:#2d6583;color:#ffffff;text-decoration:none;font-size:14px;font-weight:bold;padding:12px 22px;border-radius:999px;">Ver en el panel</a>
-              <p style="margin:16px 0 0;color:#94a3b8;font-size:12px;">Fotos adjuntas: ${
-                fotos.length
-              }. Este correo es un respaldo; el pedido siempre queda en el panel.</p>
-            </td>
-          </tr>
-        </table>
-      </td></tr>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="x-apple-disable-message-reformatting">
+    <title>${esc(asunto)}</title>
+    <style>
+      @media only screen and (max-width: 620px) {
+        .email-container { width: 100% !important; border-radius: 0 !important; }
+        .inner-padding { padding: 18px 16px !important; }
+        .header-padding { padding: 22px 18px !important; }
+        .btn-full { display: block !important; width: 100% !important; text-align: center !important; box-sizing: border-box !important; }
+      }
+    </style>
+  </head>
+  <body style="margin:0;padding:0;background-color:#ebf1f4;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#ebf1f4;padding:24px 0;">
+      <tr>
+        <td align="center" style="padding:0 12px;">
+          <!-- Contenedor Principal -->
+          <table role="presentation" width="600" class="email-container" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:18px;border:1px solid #dbe6ec;overflow:hidden;box-shadow:0 8px 30px rgba(29,78,104,0.08);">
+            
+            <!-- Cabecera de la Marca -->
+            <tr>
+              <td class="header-padding" style="background:linear-gradient(135deg, #1d4e68 0%, #2d6583 100%);padding:28px 28px 24px;text-align:center;">
+                <div style="display:inline-block;background:rgba(255,255,255,0.15);padding:4px 12px;border-radius:999px;margin-bottom:10px;">
+                  <span style="color:#ffffff;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;">PintaPatitas · Retratos</span>
+                </div>
+                <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:800;letter-spacing:-0.02em;">¡Tienes una nueva solicitud!</h1>
+                <div style="margin-top:12px;">
+                  <span style="display:inline-block;background:#fef3c7;color:#92400e;font-size:13px;font-weight:700;padding:6px 14px;border-radius:999px;box-shadow:0 2px 6px rgba(0,0,0,0.1);">
+                    Solicitud #PP-${esc(pedido.order_number)}
+                  </span>
+                </div>
+              </td>
+            </tr>
+
+            <!-- Cuerpo del Correo -->
+            <tr>
+              <td class="inner-padding" style="padding:24px 28px 16px;">
+
+                <!-- Tarjeta 1: La Obra y Mascota -->
+                ${tarjetaSeccion(
+                  "La Obra y Mascota",
+                  "🎨",
+                  filaItem("Mascota(s)", pedido.pet_name || "Sin nombre indicado") +
+                  filaItem("Estilo / Técnica", pedido.style) +
+                  filaItem("Tamaño", pedido.size) +
+                  filaItem("Cantidad de mascotas", String(n), !pedido.description) +
+                  (pedido.description
+                    ? `<tr>
+                        <td colspan="2" style="padding:10px 0 2px;">
+                          <div style="background:#f1f5f9;border-left:3px solid #2d6583;padding:10px 12px;border-radius:6px;">
+                            <span style="display:block;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;margin-bottom:3px;">Indicaciones del cliente:</span>
+                            <span style="font-size:13px;color:#0f172a;line-height:1.45;">"${esc(pedido.description)}"</span>
+                          </div>
+                        </td>
+                      </tr>`
+                    : "")
+                )}
+
+                <!-- Tarjeta 2: Cliente y Contacto -->
+                ${tarjetaSeccion(
+                  "Datos del Cliente",
+                  "👤",
+                  filaItem("Nombre", pedido.customer_name) +
+                  filaItemHTML(
+                    "Correo",
+                    pedido.customer_email
+                      ? `<a href="mailto:${esc(pedido.customer_email)}" style="color:#2d6583;font-weight:600;text-decoration:none;">${esc(pedido.customer_email)}</a>`
+                      : ""
+                  ) +
+                  filaItemHTML(
+                    "Celular",
+                    pedido.customer_phone
+                      ? `<a href="tel:${esc(pedido.customer_phone)}" style="color:#0f172a;text-decoration:none;">${esc(pedido.customer_phone)}</a>` +
+                        (enlaceWhatsApp
+                          ? `<br/><a href="${esc(enlaceWhatsApp)}" target="_blank" style="display:inline-block;margin-top:4px;color:#16a34a;font-size:12px;font-weight:700;text-decoration:none;">💬 Abrir WhatsApp</a>`
+                          : "")
+                      : ""
+                  )
+                )}
+
+                <!-- Tarjeta 3: Valores y Pago -->
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f0fdfa;border:1px solid #ccfbf1;border-radius:14px;margin-bottom:14px;overflow:hidden;">
+                  <tr>
+                    <td style="padding:14px 18px;">
+                      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td style="color:#0f766e;font-size:13px;font-weight:600;text-transform:uppercase;">
+                            💰 Resumen de Valores
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style="padding:10px 0 0;">
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                              <tr>
+                                <td style="color:#475569;font-size:13px;padding:3px 0;">Valor total del cuadro:</td>
+                                <td style="color:#0f172a;font-size:14px;font-weight:600;text-align:right;padding:3px 0;">${clp(pedido.total_amount)}</td>
+                              </tr>
+                              <tr>
+                                <td style="color:#0f766e;font-size:14px;font-weight:700;padding:6px 0 0;border-top:1px dashed #99f6e4;">Abono inicial a cobrar (50%):</td>
+                                <td style="color:#0f766e;font-size:18px;font-weight:800;text-align:right;padding:6px 0 0;border-top:1px dashed #99f6e4;">${clp(pedido.deposit_amount)}</td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+
+                <!-- Tarjeta 4: Dirección de Despacho -->
+                ${tarjetaSeccion(
+                  "Dirección de Despacho",
+                  "📍",
+                  filaItem("Dirección", direccionCompleta) +
+                  filaItem("Comuna", pedido.commune) +
+                  filaItem("Región", pedido.region, true)
+                )}
+
+                <!-- Botón de Acción Principal -->
+                <div style="text-align:center;padding:14px 0 10px;">
+                  <a href="${esc(enlace)}" class="btn-full" style="display:inline-block;background:#1d4e68;color:#ffffff;text-decoration:none;font-size:15px;font-weight:700;padding:14px 32px;border-radius:999px;box-shadow:0 4px 14px rgba(29,78,104,0.35);">
+                    Ver solicitud en el panel de control →
+                  </a>
+                </div>
+
+                <!-- Aviso de Fotos -->
+                <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px 14px;margin-top:14px;text-align:center;">
+                  <p style="margin:0;color:#64748b;font-size:12px;line-height:1.4;">
+                    📸 <strong>${fotos.length} foto(s) de referencia</strong> adjuntas en este correo y disponibles en el panel.
+                  </p>
+                </div>
+
+              </td>
+            </tr>
+
+            <!-- Pie de Página -->
+            <tr>
+              <td style="background:#f8fafc;padding:16px 28px;border-top:1px solid #e2e8f0;text-align:center;">
+                <p style="margin:0;color:#94a3b8;font-size:12px;">
+                  Solicitud recibida el ${new Date(pedido.created_at).toLocaleString("es-CL", { dateStyle: "long", timeStyle: "short" })}
+                </p>
+                <p style="margin:4px 0 0;color:#94a3b8;font-size:11px;">
+                  PintaPatitas · Retratos de mascotas hechos con amor en Chile
+                </p>
+              </td>
+            </tr>
+
+          </table>
+        </td>
+      </tr>
     </table>
   </body>
 </html>`;

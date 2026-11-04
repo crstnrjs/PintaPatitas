@@ -81,8 +81,11 @@ router.post("/:id/accept", requireAdmin, async (req, res) => {
 
       const platformPreference = crearPreferenciaPlataforma();
       const pref = await platformPreference.create({ body: preferenceBody });
-      // Se utiliza sandbox_init_point para pruebas locales o init_point en producción
-      paymentUrl = pref.sandbox_init_point || pref.init_point;
+      // En producción (credencial APP_USR) se usa init_point; en modo sandbox (TEST) se usa sandbox_init_point
+      const isTestToken = process.env.MP_ACCESS_TOKEN?.startsWith("TEST-");
+      paymentUrl = isTestToken
+        ? pref.sandbox_init_point || pref.init_point
+        : pref.init_point || pref.sandbox_init_point;
 
       // 4. Guardar registro en la tabla payments
       const { error: errPayment } = await supabase.from("payments").insert({
@@ -259,7 +262,10 @@ router.post("/:id/request-balance", requireAdmin, async (req, res) => {
 
       const sellerPreference = crearPreferenciaVendedor();
       const pref = await sellerPreference.create({ body: preferenceBody });
-      paymentUrl = pref.sandbox_init_point || pref.init_point;
+      const isTestToken = process.env.MP_ACCESS_TOKEN?.startsWith("TEST-");
+      paymentUrl = isTestToken
+        ? pref.sandbox_init_point || pref.init_point
+        : pref.init_point || pref.sandbox_init_point;
 
       // Guardar registro en payments
       const { error: errInsert } = await supabase.from("payments").insert({

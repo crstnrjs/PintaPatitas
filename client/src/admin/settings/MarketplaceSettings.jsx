@@ -75,14 +75,23 @@ export default function MarketplaceSettings() {
             <p className="mt-1 text-sm text-muted-foreground">
               {loading
                 ? "Consultando conexión…"
-                : status?.connected
-                  ? "La cuenta está vinculada por OAuth."
-                  : "Aún no hay una cuenta vendedora vinculada."}
+                : status?.modeMismatch
+                  ? `Credencial guardada es ${status.sellerMode === "live" ? "live" : "de prueba"}, pero el servidor está en modo ${status.testMode ? "de prueba" : "live"}.`
+                  : status?.connected
+                    ? "La cuenta está vinculada por OAuth."
+                    : "Aún no hay una cuenta vendedora vinculada."}
             </p>
             {!loading && status && (
-              <span className={`mt-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${status.testMode ? "bg-[#faefd9] text-[#865710]" : "bg-[#e1f0e6] text-[#2d6844]"}`}>
-                {status.testMode ? "Modo de prueba OAuth" : "Modo de producción OAuth"}
-              </span>
+              <>
+                <span className={`mt-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${status.testMode ? "bg-[#faefd9] text-[#865710]" : "bg-[#e1f0e6] text-[#2d6844]"}`}>
+                  {status.testMode ? "Modo de prueba OAuth" : "Modo de producción OAuth"}
+                </span>
+                {status.modeMismatch && (
+                  <p className="mt-2 text-xs text-[#963a31]">
+                    Desajuste detectado. Reconecta para usar el modo actual.
+                  </p>
+                )}
+              </>
             )}
           </div>
 
@@ -104,19 +113,24 @@ export default function MarketplaceSettings() {
         )}
 
         <div className="mt-6 rounded-2xl border border-tinta/8 bg-papel p-5 text-sm leading-6 text-tinta/65">
-          <p className="font-semibold text-(--deep)">Cómo autorizar la cuenta de prueba</p>
+          <p className="font-semibold text-(--deep)">Cómo autorizar la cuenta vendedora</p>
           <ol className="mt-2 list-decimal space-y-1 pl-5">
-            <li>Primero revisa el modo indicado arriba: debe ser de prueba.</li>
-            <li>Al continuar, inicia sesión en Mercado Pago con la cuenta vendedora de prueba chilena.</li>
+            <li>Primero revisa el modo indicado arriba. En producción, debe ser live; en pruebas, debe ser de prueba.</li>
+            <li>Al continuar, inicia sesión con una cuenta vendedora de Mercado Pago que corresponda al modo indicado.</li>
             <li>Revisa que el consentimiento sea para la aplicación Marketplace de PintaPatitas y acepta.</li>
-            <li>Mercado Pago volverá aquí y el servidor guardará los tokens sin mostrarlos.</li>
+            <li>Mercado Pago volverá aquí y el servidor guardará los tokens sin mostrarlos; rechazará credenciales de un modo distinto.</li>
           </ol>
+          {!loading && status && !status.testMode && (
+            <p className="mt-4 rounded-xl border border-[#ecc8c2] bg-[#fbefed] p-3 text-xs text-[#963a31]">
+              <strong>Advertencia:</strong> Estás en modo live. Al autorizar conectarás una cuenta real de Mercado Pago. Este paso solo autoriza la plataforma; no crea cobros.
+            </p>
+          )}
         </div>
 
         {!loading && <button
           type="button"
           onClick={connectSeller}
-          disabled={working || !status?.configured || !status?.testMode}
+          disabled={working || !status?.configured}
           className={`mt-6 ${btn.primary}`}
         >
           <Link2 size={16} />
@@ -124,9 +138,11 @@ export default function MarketplaceSettings() {
             ? "Abriendo Mercado Pago…"
             : !status?.configured
               ? "Completa la configuración para vincular"
-              : status?.connected
-                ? "Volver a vincular vendedor de prueba"
-                : "Vincular vendedor de prueba"}
+              : status?.modeMismatch
+                ? `Reconectar vendedor ${status.testMode ? "de prueba" : "live"}`
+                : status?.connected
+                  ? `Volver a vincular vendedor ${status.testMode ? "de prueba" : "live"}`
+                  : `Vincular vendedor ${status.testMode ? "de prueba" : "live"}`}
           <ExternalLink size={14} />
         </button>}
 
@@ -140,18 +156,10 @@ export default function MarketplaceSettings() {
             {status?.missing?.includes("MP_TOKEN_ENCRYPTION_KEY") && (
               <p className="mt-1">Reinicia el servidor para que se apliquen las variables de entorno requeridas para guardar las credenciales de forma cifrada.</p>
             )}
-            {status?.missing?.includes("MP_OAUTH_TEST_TOKEN=true") && (
-              <p className="mt-1">El modo de prueba OAuth debe estar activado antes de autorizar una cuenta de prueba.</p>
-            )}
             <p className="mt-2 text-xs">Variables pendientes: {status?.missing?.join(", ")}</p>
           </div>
         )}
 
-        {!loading && status?.configured && !status?.testMode && (
-          <p className="mt-3 text-sm text-[#865710]">
-            No se puede iniciar la vinculación de prueba porque el servidor no está en modo de prueba. No autorices una cuenta real desde esta pantalla.
-          </p>
-        )}
       </section>
 
       <p className="mt-5 text-xs text-muted-foreground">

@@ -95,6 +95,9 @@ export function getMarketplaceOAuthConfigurationStatus() {
     ? clientId === tokenAppId
     : null;
 
+  const testTokenFlag = process.env.MP_OAUTH_TEST_TOKEN;
+  const testTokenValid = testTokenFlag === undefined || testTokenFlag === "false" || testTokenFlag === "true";
+  if (!testTokenValid) missing.push("MP_OAUTH_TEST_TOKEN debe ser 'true' o 'false'");
   if (!clientId) missing.push("MP_CLIENT_ID");
   if (!process.env.MP_CLIENT_SECRET) missing.push("MP_CLIENT_SECRET");
   if (!redirectUri) missing.push("MP_OAUTH_REDIRECT_URL");
@@ -102,7 +105,6 @@ export function getMarketplaceOAuthConfigurationStatus() {
   if (!/^[a-f\d]{64}$/i.test(process.env.MP_TOKEN_ENCRYPTION_KEY ?? "")) {
     missing.push("MP_TOKEN_ENCRYPTION_KEY");
   }
-  if (process.env.MP_OAUTH_TEST_TOKEN !== "true") missing.push("MP_OAUTH_TEST_TOKEN=true");
   return {
     configured: missing.length === 0,
     missing,
@@ -116,7 +118,9 @@ export function getMarketplaceOAuthConfigurationStatus() {
       redirectHostMatchesPublicBase: redirectHost && publicBaseHost
         ? redirectHost === publicBaseHost
         : null,
-      oauthTestMode: process.env.MP_OAUTH_TEST_TOKEN === "true",
+      oauthTestMode: testTokenFlag === "true",
+      oauthMode: testTokenValid ? (testTokenFlag === "true" ? "test" : "live") : "disabled",
+      oauthTestTokenValid: testTokenValid,
       encryptionKeyValid: /^[a-f\d]{64}$/i.test(process.env.MP_TOKEN_ENCRYPTION_KEY ?? ""),
     },
   };

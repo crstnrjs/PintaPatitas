@@ -1,10 +1,7 @@
 import { Router } from "express";
 import { supabaseAdmin as supabase } from "../lib/supabase.js";
 import { requireAdmin } from "../middleware/requireAdmin.js";
-import {
-  crearPreferenciaPlataforma,
-  crearPreferenciaVendedor,
-} from "../lib/mercadopago.js";
+import { crearPreferenciaVendedor } from "../lib/mercadopago.js";
 import { marketplaceSellerIsConnected } from "../lib/marketplaceCredentials.js";
 import { enviarCorreoClienteAbono, enviarCorreoClienteSaldo } from "../lib/mailer.js";
 import { reservarPago, completarReservaPago, eliminarReservaPago } from "./paymentIdempotency.js";
@@ -33,6 +30,14 @@ router.post("/:id/accept", requireAdmin, async (req, res) => {
 
   if (!order) {
     return res.status(409).json({ error: "Esta solicitud ya fue procesada o no existe." });
+  }
+
+  // El abono se cobra 100% a la cuenta vendedora vinculada por OAuth (sin comisión de plataforma).
+  if (!marketplaceSellerIsConnected()) {
+    return res.status(503).json({
+      error:
+        "Falta vincular la cuenta de Mercado Pago de la artista en Ajustes → Mercado Pago. No se generó ningún cobro.",
+    });
   }
 
   // 2. Reservar atómicamente el pago antes de llamar al proveedor.
@@ -78,7 +83,7 @@ router.post("/:id/accept", requireAdmin, async (req, res) => {
       preferenceBody.notification_url = `${process.env.PUBLIC_BASE_URL.replace(/\/+$/, "")}/api/webhooks/mercadopago`;
     }
 
-    const pref = await crearPreferenciaPlataforma().create({ body: preferenceBody });
+    const pref = await crearPreferenciaVendedor().create({ body: preferenceBody });
     const isTestToken = process.env.MP_ACCESS_TOKEN?.startsWith("TEST-");
     paymentUrl = isTestToken
       ? pref.sandbox_init_point || pref.init_point

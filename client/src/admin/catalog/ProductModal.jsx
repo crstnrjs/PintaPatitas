@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { colorDe } from "./techniqueColors";
+import { modalOverlay, modalPanel } from "@/admin/shared/ui";
 
 const BUCKET = "catalog";
 const CANTIDADES = [1, 2, 3, 4];
@@ -34,12 +35,12 @@ function Paso({ n, titulo, ayuda, children }) {
   return (
     <section className="space-y-2">
       <div className="flex items-center gap-2">
-        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-800 text-xs font-bold text-white">
+        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-acento text-xs font-bold text-white">
           {n}
         </span>
-        <h3 className="font-semibold text-slate-800">{titulo}</h3>
+        <h3 className="font-semibold text-tinta">{titulo}</h3>
       </div>
-      {ayuda && <p className="text-xs text-slate-500">{ayuda}</p>}
+      {ayuda && <p className="text-xs text-tinta/55">{ayuda}</p>}
       {children}
     </section>
   );
@@ -214,22 +215,22 @@ export default function ProductModal({ tecnicas, producto, onClose, onSaved }) {
 
   return (
     <div
-      className="fixed inset-0 z-40 flex items-end justify-center bg-black/40 sm:items-center sm:p-4"
+      className={modalOverlay}
       onClick={(e) => e.target === e.currentTarget && !guardando && onClose()}
     >
       <form
         onSubmit={guardar}
-        className="flex max-h-[94vh] w-full max-w-xl flex-col rounded-t-3xl bg-white sm:rounded-3xl"
+        className={`flex max-h-[94vh] max-w-xl flex-col ${modalPanel}`}
       >
-        <div className="flex items-center justify-between border-b px-6 py-4">
-          <h2 className="text-xl font-semibold text-slate-800">
+        <div className="flex items-center justify-between border-b border-tinta/8 px-6 py-4">
+          <h2 className="font-display text-2xl text-tinta">
             {editando ? "Editar producto" : "Nuevo producto"}
           </h2>
           <button
             type="button"
             onClick={onClose}
             disabled={guardando}
-            className="rounded-full px-2 text-2xl leading-none text-slate-400 hover:text-slate-700"
+            className="grid size-10 place-items-center rounded-full text-2xl leading-none text-tinta/45 hover:bg-bruma/60 hover:text-tinta"
             aria-label="Cerrar"
           >
             ×
@@ -250,7 +251,7 @@ export default function ProductModal({ tecnicas, producto, onClose, onSaved }) {
                     className={`flex items-center justify-center gap-2 rounded-2xl border-2 px-3 py-3 text-sm font-medium transition ${
                       elegido
                         ? c.sel
-                        : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+                        : "border-tinta/10 bg-white text-tinta/70 hover:border-tinta/25"
                     }`}
                   >
                     <span className={`h-3 w-3 rounded-full ${c.dot}`} />
@@ -270,8 +271,8 @@ export default function ProductModal({ tecnicas, producto, onClose, onSaved }) {
                   onClick={() => setCantidad(n)}
                   className={`rounded-2xl border-2 py-2 text-center transition ${
                     cantidad === n
-                      ? "border-[#2d6583] bg-[#2d6583]/10 text-[#2d6583]"
-                      : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+                      ? "border-acento bg-acento/10 text-acento"
+                      : "border-tinta/10 bg-white text-tinta/70 hover:border-tinta/25"
                   }`}
                 >
                   <span className="block text-lg font-semibold">{n}</span>
@@ -287,7 +288,7 @@ export default function ProductModal({ tecnicas, producto, onClose, onSaved }) {
             ayuda={sinTamano ? null : "Elige un tamaño habitual o escribe las medidas en cm."}
           >
             {sinTamano ? (
-              <p className="rounded-xl bg-slate-100 px-4 py-3 text-sm text-slate-500">
+              <p className="rounded-xl bg-bruma/60 px-4 py-3 text-sm text-tinta/55">
                 La pintura digital no lleva medidas, así que no hay nada que elegir aquí.
               </p>
             ) : (
@@ -305,8 +306,8 @@ export default function ProductModal({ tecnicas, producto, onClose, onSaved }) {
                         }}
                         className={`rounded-full border px-3 py-1 text-sm transition ${
                           elegido
-                            ? "border-[#2d6583] bg-[#2d6583] text-white"
-                            : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                            ? "border-acento bg-acento text-white"
+                            : "border-tinta/15 bg-white text-tinta/80 hover:bg-bruma/40"
                         }`}
                       >
                         {w} × {h}
@@ -315,23 +316,23 @@ export default function ProductModal({ tecnicas, producto, onClose, onSaved }) {
                   })}
                 </div>
                 <div className="flex items-end gap-3">
-                  <label className="text-sm text-slate-600">
+                  <label className="text-sm text-tinta/70">
                     Ancho (cm)
                     <input
                       type="number"
                       min="1"
-                      className="mt-1 block w-28 rounded-xl border border-slate-300 p-2"
+                      className="mt-1 block w-28 rounded-xl border border-tinta/15 p-2"
                       value={ancho}
                       onChange={(e) => setAncho(e.target.value)}
                     />
                   </label>
-                  <span className="pb-2 text-slate-400">×</span>
-                  <label className="text-sm text-slate-600">
+                  <span className="pb-2 text-tinta/40">×</span>
+                  <label className="text-sm text-tinta/70">
                     Alto (cm)
                     <input
                       type="number"
                       min="1"
-                      className="mt-1 block w-28 rounded-xl border border-slate-300 p-2"
+                      className="mt-1 block w-28 rounded-xl border border-tinta/15 p-2"
                       value={alto}
                       onChange={(e) => setAlto(e.target.value)}
                     />
@@ -343,8 +344,8 @@ export default function ProductModal({ tecnicas, producto, onClose, onSaved }) {
 
           <Paso n={4} titulo="Precio">
             <div className="flex items-center gap-3">
-              <div className="flex items-center rounded-xl border border-slate-300 px-3">
-                <span className="text-slate-400">$</span>
+              <div className="flex items-center rounded-xl border border-tinta/15 px-3">
+                <span className="text-tinta/40">$</span>
                 <input
                   type="number"
                   min="1"
@@ -353,22 +354,22 @@ export default function ProductModal({ tecnicas, producto, onClose, onSaved }) {
                   onChange={(e) => setPrecio(e.target.value)}
                 />
               </div>
-              {price > 0 && <span className="text-sm text-slate-500">${clp(price)} CLP</span>}
+              {price > 0 && <span className="text-sm text-tinta/55">${clp(price)} CLP</span>}
             </div>
 
             {proyeccion && (
-              <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs space-y-1.5">
-                <p className="font-semibold text-slate-500 uppercase tracking-wide mb-2">Distribución estimada</p>
-                <div className="flex justify-between text-slate-500">
-                  <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-blue-400" />Mercado Pago (3.8% × 2)</span>
-                  <span className="font-medium text-slate-700">−${clp(proyeccion.mpTotal)}</span>
+              <div className="mt-3 rounded-xl border border-tinta/10 bg-bruma/40 px-4 py-3 text-xs space-y-1.5">
+                <p className="font-semibold text-tinta/55 uppercase tracking-wide mb-2">Distribución estimada</p>
+                <div className="flex justify-between text-tinta/55">
+                  <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#4f8fb0]" />Mercado Pago (3.8% × 2)</span>
+                  <span className="font-medium text-tinta/80">−${clp(proyeccion.mpTotal)}</span>
                 </div>
-                <div className="flex justify-between text-slate-500">
-                  <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-violet-400" />Christian (6.2%)</span>
-                  <span className="font-medium text-slate-700">−${clp(proyeccion.chris)}</span>
+                <div className="flex justify-between text-tinta/55">
+                  <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#8a7bc0]" />Christian (6.2%)</span>
+                  <span className="font-medium text-tinta/80">−${clp(proyeccion.chris)}</span>
                 </div>
-                <div className="flex justify-between font-semibold text-emerald-700 border-t border-slate-200 pt-1.5">
-                  <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-emerald-500" />Recibes tú</span>
+                <div className="flex justify-between font-semibold text-[#2d6844] border-t border-tinta/10 pt-1.5">
+                  <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#5ea67a]" />Recibes tú</span>
                   <span>${clp(proyeccion.amiga)}</span>
                 </div>
               </div>
@@ -381,11 +382,11 @@ export default function ProductModal({ tecnicas, producto, onClose, onSaved }) {
             ayuda={`Opcional. Si no subes una foto, el sitio usará la foto predeterminada para ${mascotas(cantidad)}.`}
           >
             <div className="flex items-center gap-4">
-              <div className="h-28 w-24 shrink-0 overflow-hidden rounded-2xl bg-slate-100">
+              <div className="h-28 w-24 shrink-0 overflow-hidden rounded-2xl bg-bruma/60">
                 {vistaFoto ? (
                   <img src={vistaFoto} alt="" className="h-full w-full object-cover" />
                 ) : (
-                  <div className="flex h-full items-center justify-center px-2 text-center text-xs text-slate-400">
+                  <div className="flex h-full items-center justify-center px-2 text-center text-xs text-tinta/40">
                     Sin foto
                   </div>
                 )}
@@ -394,7 +395,7 @@ export default function ProductModal({ tecnicas, producto, onClose, onSaved }) {
                 <button
                   type="button"
                   onClick={() => inputFile.current?.click()}
-                  className="rounded-lg border border-slate-300 px-3 py-2 text-sm hover:bg-slate-50"
+                  className="rounded-lg border border-tinta/15 px-3 py-2 text-sm hover:bg-bruma/40"
                 >
                   {vistaFoto ? "Cambiar foto" : "Subir foto"}
                 </button>
@@ -402,7 +403,7 @@ export default function ProductModal({ tecnicas, producto, onClose, onSaved }) {
                   <button
                     type="button"
                     onClick={quitar}
-                    className="rounded-lg px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+                    className="rounded-lg px-3 py-2 text-sm text-[#963a31] hover:bg-[#f7e3e1]"
                   >
                     Quitar
                   </button>
@@ -418,7 +419,7 @@ export default function ProductModal({ tecnicas, producto, onClose, onSaved }) {
             </div>
           </Paso>
 
-          <label className="flex items-center gap-3 rounded-xl bg-slate-50 px-4 py-3 text-sm">
+          <label className="flex items-center gap-3 rounded-xl bg-bruma/40 px-4 py-3 text-sm">
             <input
               type="checkbox"
               className="h-4 w-4"
@@ -426,31 +427,31 @@ export default function ProductModal({ tecnicas, producto, onClose, onSaved }) {
               onChange={(e) => setActivo(e.target.checked)}
             />
             <span>
-              <strong className="text-slate-800">Mostrar en el sitio</strong>
-              <span className="block text-xs text-slate-500">
+              <strong className="text-tinta">Mostrar en el sitio</strong>
+              <span className="block text-xs text-tinta/55">
                 Si lo desactivas, queda como borrador y los clientes no lo ven.
               </span>
             </span>
           </label>
         </div>
 
-        <div className="space-y-3 border-t px-6 py-4">
+        <div className="space-y-3 border-t border-tinta/8 px-6 py-4">
           {error && <p className="rounded-lg bg-red-100 p-3 text-sm text-red-700">{error}</p>}
           <div className="flex items-center justify-between gap-3">
-            <p className="min-w-0 truncate text-sm text-slate-500">{resumen}</p>
+            <p className="min-w-0 truncate text-sm text-tinta/55">{resumen}</p>
             <div className="flex shrink-0 gap-2">
               <button
                 type="button"
                 onClick={onClose}
                 disabled={guardando}
-                className="rounded-xl border border-slate-300 px-4 py-2 text-sm hover:bg-slate-50"
+                className="min-h-11 rounded-full border border-tinta/15 px-5 text-sm font-medium text-acento-oscuro hover:bg-bruma/40"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 disabled={guardando}
-                className="rounded-xl bg-[#2d6583] px-5 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
+                className="min-h-11 rounded-full bg-acento px-5 text-sm font-semibold text-white shadow-[0_8px_18px_-10px_rgb(27_68_88/0.8)] hover:bg-acento-oscuro disabled:opacity-50"
               >
                 {guardando ? "Guardando..." : editando ? "Guardar cambios" : "Crear producto"}
               </button>

@@ -1,11 +1,10 @@
-﻿import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { ArrowRight, Brush, CircleCheck, CircleX, Inbox, Wallet } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { StatusBadge, formatDate, money, orderCode } from "@/admin/shared/ui";
+import { Aviso, EmptyState, OrderList, PageHeader, Panel, Skeleton, StatCard, btn, formatDate, money, orderCode } from "@/admin/shared/ui";
 
 export default function Dashboard() {
-  const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -68,119 +67,103 @@ export default function Dashboard() {
     .filter((p) => new Date(p.created_at) >= monthStart)
     .reduce((acc, p) => acc + p.amount, 0);
 
+
   const stats = [
-    { label: "Solicitudes nuevas", value: nuevas, meta: "Por revisar" },
-    { label: "En proceso", value: enProceso, meta: "Pinturas en curso" },
-    { label: "Saldo por cobrar", value: money(porCobrar), meta: "Pedidos abiertos" },
-    { label: "Finalizadas", value: completadasMes, meta: "Este mes" },
-    { label: "Rechazadas", value: rechazado, meta: "Solicitudes rechazadas" },
+    { label: "Solicitudes nuevas", value: nuevas, meta: "Por revisar", icon: Inbox, tono: "azul", destacado: true },
+    { label: "En proceso", value: enProceso, meta: "Pinturas en curso", icon: Brush, tono: "ambar" },
+    { label: "Saldo por cobrar", value: money(porCobrar), meta: "Pedidos abiertos", icon: Wallet, tono: "morado" },
+    { label: "Finalizadas", value: completadasMes, meta: "Este mes", icon: CircleCheck, tono: "verde" },
+    { label: "Rechazadas", value: rechazado, meta: "Solicitudes rechazadas", icon: CircleX, tono: "rojo" },
   ];
 
-
-
-  if (stats.label === nuevas){
-    statsColor = "border-l-4 border-l-blue-300"
-  };
-
   const recientes = orders.slice(0, 5);
+  const porRevisar = orders.filter((o) => o.status === "solicitud").slice(0, 4);
 
   return (
     <div>
-      <header className="mb-8">
-        <span className="text-[11px] font-extrabold tracking-[.12em] text-(--blue) uppercase">
-          Administración
-        </span>
-        <h1 className="mt-2 text-3xl font-bold tracking-tight text-(--deep)">Resumen</h1>
-      </header>
+      <PageHeader title="Dashboard" description="Una vista general de tu taller: lo que llegó, lo que estás pintando y lo que falta cobrar.">
+        <Link to="/admin/solicitudes" className={btn.primary}>
+          Ver solicitudes <ArrowRight size={16} aria-hidden="true" />
+        </Link>
+      </PageHeader>
 
-      {error && <p className="mb-4 text-sm text-red-600">{error}</p>}
+      {error && (
+        <div className="mb-5">
+          <Aviso>No pudimos cargar los datos del panel. Recarga la página en unos segundos.</Aviso>
+        </div>
+      )}
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        {stats.map((s) => {
-          let statsColor = "";
-          if (s.label === "Solicitudes nuevas"){
-            statsColor = "border-l-5 border-l-blue-500"
-          }
-          if (s.label === "En proceso"){
-            statsColor = "border-l-5 border-l-yellow-500"
-          }
-          if (s.label === "Saldo por cobrar"){
-            statsColor = "border-l-5 border-l-violet-500"
-          }
-          if (s.label === "Finalizadas"){
-            statsColor = "border-l-5 border-l-green-500"
-          }
-          if (s.label === "Rechazadas"){
-            statsColor = "border-l-5 border-l-red-500"
-          }
-          return(
-          <article key={s.label} className={`rounded-2xl ${statsColor} border border-line   shadow-lg  bg-white  p-5 `}>
-            <span className="text-sm text-muted-foreground">{s.label}</span>
-            <strong className="mt-2 block text-3xl font-bold text-(--deep)">
-              {loading ? "—" : s.value}
-            </strong>
-            <small className="text-xs text-muted-foreground">{s.meta}</small>
-          </article>
-      )})}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        {stats.map((s) => (
+          <StatCard key={s.label} {...s} loading={loading} />
+        ))}
       </div>
 
-      <article className="mt-4 rounded-2xl border border-line bg-white shadow-lg  p-5">
-        <span className="text-sm text-muted-foreground">Cobrado este mes</span>
-        <strong className="mt-2 block text-3xl font-bold text-(--deep)">
-          {loading ? "—" : money(cobradoMes)}
-        </strong>
-        <small className="text-xs text-muted-foreground">Abonos y saldos aprobados</small>
-      </article>
+      <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
+        <Panel
+          title="Solicitudes recientes"
+          description="Las últimas recibidas"
+          bodyClass="pt-3 pb-2"
+          action={
+            <Link to="/admin/solicitudes" className={btn.ghost}>
+              Ver todas <ArrowRight size={16} aria-hidden="true" />
+            </Link>
+          }
+        >
+          <OrderList
+            orders={recientes}
+            loading={loading}
+            empty={<EmptyState title="Aún no hay solicitudes" text="Cuando un cliente envíe su pedido desde el sitio, aparecerá aquí." />}
+          />
+        </Panel>
 
-      <section className="mt-6 rounded-2xl border border-line bg-white">
-        <div className="flex items-center justify-between p-5">
-          <div>
-            <h2 className="font-bold text-(--deep)">Solicitudes recientes</h2>
-            <p className="text-sm text-muted-foreground">Las últimas recibidas</p>
-          </div>
-          <Link
-            to="/admin/solicitudes"
-            className="inline-flex items-center gap-1 text-sm font-semibold text-(--blue)"
-          >
-            Ver todas <ArrowRight size={16} />
-          </Link>
+        <div className="space-y-6">
+          <article className="arcilla relative overflow-hidden rounded-[26px] p-6">
+            <svg aria-hidden="true" viewBox="0 0 200 60" className="absolute right-0 bottom-0 h-16 w-48 text-cielo/40">
+              <path d="M0 50c40-30 110-40 200-14" stroke="currentColor" strokeWidth="14" strokeLinecap="round" fill="none" />
+            </svg>
+            <span className="text-sm font-medium text-tinta/60">Cobrado este mes</span>
+            <strong className="mt-2 block font-display text-4xl text-tinta">
+              {loading ? <Skeleton className="h-10 w-40" /> : money(cobradoMes)}
+            </strong>
+            <small className="relative mt-2 block text-xs text-tinta/50">Abonos y saldos aprobados</small>
+          </article>
+
+          <Panel title="Por revisar" description="Solicitudes esperando tu respuesta" bodyClass="px-3 pt-3 pb-3">
+            {loading ? (
+              <div className="space-y-2 px-2">
+                {[0, 1].map((i) => <Skeleton key={i} className="h-14" />)}
+              </div>
+            ) : porRevisar.length === 0 ? (
+              <EmptyState compact title="No tienes solicitudes nuevas" text="Todo al día por ahora." />
+            ) : (
+              <ul>
+                {porRevisar.map((o) => (
+                  <li key={o.id}>
+                    <Link
+                      to={`/admin/solicitudes/${o.id}`}
+                      className="flex items-center gap-3 rounded-2xl px-3 py-3 transition hover:bg-bruma/50 focus-visible:bg-bruma/50 focus-visible:outline-none"
+                    >
+                      <span className="grid size-10 shrink-0 place-items-center rounded-full bg-[#e1eef5] text-[#1f5675]">
+                        <Inbox size={17} aria-hidden="true" />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-medium text-tinta">
+                          {o.pet_name ?? "Sin nombre"} · {o.customer_name}
+                        </span>
+                        <span className="block truncate text-xs text-tinta/50">
+                          {orderCode(o.order_number)} · {formatDate(o.created_at)}
+                        </span>
+                      </span>
+                      <ArrowRight size={15} className="shrink-0 text-tinta/30" aria-hidden="true" />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Panel>
         </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-150 text-left text-sm">
-            <thead className="border-y border-line text-xs text-muted-foreground uppercase">
-              <tr>
-                <th className="px-5 py-3">ID</th>
-                <th className="px-5 py-3">Cliente</th>
-                <th className="px-5 py-3">Mascota</th>
-                <th className="px-5 py-3">Estado</th>
-                <th className="px-5 py-3">Total</th>
-                <th className="px-5 py-3">Fecha</th>
-              </tr>
-            </thead>
-            <tbody>
-              {recientes.map((o) => (
-                <tr
-                  key={o.id}
-                  onClick={() => navigate(`/admin/solicitudes/${o.id}`)}
-                  className="cursor-pointer border-b border-line last:border-0 hover:bg-black/2"
-                >
-                  <td className="px-5 py-4 font-semibold text-(--deep)">{orderCode(o.order_number)}</td>
-                  <td className="px-5 py-4">{o.customer_name}</td>
-                  <td className="px-5 py-4">{o.pet_name ?? "—"}</td>
-                  <td className="px-5 py-4"><StatusBadge status={o.status} /></td>
-                  <td className="px-5 py-4">{money(o.total_amount)}</td>
-                  <td className="px-5 py-4 text-muted-foreground">{formatDate(o.created_at)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          {!loading && recientes.length === 0 && (
-            <p className="p-8 text-center text-sm text-muted-foreground">Aún no hay solicitudes.</p>
-          )}
-        </div>
-      </section>
+      </div>
     </div>
   );
 }

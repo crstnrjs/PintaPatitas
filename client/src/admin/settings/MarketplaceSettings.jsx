@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ExternalLink, Link2, RefreshCw } from "lucide-react";
+import { ExternalLink, Link2, RefreshCw, WalletCards } from "lucide-react";
+import { PageHeader, btn } from "@/admin/shared/ui";
 import { supabase } from "@/lib/supabase";
 import { apiUrl } from "@/lib/api";
 
@@ -59,22 +60,18 @@ export default function MarketplaceSettings() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <header className="mb-8">
-        <span className="text-[11px] font-extrabold tracking-[.12em] text-(--blue) uppercase">
-          Configuración
-        </span>
-        <h1 className="mt-2 text-3xl font-bold tracking-tight text-(--deep)">
-          Mercado Pago Marketplace
-        </h1>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-          Vincula la cuenta vendedora con OAuth. No compartas su contraseña ni pegues tokens en el navegador o en el chat.
-        </p>
-      </header>
+      <PageHeader
+        title="Mercado Pago"
+        description="Vincula la cuenta vendedora con OAuth. No compartas su contraseña ni pegues tokens en el navegador o en el chat."
+      />
 
-      <section className="rounded-2xl border border-line bg-white p-6 shadow-sm">
+      <section className="rounded-[26px] border border-white/80 bg-white/85 p-6 shadow-[0_18px_40px_-30px_rgb(19_48_61/0.5)] md:p-7">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h2 className="font-bold text-(--deep)">Cuenta vendedora</h2>
+            <h2 className="flex items-center gap-3 text-lg font-semibold text-tinta">
+              <span className="grid size-10 place-items-center rounded-full bg-[#e1eef5] text-[#1f5675]"><WalletCards size={18} aria-hidden="true" /></span>
+              Cuenta vendedora
+            </h2>
             <p className="mt-1 text-sm text-muted-foreground">
               {loading
                 ? "Consultando conexión…"
@@ -83,7 +80,7 @@ export default function MarketplaceSettings() {
                   : "Aún no hay una cuenta vendedora vinculada."}
             </p>
             {!loading && status && (
-              <span className={`mt-3 inline-flex rounded-full px-3 py-1 text-xs font-bold ${status.testMode ? "bg-amber-50 text-amber-800" : "bg-green-50 text-green-800"}`}>
+              <span className={`mt-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${status.testMode ? "bg-[#faefd9] text-[#865710]" : "bg-[#e1f0e6] text-[#2d6844]"}`}>
                 {status.testMode ? "Modo de prueba OAuth" : "Modo de producción OAuth"}
               </span>
             )}
@@ -93,7 +90,7 @@ export default function MarketplaceSettings() {
             type="button"
             onClick={loadStatus}
             disabled={loading || working}
-            className="inline-flex items-center gap-2 rounded-full border border-line px-4 py-2 text-sm font-semibold text-(--deep) hover:bg-black/3 disabled:opacity-50"
+            className={btn.secondary}
           >
             <RefreshCw size={15} />
             Actualizar estado
@@ -101,12 +98,12 @@ export default function MarketplaceSettings() {
         </div>
 
         {error && (
-          <p role="alert" className="mt-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+          <p role="alert" className="mt-5 rounded-2xl border border-[#ecc8c2] bg-[#fbefed] p-4 text-sm text-[#963a31]">
             {error}
           </p>
         )}
 
-        <div className="mt-6 rounded-xl bg-(--surface) p-4 text-sm leading-6 text-muted-foreground">
+        <div className="mt-6 rounded-2xl border border-tinta/8 bg-papel p-5 text-sm leading-6 text-tinta/65">
           <p className="font-semibold text-(--deep)">Cómo autorizar la cuenta de prueba</p>
           <ol className="mt-2 list-decimal space-y-1 pl-5">
             <li>Primero revisa el modo indicado arriba: debe ser de prueba.</li>
@@ -120,7 +117,7 @@ export default function MarketplaceSettings() {
           type="button"
           onClick={connectSeller}
           disabled={working || !status?.configured || !status?.testMode}
-          className="mt-6 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-bold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-55"
+          className={`mt-6 ${btn.primary}`}
         >
           <Link2 size={16} />
           {working
@@ -134,7 +131,7 @@ export default function MarketplaceSettings() {
         </button>}
 
         {!loading && !status?.configured && (
-          <div role="alert" className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          <div role="alert" className="mt-5 rounded-2xl border border-[#efd9ae] bg-[#fdf6e8] p-4 text-sm text-[#6b450c]">
             <p className="font-bold">Falta completar la configuración privada del servidor.</p>
             <p className="mt-1">En <code>server/.env</code>, completa <code>MP_CLIENT_ID</code> y <code>MP_CLIENT_SECRET</code> con los datos de la aplicación Marketplace. No compartas sus valores.</p>
             {status?.missing?.includes("MP_OAUTH_REDIRECT_URL") && (
@@ -151,14 +148,14 @@ export default function MarketplaceSettings() {
         )}
 
         {!loading && status?.configured && !status?.testMode && (
-          <p className="mt-3 text-sm text-amber-800">
+          <p className="mt-3 text-sm text-[#865710]">
             No se puede iniciar la vinculación de prueba porque el servidor no está en modo de prueba. No autorices una cuenta real desde esta pantalla.
           </p>
         )}
       </section>
 
       <p className="mt-5 text-xs text-muted-foreground">
-        <Link to="/admin/solicitudes" className="font-semibold text-(--blue) hover:underline">
+        <Link to="/admin/solicitudes" className="font-semibold text-acento hover:underline">
           Volver a solicitudes
         </Link>
       </p>

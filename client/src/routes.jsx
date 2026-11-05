@@ -1,6 +1,7 @@
 import { lazy } from "react";
 import TiendaLayout from "./components/TiendaLayout";
 import LandingPage from "./pages/landingPage";
+import Terminos from "./pages/Terminos";
 const PedidoWizard = lazy(() => import("./pages/pedido/PedidoWizard"));
 const AdminLogin = lazy(() => import("./admin/auth/AdminLogin"));
 const AdminRoute = lazy(() => import("./admin/auth/AdminRoute"));
@@ -17,6 +18,7 @@ const routes = [
     element: <TiendaLayout />,
     children: [
       { path: "/catalogo", element: <PedidoWizard /> },
+      { path: "/terminos", element: <Terminos /> },
       { path: "/", element: <LandingPage /> },
     ],
   },

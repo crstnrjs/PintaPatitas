@@ -51,13 +51,13 @@ export default function FotoAObra({ comparaciones = comparacionesPredeterminadas
   if (comparaciones.length === 0) return null;
 
   return (
-    <section aria-labelledby="foto-obra-titulo" className="py-20 md:py-28">
+    <section aria-labelledby="foto-obra-titulo" className="py-14 md:py-28">
       <div className="mx-auto max-w-6xl px-5 md:px-10">
         <Encabezado id="foto-obra-titulo" titulo="De tu foto a tu obra">
-          Desliza para ver cómo una foto del celular se convierte en un retrato.
+          Desliza para comparar la foto con el retrato.
         </Encabezado>
         {comparaciones.length > 0 ? (
-          <div className="mt-12 grid gap-6 md:grid-cols-2">
+          <div className="mt-8 grid gap-4 md:mt-12 md:grid-cols-2 md:gap-6">
             {comparaciones.map((par) => (
               <Comparador key={par.obra} par={par} />
             ))}

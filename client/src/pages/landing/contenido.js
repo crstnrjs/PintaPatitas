@@ -49,17 +49,14 @@ export const FRASE_CONFIANZA = null;
 export const estilosInfo = {
   acrilico: {
     sensacion: "Vibrante y cálido",
-    texto: "Pintura acrílica con color intenso y textura de pincel. Para un cuadro que se note en la pared.",
     rasgos: ["Color intenso", "Textura de pincel"],
   },
   lapiz: {
     sensacion: "Delicado y atemporal",
-    texto: "Dibujo a lápiz que se detiene en cada pelo y en la mirada. Sobrio y lleno de detalle.",
     rasgos: ["Trazo fino", "Mucho detalle"],
   },
   digital: {
     sensacion: "Moderno y luminoso",
-    texto: "Ilustración hecha por el artista en formato digital, con colores limpios y líneas suaves.",
     rasgos: ["Colores limpios", "Formato digital"],
   },
 };

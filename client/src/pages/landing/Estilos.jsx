@@ -47,15 +47,14 @@ function Muestra({ slug }) {
 
 export default function Estilos({ cargando, error, estilos, formatosDe }) {
   return (
-    <section id="estilos" aria-labelledby="estilos-titulo" className="scroll-mt-24 py-20 md:py-28">
+    <section id="estilos" aria-labelledby="estilos-titulo" className="scroll-mt-24 py-14 md:py-28">
       <div className="mx-auto max-w-6xl px-5 md:px-10">
         <Encabezado id="estilos-titulo" titulo="Elige cómo quieres verla">
-          Cada técnica cuenta a tu mascota de otra manera. El precio final depende del tamaño y de
-          cuántas mascotas aparecen, y lo ves completo antes de enviar tu solicitud.
+          El precio final depende del tamaño y de cuántas mascotas aparecen.
         </Encabezado>
 
         {error ? (
-          <p className="mt-10 rounded-2xl bg-white/70 p-6 text-tinta/75">
+          <p className="mt-8 rounded-2xl bg-white/70 p-6 text-tinta/75 md:mt-10">
             Ahora no pudimos cargar los precios.{" "}
             <Link to="/catalogo" className="font-medium text-acento underline underline-offset-4">
               Puedes verlos al crear tu retrato
@@ -63,42 +62,42 @@ export default function Estilos({ cargando, error, estilos, formatosDe }) {
             .
           </p>
         ) : (
-          <ul className="mt-12 grid gap-6 md:grid-cols-[repeat(auto-fit,minmax(17rem,1fr))]">
+          <ul className="mt-8 grid gap-3 md:mt-12 md:grid-cols-[repeat(auto-fit,minmax(17rem,1fr))] md:gap-6">
             {cargando
               ? Array.from({ length: 3 }, (_, i) => (
-                  <li key={i} className="arcilla h-96 animate-pulse rounded-[28px]" />
+                  <li key={i} className="arcilla h-36 animate-pulse rounded-[22px] md:h-96 md:rounded-[28px]" />
                 ))
               : estilos.map((e) => {
                   const info = estilosInfo[e.slug];
                   const formatos = e.has_size ? formatosDe(e.id) : [];
                   return (
-                    <li key={e.id} className="arcilla flex flex-col rounded-[28px] p-3">
-                      <div className="h-36 overflow-hidden rounded-[20px]">
+                    // Móvil: tarjeta horizontal con la muestra a la izquierda. Desde md: vertical.
+                    <li key={e.id} className="arcilla flex gap-4 rounded-[22px] p-2.5 md:flex-col md:gap-0 md:rounded-[28px] md:p-3">
+                      <div className="w-24 shrink-0 overflow-hidden rounded-[16px] md:h-36 md:w-auto md:rounded-[20px]">
                         <Muestra slug={e.slug} />
                       </div>
-                      <div className="flex flex-1 flex-col px-4 pt-6 pb-4">
-                        <div className="flex items-baseline justify-between gap-3">
-                          <h3 className="font-display text-2xl text-tinta">{e.name}</h3>
+                      <div className="flex min-w-0 flex-1 flex-col py-1.5 pr-1.5 md:px-4 md:pt-6 md:pb-4">
+                        <div className="flex flex-col md:flex-row md:items-baseline md:justify-between md:gap-3">
+                          <h3 className="font-display text-xl text-tinta md:text-2xl">{e.name}</h3>
                           {info && <span className="text-sm text-acento">{info.sensacion}</span>}
                         </div>
-                        {info && <p className="mt-3 leading-relaxed text-tinta/70">{info.texto}</p>}
-                        <ul className="mt-4 flex flex-wrap gap-2 text-sm">
+                        <ul className="mt-2.5 flex flex-wrap gap-1.5 text-xs md:mt-4 md:gap-2 md:text-sm">
                           {info?.rasgos.map((r) => (
-                            <li key={r} className="rounded-full bg-bruma px-3 py-1 text-acento-oscuro">
+                            <li key={r} className="rounded-full bg-bruma px-2.5 py-0.5 text-acento-oscuro md:px-3 md:py-1">
                               {r}
                             </li>
                           ))}
                           {formatos.length > 0 && (
-                            <li className="rounded-full bg-bruma px-3 py-1 text-acento-oscuro">
+                            <li className="rounded-full bg-bruma px-2.5 py-0.5 text-acento-oscuro md:px-3 md:py-1">
                               {formatos.length === 1
                                 ? formatos[0].etiqueta
                                 : `${formatos.length} tamaños, desde ${formatos[0].etiqueta}`}
                             </li>
                           )}
                         </ul>
-                        <p className="mt-auto pt-8 text-tinta/60">
+                        <p className="mt-auto pt-3 text-sm text-tinta/60 md:pt-8 md:text-base">
                           Desde{" "}
-                          <span className="text-2xl font-semibold text-tinta">{clp(e.desde)}</span>
+                          <span className="text-xl font-semibold text-tinta md:text-2xl">{clp(e.desde)}</span>
                         </p>
                       </div>
                     </li>
@@ -107,7 +106,7 @@ export default function Estilos({ cargando, error, estilos, formatosDe }) {
           </ul>
         )}
 
-        <div className="mt-12">
+        <div className="mt-8 md:mt-12">
           <BotonPedido>Elegir mi estilo</BotonPedido>
         </div>
       </div>

@@ -37,3 +37,7 @@ Thumbs.db
 *.njsproj
 *.sln
 *.sw?
+
+# Claude Code (archivos personales)
+CLAUDE.local.md
+.claude/settings.local.json

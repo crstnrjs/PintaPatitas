@@ -7,6 +7,7 @@ import {
 } from "../lib/mercadopago.js";
 import { marketplaceSellerIsConnected } from "../lib/marketplaceCredentials.js";
 import { enviarCorreoClienteAbono, enviarCorreoClienteSaldo } from "../lib/mailer.js";
+import { reservarPago, completarReservaPago, eliminarReservaPago } from "./paymentIdempotency.js";
 
 const router = Router();
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -34,100 +35,78 @@ router.post("/:id/accept", requireAdmin, async (req, res) => {
     return res.status(409).json({ error: "Esta solicitud ya fue procesada o no existe." });
   }
 
-  // 2. Verificar si ya existe un pago de abono registrado previamente (evitar duplicar si se reintenta)
-  const { data: existingPayment } = await supabase
-    .from("payments")
-    .select("*")
-    .eq("order_id", id)
-    .eq("type", "abono")
-    .maybeSingle();
-
-  let paymentUrl = existingPayment?.payment_url;
-
-  if (!paymentUrl) {
-    // 3. Crear la preferencia de pago en Mercado Pago
-    try {
-      const frontendUrl = (process.env.FRONTEND_URL || "http://localhost:5173").replace(/\/+$/, "");
-      const preferenceBody = {
-        items: [
-          {
-            id: `abono-${order.id}`,
-            title: `Abono solicitud #PP-${order.order_number} (${order.style || "Retrato"})`,
-            description: `Abono inicial para retrato de ${order.pet_name || "mascota"}`,
-            quantity: 1,
-            unit_price: Number(order.deposit_amount),
-            currency_id: "CLP",
-          },
-        ],
-        payer: {
-          name: order.customer_name,
-          email: order.customer_email,
-        },
-        external_reference: order.id,
-        metadata: {
-          order_id: order.id,
-          payment_type: "abono",
-        },
-        back_urls: {
-          success: `${frontendUrl}/pago-exitoso`,
-          failure: `${frontendUrl}/pago-fallido`,
-          pending: `${frontendUrl}/pago-pendiente`,
-        },
-      };
-
-      if (process.env.PUBLIC_BASE_URL) {
-        preferenceBody.notification_url = `${process.env.PUBLIC_BASE_URL.replace(/\/+$/, "")}/api/webhooks/mercadopago`;
-      }
-
-      const platformPreference = crearPreferenciaPlataforma();
-      const pref = await platformPreference.create({ body: preferenceBody });
-      // En producción (credencial APP_USR) se usa init_point; en modo sandbox (TEST) se usa sandbox_init_point
-      const isTestToken = process.env.MP_ACCESS_TOKEN?.startsWith("TEST-");
-      paymentUrl = isTestToken
-        ? pref.sandbox_init_point || pref.init_point
-        : pref.init_point || pref.sandbox_init_point;
-
-      // 4. Guardar registro en la tabla payments
-      const { error: errPayment } = await supabase.from("payments").insert({
-        order_id: order.id,
-        type: "abono",
-        status: "pendiente",
-        amount: order.deposit_amount,
-        payment_url: paymentUrl,
-      });
-
-      if (errPayment) {
-        console.error("Error guardando pago en BD:", errPayment);
-        return res.status(500).json({ error: "No se pudo registrar el pago de abono." });
-      }
-    } catch (errMP) {
-      console.error("Error creando preferencia de abono en Mercado Pago:", {
-        name: errMP?.name,
-        status: errMP?.status ?? null,
-        error: errMP?.error ?? null,
-        message: errMP?.message ?? "Error desconocido",
-        causes: Array.isArray(errMP?.causes)
-          ? errMP.causes.map((cause) => ({
-              code: cause.code ?? null,
-              description: cause.description ?? null,
-            }))
-          : undefined,
-      });
-      return res.status(502).json({ error: "Error al comunicarse con Mercado Pago." });
+  // 2. Reservar atómicamente el pago antes de llamar al proveedor.
+  let reservationId;
+  try {
+    reservationId = await reservarPago({ orderId: id, type: "abono", amount: order.deposit_amount });
+  } catch (error) {
+    console.error("Error reservando el pago de abono:", error);
+    return res.status(500).json({ error: "No se pudo reservar el pago de abono." });
+  }
+  if (!reservationId) {
+    const { data: existingPayment, error } = await supabase
+      .from("payments").select("status, payment_url").eq("order_id", id).eq("type", "abono").maybeSingle();
+    if (error) return res.status(500).json({ error: "No se pudo consultar el pago existente." });
+    if (existingPayment?.status === "pendiente" && existingPayment.payment_url) {
+      return res.json({ ok: true, status: "pendiente_abono", payment_url: existingPayment.payment_url });
     }
+    return res.status(409).json({ error: "Ya existe una creación de pago en curso para esta solicitud." });
   }
 
-  // 5. Actualizar el estado del pedido a 'pendiente_abono'
-  const { data: updatedOrder, error: errUpdate } = await supabase
-    .from("orders")
-    .update({ status: "pendiente_abono" })
-    .eq("id", id)
-    .select("id, order_number, status")
-    .single();
+  let paymentUrl;
+  try {
+    const frontendUrl = (process.env.FRONTEND_URL || "http://localhost:5173").replace(/\/+$/, "");
+    const preferenceBody = {
+      items: [{
+        id: `abono-${order.id}`,
+        title: `Abono solicitud #PP-${order.order_number} (${order.style || "Retrato"})`,
+        description: `Abono inicial para retrato de ${order.pet_name || "mascota"}`,
+        quantity: 1,
+        unit_price: Number(order.deposit_amount),
+        currency_id: "CLP",
+      }],
+      payer: { name: order.customer_name, email: order.customer_email },
+      external_reference: order.id,
+      metadata: { order_id: order.id, payment_type: "abono" },
+      back_urls: {
+        success: `${frontendUrl}/pago-exitoso`,
+        failure: `${frontendUrl}/pago-fallido`,
+        pending: `${frontendUrl}/pago-pendiente`,
+      },
+    };
+    if (process.env.PUBLIC_BASE_URL) {
+      preferenceBody.notification_url = `${process.env.PUBLIC_BASE_URL.replace(/\/+$/, "")}/api/webhooks/mercadopago`;
+    }
 
-  if (errUpdate) {
-    console.error("Error actualizando estado del pedido:", errUpdate);
-    return res.status(500).json({ error: "No se pudo actualizar el estado de la solicitud." });
+    const pref = await crearPreferenciaPlataforma().create({ body: preferenceBody });
+    const isTestToken = process.env.MP_ACCESS_TOKEN?.startsWith("TEST-");
+    paymentUrl = isTestToken
+      ? pref.sandbox_init_point || pref.init_point
+      : pref.init_point || pref.sandbox_init_point;
+    if (!paymentUrl) throw new Error("Mercado Pago no devolvió una URL de pago.");
+
+    await completarReservaPago(reservationId, { paymentUrl, mpPaymentId: pref.id });
+    const { data: updatedOrder, error: errUpdate } = await supabase
+      .from("orders")
+      .update({ status: "pendiente_abono" })
+      .eq("id", id)
+      .eq("status", "solicitud")
+      .select("id, order_number, status")
+      .maybeSingle();
+    if (errUpdate) throw errUpdate;
+    if (!updatedOrder) throw new Error("La solicitud cambió de estado durante la aceptación.");
+
+    enviarCorreoClienteAbono({ pedido: order, paymentUrl }).catch((err) => {
+      console.error("Error enviando correo de abono al cliente:", err);
+    });
+    return res.json({ ok: true, status: updatedOrder.status, payment_url: paymentUrl });
+  } catch (error) {
+    // Solo borrar la reserva si aún está en creación; una URL ya guardada permite recuperar el cobro.
+    try { await eliminarReservaPago(reservationId); } catch (cleanupError) {
+      console.error("No se pudo liberar la reserva de pago:", cleanupError);
+    }
+    console.error("Error creando preferencia de abono en Mercado Pago:", error);
+    return res.status(502).json({ error: "No se pudo completar la creación del pago." });
   }
 
   // 6. Enviar correo al cliente con el enlace de pago (en segundo plano)
@@ -260,27 +239,38 @@ router.post("/:id/request-balance", requireAdmin, async (req, res) => {
         preferenceBody.notification_url = `${process.env.PUBLIC_BASE_URL.replace(/\/+$/, "")}/api/webhooks/mercadopago`;
       }
 
-      const sellerPreference = crearPreferenciaVendedor();
-      const pref = await sellerPreference.create({ body: preferenceBody });
-      const isTestToken = process.env.MP_ACCESS_TOKEN?.startsWith("TEST-");
-      paymentUrl = isTestToken
-        ? pref.sandbox_init_point || pref.init_point
-        : pref.init_point || pref.sandbox_init_point;
-
-      // Guardar registro en payments
-      const { error: errInsert } = await supabase.from("payments").insert({
-        order_id: order.id,
+      const reservationId = await reservarPago({
+        orderId: id,
         type: "saldo",
-        status: "pendiente",
         amount: saldoAmount,
-        payment_url: paymentUrl,
-        commission_rate: comisionPorcentaje,
-        commission_amount: fee,
+        commissionRate: comisionPorcentaje,
+        commissionAmount: fee,
       });
+      if (!reservationId) {
+        const { data: latest, error } = await supabase.from("payments")
+          .select("status, payment_url").eq("order_id", id).eq("type", "saldo").maybeSingle();
+        if (error) return res.status(500).json({ error: "No se pudo consultar el pago de saldo existente." });
+        if (latest?.status === "pendiente" && latest.payment_url) {
+          return res.json({ ok: true, payment_url: latest.payment_url, amount: saldoAmount,
+            commission_rate: comisionPorcentaje, commission_amount: fee });
+        }
+        return res.status(409).json({ error: "Ya existe una creación del pago de saldo en curso." });
+      }
 
-      if (errInsert) {
-        console.error("Error guardando pago de saldo en BD:", errInsert);
-        return res.status(500).json({ error: "No se pudo registrar el cobro del saldo." });
+      try {
+        const sellerPreference = crearPreferenciaVendedor();
+        const pref = await sellerPreference.create({ body: preferenceBody });
+        const isTestToken = process.env.MP_ACCESS_TOKEN?.startsWith("TEST-");
+        paymentUrl = isTestToken
+          ? pref.sandbox_init_point || pref.init_point
+          : pref.init_point || pref.sandbox_init_point;
+        if (!paymentUrl) throw new Error("Mercado Pago no devolvió una URL de pago.");
+        await completarReservaPago(reservationId, { paymentUrl, mpPaymentId: pref.id });
+      } catch (error) {
+        try { await eliminarReservaPago(reservationId); } catch (cleanupError) {
+          console.error("No se pudo liberar la reserva del saldo:", cleanupError);
+        }
+        throw error;
       }
     } catch (errMP) {
       console.error("Error creando preferencia de saldo en Mercado Pago:", errMP);

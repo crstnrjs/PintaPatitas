@@ -69,6 +69,15 @@
   transform: translateY(16px);
 }
 
+/* Fondo del panel admin: más calmo que la landing, para trabajar varias horas */
+.fondo-admin {
+  background-color: var(--surface);
+  background-image:
+    radial-gradient(42rem 28rem at 100% 0%, rgb(138 191 208 / 0.28), transparent 70%),
+    radial-gradient(36rem 26rem at 0% 100%, rgb(220 236 241 / 0.9), transparent 70%);
+  background-attachment: fixed;
+}
+
 /* Fondo de la landing: manchas de acuarela en azules + grano de papel */
 .fondo-acuarela {
   background-color: var(--color-lino);
@@ -161,6 +170,11 @@
 }
 
 :root {
+  /* Panel admin: mismos azules de la landing (antes estas variables no existían) */
+  --deep: #1b4458;
+  --ink: #13303d;
+  --blue: #2e6a85;
+  --surface: #eef4f6;
   --mist: #dcecf1; /* forma de atrás */
   --line: #e3eaee; /* borde de la tarjeta */
   --mid: #3f7f96; /* texto pequeño de la tarjeta */

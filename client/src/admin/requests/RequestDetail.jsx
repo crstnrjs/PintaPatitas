@@ -1,9 +1,16 @@
-﻿import { useEffect, useState } from "react";
+﻿import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   ArrowLeft,
   Brush,
   Check,
+  ChevronLeft,
+  ChevronRight,
+  CircleX,
+  ExternalLink,
+  MessageSquareQuote,
+  X,
+  ZoomIn,
   ClipboardCheck,
   Copy,
   CreditCard,
@@ -13,72 +20,18 @@ import {
   Wallet,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { StatusBadge, formatDate, money, orderCode } from "@/admin/shared/ui";
+import { Aviso, EmptyState, Panel, Skeleton, StatusBadge, btn, formatDate, initials, money, orderCode } from "@/admin/shared/ui";
 import { apiUrl } from "@/lib/api";
 
 const sumAmount = (list) => list.reduce((acc, p) => acc + p.amount, 0);
 
+// Botones sobre la tarjeta "Siguiente paso" (fondo azul)
 const primaryBtn =
-  "rounded-full bg-[#214a5d] px-5 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50";
+  "inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-white px-5 text-sm font-semibold text-acento-oscuro shadow-[0_8px_18px_-10px_rgb(0_0_0/0.5)] transition hover:bg-papel active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:cursor-not-allowed disabled:opacity-60";
+const secondaryBtn =
+  "inline-flex min-h-11 items-center gap-2 rounded-full border border-white/30 px-5 text-sm font-semibold text-white transition hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white";
 
-const STEP_STYLES = {
-  blue: {
-    solid: "bg-blue-500",
-    border: "border-blue-500",
-    text: "text-blue-600",
-    ping: "bg-blue-400",
-    line: "bg-blue-500",
-    chip: "bg-blue-50 text-blue-700",
-  },
-  sky: {
-    solid: "bg-sky-500",
-    border: "border-sky-500",
-    text: "text-sky-600",
-    ping: "bg-sky-400",
-    line: "bg-sky-500",
-    chip: "bg-sky-50 text-sky-700",
-  },
-  teal: {
-    solid: "bg-teal-500",
-    border: "border-teal-500",
-    text: "text-teal-600",
-    ping: "bg-teal-400",
-    line: "bg-teal-500",
-    chip: "bg-teal-50 text-teal-700",
-  },
-  amber: {
-    solid: "bg-amber-500",
-    border: "border-amber-500",
-    text: "text-amber-600",
-    ping: "bg-amber-400",
-    line: "bg-amber-500",
-    chip: "bg-amber-50 text-amber-700",
-  },
-  violet: {
-    solid: "bg-violet-500",
-    border: "border-violet-500",
-    text: "text-violet-600",
-    ping: "bg-violet-400",
-    line: "bg-violet-500",
-    chip: "bg-violet-50 text-violet-700",
-  },
-  emerald: {
-    solid: "bg-emerald-500",
-    border: "border-emerald-500",
-    text: "text-emerald-600",
-    ping: "bg-emerald-400",
-    line: "bg-emerald-500",
-    chip: "bg-emerald-50 text-emerald-700",
-  },
-  indigo: {
-    solid: "bg-indigo-500",
-    border: "border-indigo-500",
-    text: "text-indigo-600",
-    ping: "bg-indigo-400",
-    line: "bg-indigo-500",
-    chip: "bg-indigo-50 text-indigo-700",
-  },
-};
+
 
 export default function RequestDetail() {
   const { id } = useParams();
@@ -274,14 +227,27 @@ export default function RequestDetail() {
     setTimeout(() => setCopied(false), 2000);
   }
 
-  if (loading) return <p className="text-sm text-muted-foreground">Cargando...</p>;
+  if (loading)
+    return (
+      <div className="space-y-5" aria-label="Cargando solicitud">
+        <Skeleton className="h-10 w-64" />
+        <Skeleton className="h-32" />
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+          <Skeleton className="h-80" />
+          <Skeleton className="h-80" />
+        </div>
+      </div>
+    );
   if (error)
     return (
       <div>
-        <p className="mb-4 text-sm text-red-600">{error}</p>
-        <Link to="/admin/solicitudes" className="text-sm font-semibold text-(--blue)">
-          Volver a solicitudes
-        </Link>
+        <Panel>
+          <EmptyState title={error} text="Puede que el enlace esté incompleto o que la solicitud ya no exista.">
+            <Link to="/admin/solicitudes" className={btn.secondary}>
+              Volver a solicitudes
+            </Link>
+          </EmptyState>
+        </Panel>
       </div>
     );
 
@@ -385,7 +351,7 @@ export default function RequestDetail() {
         {abonoPayment?.payment_url && (
           <button
             onClick={() => copyLink(abonoPayment.payment_url)}
-            className="inline-flex items-center gap-2 rounded-full border border-line px-5 py-3 text-sm font-semibold text-(--deep) transition hover:bg-black/3"
+            className={secondaryBtn}
           >
             <Copy size={15} />
             {copied ? "Link copiado" : "Copiar link de pago"}
@@ -425,7 +391,7 @@ export default function RequestDetail() {
         {saldoPayment?.payment_url && (
           <button
             onClick={() => copyLink(saldoPayment.payment_url)}
-            className="inline-flex items-center gap-2 rounded-full border border-line px-5 py-3 text-sm font-semibold text-(--deep) transition hover:bg-black/3"
+            className={secondaryBtn}
           >
             <Copy size={15} />
             {copied ? "Link copiado" : "Copiar link de pago"}
@@ -440,7 +406,8 @@ export default function RequestDetail() {
           value={tracking}
           onChange={(e) => setTracking(e.target.value)}
           placeholder="Código de seguimiento (opcional)"
-          className="h-11 min-w-64 rounded-xl border border-line bg-white px-4 text-sm outline-none focus:border-mid"
+          aria-label="Código de seguimiento"
+          className="h-11 min-w-0 flex-1 rounded-full border border-white/30 bg-white/95 px-4 text-sm text-tinta outline-none focus:ring-3 focus:ring-white/40 sm:max-w-72"
         />
         <button disabled={saving} onClick={markShipped} className={primaryBtn}>
           Marcar como enviado
@@ -458,27 +425,28 @@ export default function RequestDetail() {
   }
 
   return (
-    <div className="max-w-5xl">
+    <div>
       <Link
         to="/admin/solicitudes"
-        className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-(--deep)"
+        className="mb-5 inline-flex min-h-10 items-center gap-2 rounded-full pr-3 text-sm font-medium text-tinta/55 transition hover:text-tinta focus-visible:outline-2 focus-visible:outline-acento"
       >
-        <ArrowLeft size={16} /> Solicitudes
+        <ArrowLeft size={16} aria-hidden="true" /> Solicitudes
       </Link>
 
       <header className="mb-6 flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <StatusBadge status={order.status} />
-          <h1 className="mt-3 text-3xl font-bold tracking-tight text-(--deep)">
-            Solicitud {orderCode(order.order_number)}
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <StatusBadge status={order.status} />
+            <span className="text-sm text-tinta/50">Recibida el {formatDate(order.created_at)}</span>
+          </div>
+          <h1 className="mt-3 font-display text-3xl text-tinta md:text-[2.5rem] md:leading-tight">
+            {order.pet_name ? `Retrato de ${order.pet_name}` : "Solicitud"}{" "}
+            <span className="text-tinta/35">{orderCode(order.order_number)}</span>
           </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {order.customer_name} ·{" "}
-            <a href={`mailto:${order.customer_email}`} className="hover:text-(--deep)">
-              {order.customer_email}
-            </a>
-            {order.customer_phone && ` · ${order.customer_phone}`} ·{" "}
-            {formatDate(order.created_at)}
+          <p className="mt-1.5 text-tinta/60">
+            {[order.style, order.size, order.pet_count && `${order.pet_count} ${order.pet_count === 1 ? "mascota" : "mascotas"}`]
+              .filter(Boolean)
+              .join(" · ")}
           </p>
         </div>
 
@@ -493,118 +461,228 @@ export default function RequestDetail() {
                   : "¿Rechazar esta solicitud? Todavía no hay ningún abono pagado.",
               )
             }
-            className="rounded-full border border-red-200 px-5 py-3 text-sm font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-50"
+            className={btn.danger}
           >
-            Rechazar
+            <CircleX size={16} aria-hidden="true" /> Rechazar
           </button>
         )}
       </header>
 
       {nextStep}
-      {actionError && <p className="mb-4 text-sm text-red-600">{actionError}</p>}
-
-      <div className="grid gap-5 md:grid-cols-2">
-        <section className="rounded-2xl border border-line bg-white p-6">
-          <h2 className="mb-4 font-bold text-(--deep)">Detalles de la obra</h2>
-          <dl className="space-y-3 text-sm">
-            <Row label="Producto" value={order.product} />
-            <Row label="Estilo" value={order.style} />
-            <Row label="Tamaño" value={order.size} />
-            <Row label="Mascotas" value={order.pet_count} />
-            <Row label="Mascota" value={order.pet_name} />
-            <Row label="Indicaciones" value={order.description} />
-          </dl>
-        </section>
-
-        <section className="rounded-2xl border border-line bg-white p-6">
-          <h2 className="mb-4 font-bold text-(--deep)">Resumen financiero</h2>
-          <dl className="space-y-3 text-sm">
-            <Row label="Precio total" value={money(order.total_amount)} />
-            <Row label="Abono a pagar" value={money(order.deposit_amount)} />
-            <Row label="Abono pagado" value={money(abonoPaid)} />
-            <Row label="Saldo pagado" value={money(saldoPaid)} />
-            <Row label="Pendiente" value={money(pending)} />
-          </dl>
-
-          {/* Desglose de comisiones */}
-          <div className="mt-4 rounded-xl bg-slate-50 border border-slate-200 p-4 space-y-2 text-sm">
-            <p className="text-xs font-bold uppercase tracking-wide text-slate-500 mb-3">Distribución del cobro</p>
-
-            <div className="flex justify-between text-slate-600">
-              <span className="flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-blue-400 shrink-0" />
-                Mercado Pago (3.8% × 2 cobros)
-              </span>
-              <span className="font-medium text-slate-800">−{money(comisionMpTotal)}</span>
-            </div>
-            <div className="pl-4 text-xs text-slate-400 -mt-1 space-y-0.5">
-              <div className="flex justify-between">
-                <span>Abono ({money(abonoRef)})</span>
-                <span>−{money(comisionMpAbono)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Saldo ({money(saldoRef)})</span>
-                <span>−{money(comisionMpSaldo)}</span>
-              </div>
-            </div>
-
-            <div className="flex justify-between text-slate-600 border-t border-slate-200 pt-2">
-              <span className="flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-violet-400 shrink-0" />
-                Christian (6.2% del total)
-              </span>
-              <span className="font-medium text-slate-800">−{money(comisionChris)}</span>
-            </div>
-
-            <div className="flex justify-between font-semibold text-emerald-700 border-t border-slate-200 pt-2">
-              <span className="flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
-                Recibe tu amiga
-              </span>
-              <span>{money(recibeAmiga)}</span>
-            </div>
-          </div>
-        </section>
-      </div>
-
-      <section className="mt-5 rounded-2xl border border-line bg-white p-6">
-        <h2 className="mb-4 font-bold text-(--deep)">Dirección de envío</h2>
-        <dl className="space-y-3 text-sm">
-          <Row label="Dirección" value={address} />
-          <Row label="Comuna" value={order.commune} />
-          <Row label="Región" value={order.region} />
-        </dl>
-      </section>
-
-      <section className="mt-5 rounded-2xl border border-line bg-white p-6">
-        <h2 className="mb-4 font-bold text-(--deep)">Fotos de la mascota</h2>
-        {photos.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Esta solicitud no tiene fotos.</p>
-        ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-            {photos.map((url) => (
-              <a key={url} href={url} target="_blank" rel="noreferrer">
-                <img
-                  src={url}
-                  alt="Foto de la mascota"
-                  className="aspect-square w-full rounded-xl object-cover"
-                />
-              </a>
-            ))}
-          </div>
-        )}
-      </section>
-
-      {order.status !== "rechazado" ? (
-        <ProgressTracker steps={timeline} />
-      ) : (
-        <section className="mt-5 rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">
-          {abonoPaid > 0
-            ? "Este pedido fue rechazado. El abono no es reembolsable."
-            : "Este pedido fue rechazado antes de recibir un abono."}
-        </section>
+      {actionError && (
+        <div className="mb-5">
+          <Aviso onClose={() => setActionError("")}>{actionError}</Aviso>
+        </div>
       )}
+
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+        <div className="min-w-0 space-y-6">
+          <Panel
+            title="Fotos de la mascota"
+            description={photos.length ? `${photos.length} ${photos.length === 1 ? "foto" : "fotos"} · toca una para verla en grande` : undefined}
+          >
+            {photos.length === 0 ? (
+              <EmptyState compact title="Esta solicitud no tiene fotos" />
+            ) : (
+              <GaleriaFotos photos={photos} nombre={order.pet_name} />
+            )}
+          </Panel>
+
+          <Panel title="Detalles de la obra">
+            <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              {[
+                ["Estilo", order.style],
+                ["Tamaño", order.size],
+                ["Mascotas", order.pet_count],
+                ["Nombre", order.pet_name],
+                ["Producto", order.product],
+              ].map(([k, v]) => (
+                <div key={k} className="rounded-2xl bg-bruma/45 px-4 py-3">
+                  <dt className="text-xs text-tinta/50">{k}</dt>
+                  <dd className="mt-0.5 font-medium break-words text-tinta">{v || "—"}</dd>
+                </div>
+              ))}
+            </dl>
+            <div className="mt-4 rounded-2xl border border-tinta/8 bg-papel px-5 py-4">
+              <p className="flex items-center gap-2 text-xs font-medium text-tinta/50">
+                <MessageSquareQuote size={14} aria-hidden="true" /> Indicaciones del cliente
+              </p>
+              <p className="mt-2 leading-relaxed whitespace-pre-line text-tinta/85">
+                {order.description || "El cliente no dejó indicaciones."}
+              </p>
+            </div>
+          </Panel>
+
+          {order.status !== "rechazado" ? (
+            <ProgressTracker steps={timeline} />
+          ) : (
+            <Aviso>
+              {abonoPaid > 0
+                ? "Este pedido fue rechazado. El abono no es reembolsable."
+                : "Este pedido fue rechazado antes de recibir un abono."}
+            </Aviso>
+          )}
+        </div>
+
+        <aside className="space-y-6">
+          <Panel title="Cliente">
+            <div className="flex items-center gap-3">
+              <span className="grid size-12 shrink-0 place-items-center rounded-full bg-bruma font-semibold text-acento-oscuro">
+                {initials(order.customer_name)}
+              </span>
+              <div className="min-w-0">
+                <p className="truncate font-medium text-tinta">{order.customer_name}</p>
+                <a href={`mailto:${order.customer_email}`} className="block truncate text-sm text-acento hover:underline">
+                  {order.customer_email}
+                </a>
+                {order.customer_phone && <p className="text-sm text-tinta/60">{order.customer_phone}</p>}
+              </div>
+            </div>
+          </Panel>
+
+          <Panel title="Dirección de envío">
+            <dl className="space-y-3 text-sm">
+              <Row label="Dirección" value={address} />
+              <Row label="Comuna" value={order.commune} />
+              <Row label="Región" value={order.region} />
+            </dl>
+          </Panel>
+
+          <Panel title="Resumen financiero">
+            <dl className="space-y-3 text-sm">
+              <Row label="Precio total" value={money(order.total_amount)} />
+              <Row label="Abono a pagar" value={money(order.deposit_amount)} />
+              <Row label="Abono pagado" value={money(abonoPaid)} />
+              <Row label="Saldo pagado" value={money(saldoPaid)} />
+            </dl>
+            <div className="mt-4 flex items-center justify-between rounded-2xl bg-bruma/50 px-4 py-3">
+              <span className="text-sm text-tinta/60">Pendiente</span>
+              <strong className="font-display text-2xl text-tinta">{money(pending)}</strong>
+            </div>
+
+            {/* Desglose de comisiones */}
+            <div className="mt-4 space-y-2 rounded-2xl border border-tinta/8 bg-papel p-4 text-sm">
+              <p className="mb-3 text-xs font-medium text-tinta/50">Distribución del cobro</p>
+
+              <div className="flex justify-between gap-3 text-tinta/70">
+                <span className="flex items-center gap-1.5">
+                  <span className="size-2 shrink-0 rounded-full bg-[#4f8fb0]" />
+                  Mercado Pago (3.8% × 2 cobros)
+                </span>
+                <span className="font-medium text-tinta">−{money(comisionMpTotal)}</span>
+              </div>
+              <div className="-mt-1 space-y-0.5 pl-4 text-xs text-tinta/45">
+                <div className="flex justify-between">
+                  <span>Abono ({money(abonoRef)})</span>
+                  <span>−{money(comisionMpAbono)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Saldo ({money(saldoRef)})</span>
+                  <span>−{money(comisionMpSaldo)}</span>
+                </div>
+              </div>
+
+              <div className="flex justify-between gap-3 border-t border-tinta/8 pt-2 text-tinta/70">
+                <span className="flex items-center gap-1.5">
+                  <span className="size-2 shrink-0 rounded-full bg-[#8a7bc0]" />
+                  Christian (6.2% del total)
+                </span>
+                <span className="font-medium text-tinta">−{money(comisionChris)}</span>
+              </div>
+
+              <div className="flex justify-between gap-3 border-t border-tinta/8 pt-2 font-semibold text-[#2d6844]">
+                <span className="flex items-center gap-1.5">
+                  <span className="size-2 shrink-0 rounded-full bg-[#5ea67a]" />
+                  Recibe tu amiga
+                </span>
+                <span>{money(recibeAmiga)}</span>
+              </div>
+            </div>
+          </Panel>
+        </aside>
+      </div>
     </div>
+  );
+}
+
+/* Fotos grandes: la primera destacada, el resto en grilla. Visor con flechas y teclado. */
+function GaleriaFotos({ photos, nombre }) {
+  const [abierta, setAbierta] = useState(null);
+  const dialogo = useRef(null);
+  const alt = (i) => `Foto ${i + 1} de ${nombre || "la mascota"}`;
+
+  function abrir(i) {
+    setAbierta(i);
+    dialogo.current?.showModal();
+  }
+  const mover = (d) => setAbierta((i) => (i + d + photos.length) % photos.length);
+
+  return (
+    <>
+      <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        {photos.map((url, i) => (
+          <li key={url} className={i === 0 ? "col-span-2 row-span-2" : ""}>
+            <button
+              type="button"
+              onClick={() => abrir(i)}
+              className="group relative block w-full overflow-hidden rounded-2xl bg-bruma focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-acento"
+            >
+              <img
+                src={url}
+                alt={alt(i)}
+                loading={i === 0 ? "eager" : "lazy"}
+                decoding="async"
+                className="aspect-square w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+              />
+              <span className="absolute right-2 bottom-2 grid size-9 place-items-center rounded-full bg-white/85 text-tinta opacity-0 shadow transition group-hover:opacity-100 group-focus-visible:opacity-100">
+                <ZoomIn size={16} aria-hidden="true" />
+              </span>
+            </button>
+          </li>
+        ))}
+      </ul>
+
+      <dialog
+        ref={dialogo}
+        onClose={() => setAbierta(null)}
+        onClick={(e) => e.target === dialogo.current && dialogo.current.close()}
+        onKeyDown={(e) => {
+          if (e.key === "ArrowRight") mover(1);
+          if (e.key === "ArrowLeft") mover(-1);
+        }}
+        aria-label="Visor de fotos"
+        className="m-auto max-h-[94vh] max-w-[min(94vw,1100px)] overflow-visible bg-transparent p-0 backdrop:bg-tinta/80 backdrop:backdrop-blur-sm"
+      >
+        {abierta !== null && (
+          <figure className="relative">
+            <img src={photos[abierta]} alt={alt(abierta)} className="max-h-[84vh] w-auto rounded-2xl object-contain" />
+            <figcaption className="mt-3 flex items-center justify-between gap-3 text-sm text-white">
+              <span>
+                {abierta + 1} de {photos.length}
+              </span>
+              <span className="flex gap-2">
+                {photos.length > 1 && (
+                  <>
+                    <button type="button" onClick={() => mover(-1)} aria-label="Foto anterior" className="grid size-11 place-items-center rounded-full bg-white/15 hover:bg-white/25">
+                      <ChevronLeft size={20} />
+                    </button>
+                    <button type="button" onClick={() => mover(1)} aria-label="Foto siguiente" className="grid size-11 place-items-center rounded-full bg-white/15 hover:bg-white/25">
+                      <ChevronRight size={20} />
+                    </button>
+                  </>
+                )}
+                <a href={photos[abierta]} target="_blank" rel="noreferrer" aria-label="Abrir original en otra pestaña" className="grid size-11 place-items-center rounded-full bg-white/15 hover:bg-white/25">
+                  <ExternalLink size={18} />
+                </a>
+                <button type="button" onClick={() => dialogo.current.close()} aria-label="Cerrar" className="grid size-11 place-items-center rounded-full bg-white text-tinta">
+                  <X size={19} />
+                </button>
+              </span>
+            </figcaption>
+          </figure>
+        )}
+      </dialog>
+    </>
   );
 }
 
@@ -613,17 +691,16 @@ function ProgressTracker({ steps }) {
   const currentIndex = steps.findIndex((s) => !s.done); // primer paso pendiente
 
   return (
-    <section className="mt-5 rounded-2xl border border-line bg-white p-6">
-      <div className="mb-7 flex items-center justify-between">
-        <h2 className="font-bold text-(--deep)">Progreso</h2>
-        <span className="text-sm text-muted-foreground">
+    <Panel
+      title="Progreso"
+      action={
+        <span className="text-sm text-tinta/50">
           {doneCount} de {steps.length} pasos
         </span>
-      </div>
-
-      <ol className="flex flex-col md:flex-row">
+      }
+    >
+      <ol className="mt-2 flex flex-col md:flex-row">
         {steps.map((step, i) => {
-          const c = STEP_STYLES[step.color];
           const Icon = step.icon;
           const isCurrent = i === currentIndex;
           const isLast = i === steps.length - 1;
@@ -631,75 +708,69 @@ function ProgressTracker({ steps }) {
           return (
             <li
               key={step.label}
-              className="relative flex gap-4 pb-8 last:pb-0 md:flex-1 md:flex-col md:items-center md:gap-3 md:pb-0 md:text-center"
+              aria-current={isCurrent ? "step" : undefined}
+              className="relative flex gap-4 pb-7 last:pb-0 md:flex-1 md:flex-col md:items-center md:gap-3 md:pb-0 md:text-center"
             >
-              {/* Línea conectora con el siguiente paso */}
               {!isLast && (
                 <span
+                  aria-hidden="true"
                   className={`absolute top-10 bottom-0 left-5 w-0.5 -translate-x-1/2 md:top-5 md:right-auto md:bottom-auto md:left-1/2 md:h-0.5 md:w-full md:translate-x-0 md:-translate-y-1/2 ${
-                    step.done ? c.line : "bg-gray-200"
+                    step.done ? "bg-acento" : "bg-tinta/10"
                   }`}
                 />
               )}
 
-              {/* Círculo */}
               <span className="relative z-10 shrink-0">
-                {isCurrent && (
-                  <span
-                    className={`absolute inset-0 rounded-full opacity-40 motion-safe:animate-ping ${c.ping}`}
-                  />
-                )}
+                {isCurrent && <span className="absolute inset-0 rounded-full bg-cielo opacity-50 motion-safe:animate-ping" />}
                 <span
                   className={`relative grid size-10 place-items-center rounded-full ${
                     step.done
-                      ? `${c.solid} text-white`
+                      ? "bg-acento text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.3)]"
                       : isCurrent
-                        ? `border-2 bg-white ${c.border} ${c.text}`
-                        : "bg-gray-100 text-gray-400"
+                        ? "border-2 border-acento bg-white text-acento"
+                        : "bg-bruma text-tinta/35"
                   }`}
                 >
-                  {step.done ? <Check size={18} strokeWidth={3} /> : <Icon size={18} />}
+                  {step.done ? <Check size={18} strokeWidth={3} aria-hidden="true" /> : <Icon size={18} aria-hidden="true" />}
                 </span>
               </span>
 
-              {/* Texto */}
-              <div className="min-w-0 pt-1.5 md:px-2 md:pt-0">
+              <div className="min-w-0 pt-1.5 md:px-1 md:pt-0">
                 <p
                   className={`text-sm leading-tight ${
-                    step.done
-                      ? "font-semibold text-(--ink)"
-                      : isCurrent
-                        ? `font-bold ${c.text}`
-                        : "text-muted-foreground"
+                    step.done ? "font-medium text-tinta" : isCurrent ? "font-semibold text-acento" : "text-tinta/45"
                   }`}
                 >
                   {step.label}
                 </p>
                 {isCurrent && (
-                  <span
-                    className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-bold tracking-wide uppercase ${c.chip}`}
-                  >
+                  <span className="mt-1 inline-block rounded-full bg-[#e1eef5] px-2 py-0.5 text-[10px] font-semibold text-[#1f5675]">
                     En curso
                   </span>
                 )}
-                {step.done && step.date && (
-                  <p className="mt-0.5 text-xs text-muted-foreground">{step.date}</p>
-                )}
+                {step.done && step.date && <p className="mt-0.5 text-xs text-tinta/45">{step.date}</p>}
               </div>
             </li>
           );
         })}
       </ol>
-    </section>
+    </Panel>
   );
 }
 
 function StepCard({ text, children }) {
   return (
-    <section className="mb-5 rounded-2xl border border-line bg-white p-6">
-      <h2 className="font-bold text-(--deep)">Siguiente paso</h2>
-      <p className="mt-1 text-sm text-muted-foreground">{text}</p>
-      {children && <div className="mt-4 flex flex-wrap items-center gap-3">{children}</div>}
+    <section className="mb-6 overflow-hidden rounded-[26px] bg-gradient-to-br from-acento to-acento-oscuro p-6 text-white shadow-[0_24px_44px_-28px_rgb(19_48_61/0.9)]">
+      <div className="flex items-start gap-4">
+        <span className="grid size-10 shrink-0 place-items-center rounded-full bg-white/15">
+          <Brush size={18} aria-hidden="true" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <h2 className="font-semibold">Siguiente paso</h2>
+          <p className="mt-1 max-w-2xl text-sm leading-relaxed text-white/80">{text}</p>
+          {children && <div className="mt-4 flex flex-wrap items-center gap-3">{children}</div>}
+        </div>
+      </div>
     </section>
   );
 }
@@ -707,8 +778,8 @@ function StepCard({ text, children }) {
 function Row({ label, value }) {
   return (
     <div className="flex justify-between gap-4">
-      <dt className="text-muted-foreground">{label}</dt>
-      <dd className="text-right font-medium text-(--ink)">{value || "—"}</dd>
+      <dt className="text-tinta/55">{label}</dt>
+      <dd className="text-right font-medium text-tinta">{value || "—"}</dd>
     </div>
   );
 }

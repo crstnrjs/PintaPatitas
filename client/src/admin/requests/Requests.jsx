@@ -1,14 +1,7 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { ChevronRight, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import {
-  STATUS,
-  StatusBadge,
-  formatDate,
-  money,
-  orderCode,
-} from "@/admin/shared/ui";
+import { Aviso, EmptyState, OrderList, PageHeader, Panel, STATUS, inputClass } from "@/admin/shared/ui";
 
 const FILTERS = [
   "solicitud",
@@ -23,113 +16,38 @@ const SECTIONS = [
     statuses: ["solicitud", "pendiente_abono"],
     title: "Solicitudes",
     description: "Por revisar o esperando el abono",
-    border: "border-blue-500",
-    heading: "text-blue-700",
-    tint: "bg-blue-50/70",
+    dot: "bg-[#4f8fb0]",
+    vacio: "No tienes solicitudes nuevas",
   },
-  {
-    status: "en_proceso",
-    title: "En proceso",
-    border: "border-yellow-500",
-    heading: "text-yellow-700",
-    tint: "bg-yellow-50/70",
-  },
-  {
-    status: "finalizado",
-    title: "Finalizados",
-    border: "border-green-500",
-    heading: "text-green-700",
-    tint: "bg-green-50/70",
-  },
-  {
-    status: "rechazado",
-    title: "Rechazados",
-    border: "border-red-500",
-    heading: "text-red-700",
-    tint: "bg-red-50/70",
-  },
+  { status: "en_proceso", title: "En proceso", description: "Pinturas en curso", dot: "bg-[#d99a37]", vacio: "No hay pinturas en curso" },
+  { status: "finalizado", title: "Finalizados", description: "Pedidos enviados", dot: "bg-[#5ea67a]", vacio: "Aún no hay pedidos finalizados" },
+  { status: "rechazado", title: "Rechazados", dot: "bg-[#cf6b60]", vacio: "No hay solicitudes rechazadas" },
 ];
 
-function OrderTable({ orders, loading, section, navigate }) {
+function OrderSection({ orders, loading, section }) {
   return (
-    <section className={`overflow-hidden rounded-2xl border border-line border-l-5 ${section.border} bg-white shadow-sm`}>
-      <div className={`flex items-center justify-between gap-3 border-b border-line px-5 py-4 ${section.tint}`}>
-        <div className="flex items-center gap-3">
-          <span className={`h-8 w-1 rounded-full ${section.border.replace("border-", "bg-")}`} aria-hidden="true" />
-          <div>
-            <h2 className={`text-lg font-bold ${section.heading}`}>{section.title}</h2>
-            {section.description && (
-              <p className="text-xs text-muted-foreground">{section.description}</p>
-            )}
-          </div>
-        </div>
-        <span className={`rounded-full bg-white px-3 py-1 text-xs font-bold ${section.heading}`}>
+    <Panel
+      bodyClass="pt-3 pb-2"
+      title={
+        <span className="flex items-center gap-2.5">
+          <span aria-hidden="true" className={`size-2.5 rounded-full ${section.dot}`} />
+          {section.title}
+        </span>
+      }
+      description={section.description}
+      action={
+        <span className="rounded-full bg-bruma px-3 py-1 text-xs font-semibold text-acento-oscuro tabular-nums">
           {loading ? "…" : orders.length}
         </span>
-      </div>
-
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-175 text-left text-sm">
-          <thead className="border-b border-line text-xs text-muted-foreground uppercase">
-            <tr>
-              <th className="px-5 py-4">ID</th>
-              <th className="px-5 py-4">Cliente</th>
-              <th className="px-5 py-4">Mascota</th>
-              <th className="px-5 py-4">Producto</th>
-              <th className="px-5 py-4">Estado</th>
-              <th className="px-5 py-4">Total</th>
-              <th className="px-5 py-4">Fecha</th>
-              <th className="px-5 py-4" />
-            </tr>
-          </thead>
-          <tbody>
-            {orders.map((order) => (
-              <tr
-                key={order.id}
-                onClick={() => navigate(`/admin/solicitudes/${order.id}`)}
-                className="cursor-pointer border-b border-line last:border-0 hover:bg-black/2"
-              >
-                <td className="px-5 py-4 font-semibold text-(--deep)">
-                  {orderCode(order.order_number)}
-                </td>
-                <td className="px-5 py-4">{order.customer_name}</td>
-                <td className="px-5 py-4">{order.pet_name ?? "—"}</td>
-                <td className="px-5 py-4">
-                  {order.product ?? "—"}
-                  {order.style && (
-                    <span className="text-muted-foreground"> · {order.style}</span>
-                  )}
-                </td>
-                <td className="px-5 py-4">
-                  <StatusBadge status={order.status} />
-                </td>
-                <td className="px-5 py-4">{money(order.total_amount)}</td>
-                <td className="px-5 py-4 text-muted-foreground">
-                  {formatDate(order.created_at)}
-                </td>
-                <td className="px-5 py-4 text-muted-foreground">
-                  <ChevronRight size={17} />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        {!loading && orders.length === 0 && (
-          <p className="p-7 text-center text-sm text-muted-foreground">
-            No hay pedidos en esta sección.
-          </p>
-        )}
-        {loading && (
-          <p className="p-7 text-center text-sm text-muted-foreground">Cargando pedidos…</p>
-        )}
-      </div>
-    </section>
+      }
+    >
+      <OrderList orders={orders} loading={loading} showProduct empty={<EmptyState compact title={section.vacio} />} />
+    </Panel>
   );
 }
 
 export default function Requests() {
-  const navigate = useNavigate();
+
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -197,54 +115,54 @@ export default function Requests() {
     ? SECTIONS.filter((section) => section.statuses?.includes(status) || section.status === status)
     : SECTIONS;
 
+  const chip = (activo) =>
+    `min-h-10 shrink-0 rounded-full px-4 text-sm font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento ${
+      activo ? "bg-acento-oscuro text-white shadow-sm" : "text-tinta/65 hover:bg-white hover:text-tinta"
+    }`;
+
   return (
     <div>
-      <header className="mb-8">
-        <span className="text-[11px] font-extrabold tracking-[.12em] text-(--blue) uppercase">
-          Administración
-        </span>
-        <h1 className="mt-2 text-3xl font-bold tracking-tight text-(--deep)">
-          Solicitudes
-        </h1>
-      </header>
+      <PageHeader title="Solicitudes" description="Todos los pedidos, ordenados por etapa. Toca uno para ver su ficha." />
 
-      <div className="mb-6 flex flex-wrap gap-3">
-        <label className="flex h-11 min-w-64 flex-1 items-center gap-2 rounded-xl border border-line bg-white px-4 text-muted-foreground focus-within:border-mid">
-          <Search size={18} />
+      <div className="vidrio mb-6 flex flex-col gap-3 rounded-[24px] p-2.5 lg:flex-row lg:items-center">
+        <label className="relative flex-1">
+          <span className="sr-only">Buscar solicitudes</span>
+          <Search size={18} className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-tinta/40" aria-hidden="true" />
           <input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Nombre, correo, mascota o ID"
-            className="h-full min-w-0 flex-1 bg-transparent text-sm text-(--ink) outline-none"
+            className={`${inputClass} pl-11`}
           />
         </label>
 
-        <select
-          value={status}
-          onChange={(event) => setStatus(event.target.value)}
-          className="h-11 rounded-xl border border-line bg-white px-4 text-sm text-(--ink) outline-none"
-        >
-          <option value="">Todas las tablas</option>
+        <div role="group" aria-label="Filtrar por estado" className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-0.5">
+          <button type="button" aria-pressed={status === ""} onClick={() => setStatus("")} className={chip(status === "")}>
+            Todas
+          </button>
           {FILTERS.map((value) => (
-            <option key={value} value={value}>
-              {STATUS[value].label}
-            </option>
+            <button key={value} type="button" aria-pressed={status === value} onClick={() => setStatus(value)} className={chip(status === value)}>
+              {STATUS[value].label.charAt(0) + STATUS[value].label.slice(1).toLowerCase()}
+            </button>
           ))}
-        </select>
+        </div>
       </div>
 
-      {error && <p className="mb-4 text-sm text-red-600">{error}</p>}
+      {error && (
+        <div className="mb-5">
+          <Aviso>No pudimos cargar las solicitudes. Revisa tu conexión y vuelve a intentarlo.</Aviso>
+        </div>
+      )}
 
       <div className="space-y-6">
         {visibleSections.map((section) => (
-          <OrderTable
+          <OrderSection
             key={section.status ?? section.statuses.join("-")}
             orders={orders.filter((order) =>
               section.statuses?.includes(order.status) || order.status === section.status,
             )}
             loading={loading}
             section={section}
-            navigate={navigate}
           />
         ))}
       </div>

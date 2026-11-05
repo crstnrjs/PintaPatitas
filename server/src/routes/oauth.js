@@ -6,10 +6,8 @@ import {
   exchangeMarketplaceAuthorizationCode,
   getMarketplaceOAuthConfigurationStatus,
 } from "../lib/marketplaceOAuth.js";
-import {
-  marketplaceSellerIsConnected,
-  saveMarketplaceSellerCredentials,
-} from "../lib/marketplaceCredentials.js";
+import { saveMarketplaceSellerCredentials } from "../lib/marketplaceCredentials.js";
+import { getMarketplaceSellerStatus } from "../lib/marketplaceSeller.js";
 
 const router = Router();
 
@@ -89,9 +87,17 @@ router.get("/mercadopago/callback", async (req, res) => {
       return res.status(502).send("Mercado Pago no devolvió la autorización esperada. No se guardó ningún token.");
     }
 
-    if (process.env.MP_OAUTH_TEST_TOKEN === "true" && tokenData.live_mode === true) {
-      console.error("OAuth devolvió una autorización live cuando se solicitó una credencial de prueba; no se guardó.");
-      return res.status(400).send("Mercado Pago devolvió una autorización live, no de prueba. No se guardó ningún token.");
+    const config = getMarketplaceOAuthConfigurationStatus();
+    if (!config.configured) {
+      return res.status(503).send("La configuración OAuth no es válida. No se guardó ningún token.");
+    }
+    const testMode = config.diagnostics.oauthTestMode;
+    const expectedLiveMode = !testMode;
+    if (typeof tokenData.live_mode !== "boolean" || tokenData.live_mode !== expectedLiveMode) {
+      const requestedMode = testMode ? "de prueba" : "live";
+      const returnedMode = tokenData.live_mode === true ? "live" : tokenData.live_mode === false ? "de prueba" : "desconocido";
+      console.error(`OAuth devolvió una autorización ${returnedMode} cuando se solicitó una credencial ${requestedMode}; no se guardó.`);
+      return res.status(400).send(`Mercado Pago devolvió una autorización ${returnedMode}, no ${requestedMode}. No se guardó ningún token.`);
     }
 
     if (!tokenData.refresh_token) {
@@ -130,9 +136,14 @@ router.get("/mercadopago/callback", async (req, res) => {
 
 router.get("/mercadopago/status", requireAdmin, (_req, res) => {
   const config = getMarketplaceOAuthConfigurationStatus();
+  // Misma regla que usan los cobros en orders.js
+  const { ready, mode, sellerMode, modeMismatch } = getMarketplaceSellerStatus();
   res.json({
-    connected: marketplaceSellerIsConnected(),
-    testMode: process.env.MP_OAUTH_TEST_TOKEN === "true",
+    connected: ready,
+    testMode: config.diagnostics.oauthTestMode,
+    mode,
+    sellerMode,
+    modeMismatch,
     configured: config.configured,
     missing: config.missing,
   });

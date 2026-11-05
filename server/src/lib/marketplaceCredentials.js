@@ -59,6 +59,13 @@ export function getMarketplaceSellerCredentials() {
   return JSON.parse(decrypted);
 }
 
+export function getMarketplaceSellerMode() {
+  const credentials = getMarketplaceSellerCredentials();
+  return credentials && typeof credentials.live_mode === "boolean"
+    ? (credentials.live_mode ? "live" : "test")
+    : null;
+}
+
 export function marketplaceSellerIsConnected() {
   return Boolean(getMarketplaceSellerCredentials()?.access_token);
 }

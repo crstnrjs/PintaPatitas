@@ -43,9 +43,9 @@ const texto = (v, max = 120) => (typeof v === "string" ? v.trim().slice(0, max) 
 function leerCampos(b) {
   return {
     technique_slug: texto(b.technique_slug, 60),
-    pet_count: Number.parseInt(b.pet_count, 10),
-    width_cm: b.width_cm ? Number.parseInt(b.width_cm, 10) : null,
-    height_cm: b.height_cm ? Number.parseInt(b.height_cm, 10) : null,
+    pet_count: typeof b.pet_count === "string" && /^\d+$/.test(b.pet_count) ? Number(b.pet_count) : NaN,
+    width_cm: b.width_cm ? (typeof b.width_cm === "string" && /^\d+$/.test(b.width_cm) ? Number(b.width_cm) : NaN) : null,
+    height_cm: b.height_cm ? (typeof b.height_cm === "string" && /^\d+$/.test(b.height_cm) ? Number(b.height_cm) : NaN) : null,
     idea: texto(b.idea, 800),
     pet_name: texto(b.pet_name, 160),
     nombre: texto(b.nombre, 60),
@@ -62,8 +62,11 @@ function leerCampos(b) {
 
 function validar(c, fotos) {
   if (!c.technique_slug) return "Falta el estilo.";
-  if (!Number.isInteger(c.pet_count) || c.pet_count < 1) return "Falta la cantidad de mascotas.";
+  if (!Number.isInteger(c.pet_count) || c.pet_count < 1 || c.pet_count > 20) return "La cantidad de mascotas debe estar entre 1 y 20.";
   if (Number.isNaN(c.width_cm) || Number.isNaN(c.height_cm)) return "El formato no es válido.";
+  if (c.width_cm !== null && (c.width_cm < 1 || c.width_cm > 500)) return "El ancho debe estar entre 1 y 500 cm.";
+  if (c.height_cm !== null && (c.height_cm < 1 || c.height_cm > 500)) return "El alto debe estar entre 1 y 500 cm.";
+  if ((c.width_cm === null) !== (c.height_cm === null)) return "El formato debe incluir ancho y alto.";
   if (c.nombre.length < 2 || c.apellido.length < 2) return "Ingresa tu nombre y apellido.";
   if (!REGEX_CORREO.test(c.correo)) return "El correo no es válido.";
   if (!/^\+569\d{8}$/.test(c.telefono)) return "El celular no es válido.";

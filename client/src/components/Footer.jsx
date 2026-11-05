@@ -1,9 +1,10 @@
 import { Link } from "react-router-dom";
 import { Lock } from "lucide-react";
 import { enlacesLanding } from "./navegacion";
-import { INSTAGRAM_URL } from "@/pages/landing/contenido";
+import { useContenidoLanding } from "@/pages/landing/useContenidoLanding";
 
 export default function Footer() {
+  const { instagramUrl } = useContenidoLanding();
   return (
     <footer className="bg-tinta text-white/70">
       <div className="mx-auto grid max-w-6xl gap-10 px-5 py-14 md:grid-cols-[1.4fr_1fr_1fr] md:px-10">
@@ -26,7 +27,7 @@ export default function Footer() {
         </nav>
 
         <div className="flex flex-col gap-1">
-          {INSTAGRAM_URL && (
+          {instagramUrl && (
             <a href={INSTAGRAM_URL} target="_blank" rel="noopener noreferrer" className="py-1.5 transition hover:text-white">
               Instagram
             </a>

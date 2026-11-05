@@ -1,10 +1,10 @@
 import { useMemo, useRef, useState } from "react";
 import { XMarkIcon } from "@heroicons/react/24/outline";
-import { obras } from "./contenido";
+import { obras as obrasPredeterminadas } from "./contenido";
 import { Encabezado, FaltaMaterial, Imagen } from "./ui";
 
 /* Galería tipo masonry con filtro por técnica (si hay obras etiquetadas) y visor ampliado. */
-export default function Galeria({ estilos }) {
+export default function Galeria({ estilos, obras = obrasPredeterminadas, cargado = true }) {
   const [filtro, setFiltro] = useState(null);
   const [abierta, setAbierta] = useState(null);
   const dialogo = useRef(null);
@@ -12,7 +12,7 @@ export default function Galeria({ estilos }) {
   const nombreDe = (slug) => estilos.find((e) => e.slug === slug)?.name ?? slug;
   const tecnicas = useMemo(
     () => [...new Set(obras.map((o) => o.tecnica).filter(Boolean))],
-    [],
+    [obras],
   );
   const visibles = filtro ? obras.filter((o) => o.tecnica === filtro) : obras;
 
@@ -81,7 +81,7 @@ export default function Galeria({ estilos }) {
           ))}
         </ul>
 
-        {obras.length < 6 && (
+        {cargado && obras.length < 6 && (
           <FaltaMaterial>
             Hay {obras.length} obras reales en la galería. Agrega más fotos de pinturas terminadas
             (distintas mascotas, técnicas y tamaños) en <code>pages/landing/contenido.js</code>.

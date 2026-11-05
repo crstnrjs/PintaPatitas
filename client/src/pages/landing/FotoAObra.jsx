@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { comparaciones } from "./contenido";
+import { ArrowLeftRight } from "lucide-react";
+import { comparaciones as comparacionesPredeterminadas } from "./contenido";
 import { Encabezado, FaltaMaterial } from "./ui";
 
 /* Deslizador antes/después: solo CSS (clip-path) + un input range accesible. */
@@ -21,6 +22,13 @@ function Comparador({ par }) {
           style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }}
         />
         <span aria-hidden="true" className="pointer-events-none absolute inset-y-0 w-0.5 bg-white shadow" style={{ left: `${pos}%` }} />
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute top-1/2 flex size-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-white bg-tinta/65 text-white shadow-md"
+          style={{ left: `${pos}%` }}
+        >
+          <ArrowLeftRight size={20} strokeWidth={2.5} />
+        </span>
         <input
           type="range"
           min="0"
@@ -39,7 +47,7 @@ function Comparador({ par }) {
   );
 }
 
-export default function FotoAObra() {
+export default function FotoAObra({ comparaciones = comparacionesPredeterminadas }) {
   if (comparaciones.length === 0) return null;
 
   return (

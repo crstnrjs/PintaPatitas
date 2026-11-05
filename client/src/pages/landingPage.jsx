@@ -4,8 +4,10 @@ import { CheckIcon, XMarkIcon, TruckIcon, ClockIcon, MapPinIcon } from "@heroico
 import { useCatalogoPublico } from "./pedido/useCatalogoPublico";
 import { clp } from "./pedido/pasos";
 import { MAX_FOTOS } from "./pedido/imagenes";
-import { MOSTRAR_AVISOS, obras, testimonios, FRASE_CONFIANZA, TIEMPO_PRODUCCION } from "./landing/contenido";
-import { BotonPedido, Encabezado, FaltaMaterial, Huella, Imagen, Mancha, Ramita, Revelar } from "./landing/ui";
+import { MOSTRAR_AVISOS, TIEMPO_PRODUCCION } from "./landing/contenido";
+import { useContenidoLanding } from "./landing/useContenidoLanding";
+import { obras as obrasIniciales } from "./landing/contenido";
+import { BotonPedido, Encabezado, FaltaMaterial, Huella, Ramita, Revelar } from "./landing/ui";
 import Galeria from "./landing/Galeria";
 import FotoAObra from "./landing/FotoAObra";
 import Estilos from "./landing/Estilos";
@@ -13,8 +15,7 @@ import Preguntas from "./landing/Preguntas";
 
 /* ---------- Portada ---------- */
 
-function Portada({ desde }) {
-  const obra = obras[0];
+function Portada({ desde, fraseConfianza }) {
   return (
     <section aria-labelledby="portada-titulo" className="relative overflow-hidden">
       <div className="mx-auto grid max-w-6xl items-center gap-12 px-5 pt-10 pb-20 md:grid-cols-[1.05fr_1fr] md:gap-10 md:px-10 md:pt-16 md:pb-28">
@@ -42,37 +43,34 @@ function Portada({ desde }) {
           <p className="mt-6 max-w-sm text-sm text-tinta/60">
             Envías tu solicitud sin pagar. Solo pagas si el artista la acepta.
           </p>
-          {FRASE_CONFIANZA && <p className="mt-2 text-sm font-medium text-tinta">{FRASE_CONFIANZA}</p>}
+          {fraseConfianza && <p className="mt-2 text-sm font-medium text-tinta">{fraseConfianza}</p>}
         </div>
 
-        {obra && (
-          <div className="relative">
-            <Mancha className="animate-flotar absolute -top-6 -right-10 h-72 w-72 text-cielo/45 md:h-96 md:w-96" />
-            <Ramita className="absolute -bottom-2 -left-4 h-40 w-32 -rotate-12 text-salvia md:-left-10" />
-            <figure className="relative mx-auto w-full max-w-[460px]">
-              <svg aria-hidden="true" viewBox="0 0 200 60" className="mx-auto -mb-1 block h-12 w-48 text-tinta/40">
-                <circle cx="100" cy="6" r="4" fill="currentColor" />
-                <path d="M100 8 L22 58 M100 8 L178 58" stroke="currentColor" strokeWidth="1.5" fill="none" />
-              </svg>
-              <div className="animate-colgar origin-top rounded-[6px] bg-bastidor p-3 shadow-[0_30px_50px_-20px_rgba(20,42,53,0.55)] md:p-4">
-                <div className="overflow-hidden rounded-[2px] bg-white p-2 md:p-3">
-                  <Imagen
-                    obra={obra}
-                    prioridad
-                    sizes="(min-width: 768px) 430px, 88vw"
-                    className="aspect-[4/5] h-auto w-full object-cover object-[58%_center]"
-                  />
-                </div>
+        <div className="relative">
+          <figure className="relative mx-auto w-full max-w-[460px]">
+            <div className="rounded-[6px] bg-bastidor p-3 shadow-[0_30px_50px_-20px_rgba(20,42,53,0.55)] md:p-4">
+              <div className="overflow-hidden rounded-[2px] bg-white p-2 md:p-3">
+                <img
+                  src={obrasIniciales[0].src}
+                  srcSet={obrasIniciales[0].variantes.map((ancho) => `${obrasIniciales[0].src.replace(/\\.webp$/, `-${ancho}.webp`)} ${ancho}w`).concat(`${obrasIniciales[0].src} ${obrasIniciales[0].ancho}w`).join(", ")}
+                  sizes="(min-width: 768px) 430px, 88vw"
+                  width={obrasIniciales[0].ancho}
+                  height={obrasIniciales[0].alto}
+                  alt={obrasIniciales[0].alt}
+                  loading="eager"
+                  fetchPriority="high"
+                  className="aspect-[4/5] h-auto w-full object-cover object-[58%_center]"
+                />
               </div>
-              {desde != null && (
-                <figcaption className="vidrio absolute -bottom-6 left-3 rounded-2xl px-5 py-3.5 text-sm text-tinta md:-left-12 md:bottom-10">
-                  <span className="block text-tinta/65">Retratos desde</span>
-                  <strong className="font-display text-2xl">{clp(desde)}</strong>
-                </figcaption>
-              )}
-            </figure>
-          </div>
-        )}
+            </div>
+            {desde != null && (
+              <figcaption className="vidrio absolute -bottom-6 left-3 rounded-2xl px-5 py-3.5 text-sm text-tinta md:-left-12 md:bottom-10">
+                <span className="block text-tinta/65">Retratos desde</span>
+                <strong className="font-display text-2xl">{clp(desde)}</strong>
+              </figcaption>
+            )}
+          </figure>
+        </div>
       </div>
     </section>
   );
@@ -222,7 +220,7 @@ function GuiaFotos() {
 
 /* ---------- Testimonios (solo reales) ---------- */
 
-function Testimonios() {
+function Testimonios({ testimonios }) {
   if (testimonios.length === 0) {
     return MOSTRAR_AVISOS && import.meta.env.DEV ? (
       <div className="mx-auto max-w-6xl px-5 pb-10 md:px-10">
@@ -310,6 +308,7 @@ function Cierre() {
 
 export default function LandingPage() {
   const catalogo = useCatalogoPublico();
+  const contenido = useContenidoLanding();
   const { hash } = useLocation();
   const desde = catalogo.estilos.length ? Math.min(...catalogo.estilos.map((e) => e.desde)) : null;
 
@@ -320,15 +319,15 @@ export default function LandingPage() {
 
   return (
     <div className="fondo-acuarela text-tinta">
-      <Portada desde={desde} />
-      <Galeria estilos={catalogo.estilos} />
+      <Portada desde={desde} fraseConfianza={contenido.fraseConfianza} />
+      <Galeria estilos={catalogo.estilos} obras={contenido.obras} cargado={contenido.cargado} />
       {/* Futuro: <ObrasDisponibles /> (obras ya pintadas a la venta) encaja aquí, junto a la galería. */}
-      <FotoAObra />
+      <FotoAObra comparaciones={contenido.comparaciones} />
       <ComoFunciona />
       <Estilos {...catalogo} />
       <Personalizacion />
       <GuiaFotos />
-      <Testimonios />
+      <Testimonios testimonios={contenido.testimonios} />
       <Envios />
       <Preguntas estilos={catalogo.estilos} />
       <Cierre />

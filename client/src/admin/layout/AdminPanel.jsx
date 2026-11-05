@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { ExternalLink, LayoutDashboard, LogOut, Menu, Package, StoreIcon, WalletCards, X } from "lucide-react";
+import { ExternalLink, Images, LayoutDashboard, LogOut, Menu, Package, StoreIcon, WalletCards, X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { initials } from "@/admin/shared/ui";
 
@@ -8,6 +8,7 @@ const menu = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard, end: true },
   { to: "/admin/solicitudes", label: "Solicitudes", icon: Package },
   { to: "/admin/catalogo", label: "Catálogo", icon: StoreIcon },
+  { to: "/admin/contenido", label: "Contenido", icon: Images },
   { to: "/admin/configuracion/mercadopago", label: "Mercado Pago", icon: WalletCards },
 ];
 

@@ -28,7 +28,7 @@ export default function Footer() {
 
         <div className="flex flex-col gap-1">
           {instagramUrl && (
-            <a href={INSTAGRAM_URL} target="_blank" rel="noopener noreferrer" className="py-1.5 transition hover:text-white">
+            <a href={instagramUrl} target="_blank" rel="noopener noreferrer" className="py-1.5 transition hover:text-white">
               Instagram
             </a>
           )}

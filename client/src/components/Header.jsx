@@ -1,44 +1,90 @@
-import { Link, NavLink } from "react-router-dom";
-import { ShimmerButton } from "@/components/ui/shimmer-button";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
+import { enlacesLanding } from "./navegacion";
 
-const enlaces = [
-  { to: "/", label: "Inicio" },
-  { to: "/catalogo", label: "Crear Pintura" },
-];
-const enlacesDerecha = [{ to: "/catalogo", label: "Crear Pintura" }];
+const enfoque = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tinta";
 
 export default function Header() {
+  const [abierto, setAbierto] = useState(false);
+  const { pathname } = useLocation();
+  const enPedido = pathname === "/catalogo";
+
+  // Cierra el menú móvil con Escape (los enlaces lo cierran al hacer clic)
+  useEffect(() => {
+    if (!abierto) return;
+    const cerrar = (e) => e.key === "Escape" && setAbierto(false);
+    window.addEventListener("keydown", cerrar);
+    return () => window.removeEventListener("keydown", cerrar);
+  }, [abierto]);
+
+  const enlaces = (
+    <>
+      {enlacesLanding.map(({ hash: h, label }) => (
+        <Link
+          key={h}
+          to={{ pathname: "/", hash: h }}
+          onClick={() => setAbierto(false)}
+          className={`flex min-h-11 items-center rounded-full px-3 text-tinta/75 transition hover:text-tinta ${enfoque}`}
+        >
+          {label}
+        </Link>
+      ))}
+    </>
+  );
+
   return (
-    <header className="border-b bg-background">
-      <div className="mx-auto flex px-5 items-center justify-between p-4">
-        <Link to="/" className="text-xl font-semibold">
+    <header className="sticky top-0 z-40 px-3 pt-3">
+      <div className="vidrio mx-auto flex max-w-6xl items-center justify-between gap-2 rounded-full py-2 pr-2 pl-4 sm:pl-5">
+        <Link to="/" className={`shrink-0 font-display text-lg text-tinta sm:text-xl md:text-2xl ${enfoque} rounded`}>
           PintaPatitas
         </Link>
-        <nav className="flex gap-6 align-center">
-          {enlaces.map(({ to, label }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={to === "/"}
-              className={({ isActive }) =>
-                `self-center ${
-                  isActive
-                    ? "font-medium text-foreground"
-                    : "text-muted-foreground hover:text-foreground"
-                }`
-              }
-            >
-              {label}
-            </NavLink>
-          ))}
-          {/*enlacesDerecha.map(({ to, label }) => (
-            <ShimmerButton key={to} onClick={() => navigate(to)}>
-              {label}
-            </ShimmerButton>
-          ))*/}
+
+        <nav aria-label="Principal" className="hidden items-center gap-1 text-[15px] lg:flex">
+          {enlaces}
         </nav>
+
+        <div className="flex items-center gap-1 sm:gap-2">
+          {!enPedido && (
+            <Link
+              to="/catalogo"
+              className={`inline-flex min-h-11 items-center whitespace-nowrap rounded-full bg-acento px-4 text-sm sm:px-5 font-semibold text-white transition hover:bg-acento-oscuro ${enfoque}`}
+            >
+              Crear mi retrato
+            </Link>
+          )}
+          <button
+            type="button"
+            onClick={() => setAbierto((a) => !a)}
+            aria-expanded={abierto}
+            aria-controls="menu-movil"
+            aria-label={abierto ? "Cerrar menú" : "Abrir menú"}
+            className={`flex h-11 w-11 items-center justify-center rounded-full text-tinta hover:bg-white/70 lg:hidden ${enfoque}`}
+          >
+            {abierto ? <XMarkIcon className="h-6 w-6" aria-hidden="true" /> : <Bars3Icon className="h-6 w-6" aria-hidden="true" />}
+          </button>
+        </div>
       </div>
+
+      {abierto && (
+        <nav
+          id="menu-movil"
+          aria-label="Principal"
+          className="vidrio mx-auto mt-2 flex max-w-6xl flex-col rounded-[24px] p-3 text-lg lg:hidden"
+        >
+          <Link
+            to="/"
+            onClick={() => {
+              setAbierto(false);
+              window.scrollTo({ top: 0 });
+            }}
+            className={`flex min-h-11 items-center rounded-full px-3 text-tinta/75 hover:text-tinta ${enfoque}`}
+          >
+            Inicio
+          </Link>
+          {enlaces}
+        </nav>
+      )}
     </header>
   );
 }

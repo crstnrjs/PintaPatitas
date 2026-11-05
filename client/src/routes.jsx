@@ -1,15 +1,16 @@
+import { lazy } from "react";
 import TiendaLayout from "./components/TiendaLayout";
 import LandingPage from "./pages/landingPage";
-import PedidoWizard from "./pages/pedido/PedidoWizard";
-import AdminLogin from "./admin/auth/AdminLogin";
-import AdminRoute from "./admin/auth/AdminRoute";
-import AdminPanel from "./admin/layout/AdminPanel";
-import Dashboard from "./admin/dashboard/Dashboard";
-import Requests from "./admin/requests/Requests";
-import RequestDetail from "./admin/requests/RequestDetail";
-import AdminCatalog from "./admin/catalog/AdminCatalog";
-import ContentEditor from "./admin/content/ContentEditor";
-import MarketplaceSettings from "./admin/settings/MarketplaceSettings";
+const PedidoWizard = lazy(() => import("./pages/pedido/PedidoWizard"));
+const AdminLogin = lazy(() => import("./admin/auth/AdminLogin"));
+const AdminRoute = lazy(() => import("./admin/auth/AdminRoute"));
+const AdminPanel = lazy(() => import("./admin/layout/AdminPanel"));
+const Dashboard = lazy(() => import("./admin/dashboard/Dashboard"));
+const Requests = lazy(() => import("./admin/requests/Requests"));
+const RequestDetail = lazy(() => import("./admin/requests/RequestDetail"));
+const AdminCatalog = lazy(() => import("./admin/catalog/AdminCatalog"));
+const ContentEditor = lazy(() => import("./admin/content/ContentEditor"));
+const MarketplaceSettings = lazy(() => import("./admin/settings/MarketplaceSettings"));
 
 const routes = [
   {

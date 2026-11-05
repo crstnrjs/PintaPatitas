@@ -82,12 +82,12 @@ export function Encabezado({ id, titulo, children, centrado = false, claro = fal
     <div className={`max-w-2xl ${centrado ? "mx-auto text-center" : ""}`}>
       <h2
         id={id}
-        className={`font-display text-[clamp(2rem,5vw,3.25rem)] leading-[1.05] ${claro ? "text-white" : "text-tinta"}`}
+        className={`font-display text-[clamp(1.85rem,5vw,3.25rem)] leading-[1.05] ${claro ? "text-white" : "text-tinta"}`}
       >
         {titulo}
       </h2>
       {children && (
-        <p className={`mt-4 text-lg leading-relaxed ${claro ? "text-white/75" : "text-tinta/70"}`}>
+        <p className={`mt-3 text-base leading-relaxed md:mt-4 md:text-lg ${claro ? "text-white/75" : "text-tinta/70"}`}>
           {children}
         </p>
       )}

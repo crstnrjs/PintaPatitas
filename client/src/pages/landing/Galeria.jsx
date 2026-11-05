@@ -27,16 +27,15 @@ export default function Galeria({ estilos, obras = obrasPredeterminadas, cargado
     <section
       id="galeria"
       aria-labelledby="galeria-titulo"
-      className="scroll-mt-24 py-20 md:py-28"
+      className="scroll-mt-24 py-14 md:py-28"
     >
       <div className="mx-auto max-w-6xl px-5 md:px-10">
         <Encabezado id="galeria-titulo" titulo="Retratos que ya viven en su casa">
-          Cada cuadro parte de las fotos que nos envía su familia. Ninguno se repite, porque
-          ninguna mascota es igual a otra.
+          Cada cuadro parte de las fotos que nos envía su familia.
         </Encabezado>
 
         {tecnicas.length > 1 && (
-          <div role="group" aria-label="Filtrar por técnica" className="mt-8 flex flex-wrap gap-2">
+          <div role="group" aria-label="Filtrar por técnica" className="mt-6 flex flex-wrap gap-2 md:mt-8">
             {[null, ...tecnicas].map((t) => (
               <button
                 key={t ?? "todas"}
@@ -53,11 +52,12 @@ export default function Galeria({ estilos, obras = obrasPredeterminadas, cargado
           </div>
         )}
 
+        {/* Móvil: carrusel horizontal deslizable. Desde sm: masonry en columnas. */}
         <ul
-          className={`mt-12 columns-1 gap-5 sm:columns-2 [&>li]:mb-5 ${visibles.length > 2 ? "lg:columns-3" : "max-w-4xl"}`}
+          className={`-mx-5 mt-8 flex snap-x snap-mandatory items-start gap-4 overflow-x-auto px-5 pb-3 [scrollbar-width:none] sm:mx-0 sm:mt-12 sm:block sm:columns-2 sm:gap-5 sm:overflow-visible sm:px-0 sm:pb-0 sm:[&>li]:mb-5 ${visibles.length > 2 ? "lg:columns-3" : "max-w-4xl"}`}
         >
           {visibles.map((o) => (
-            <li key={o.src} className="break-inside-avoid">
+            <li key={o.src} className="w-[80%] shrink-0 snap-center break-inside-avoid sm:w-auto">
               <button
                 type="button"
                 onClick={() => abrir(o)}
@@ -66,7 +66,7 @@ export default function Galeria({ estilos, obras = obrasPredeterminadas, cargado
                 <span className="block overflow-hidden rounded-[10px]">
                   <Imagen
                     obra={o}
-                    sizes="(min-width: 1024px) 360px, (min-width: 640px) 45vw, 92vw"
+                    sizes="(min-width: 1024px) 360px, (min-width: 640px) 45vw, 80vw"
                     className="h-auto w-full transition duration-700 group-hover:scale-[1.03]"
                   />
                 </span>

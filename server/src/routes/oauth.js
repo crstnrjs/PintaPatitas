@@ -6,11 +6,8 @@ import {
   exchangeMarketplaceAuthorizationCode,
   getMarketplaceOAuthConfigurationStatus,
 } from "../lib/marketplaceOAuth.js";
-import {
-  getMarketplaceSellerMode,
-  marketplaceSellerIsConnected,
-  saveMarketplaceSellerCredentials,
-} from "../lib/marketplaceCredentials.js";
+import { saveMarketplaceSellerCredentials } from "../lib/marketplaceCredentials.js";
+import { getMarketplaceSellerStatus } from "../lib/marketplaceSeller.js";
 
 const router = Router();
 
@@ -139,12 +136,10 @@ router.get("/mercadopago/callback", async (req, res) => {
 
 router.get("/mercadopago/status", requireAdmin, (_req, res) => {
   const config = getMarketplaceOAuthConfigurationStatus();
-  const sellerMode = getMarketplaceSellerMode();
-  const credentialsPresent = marketplaceSellerIsConnected();
-  const mode = config.diagnostics.oauthMode;
-  const modeMismatch = credentialsPresent && sellerMode !== null && sellerMode !== mode;
+  // Misma regla que usan los cobros en orders.js
+  const { ready, mode, sellerMode, modeMismatch } = getMarketplaceSellerStatus();
   res.json({
-    connected: config.configured && credentialsPresent && sellerMode !== null && sellerMode === mode,
+    connected: ready,
     testMode: config.diagnostics.oauthTestMode,
     mode,
     sellerMode,

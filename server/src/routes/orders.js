@@ -2,7 +2,7 @@ import { Router } from "express";
 import { supabaseAdmin as supabase } from "../lib/supabase.js";
 import { requireAdmin } from "../middleware/requireAdmin.js";
 import { crearPreferenciaVendedor } from "../lib/mercadopago.js";
-import { marketplaceSellerIsConnected } from "../lib/marketplaceCredentials.js";
+import { getMarketplaceSellerStatus, urlDePago } from "../lib/marketplaceSeller.js";
 import { enviarCorreoClienteAbono, enviarCorreoClienteSaldo } from "../lib/mailer.js";
 import { reservarPago, completarReservaPago, eliminarReservaPago } from "./paymentIdempotency.js";
 
@@ -33,10 +33,13 @@ router.post("/:id/accept", requireAdmin, async (req, res) => {
   }
 
   // El abono se cobra 100% a la cuenta vendedora vinculada por OAuth (sin comisión de plataforma).
-  if (!marketplaceSellerIsConnected()) {
+  // Además del token, el modo de la credencial (live/test) debe coincidir con MP_OAUTH_TEST_TOKEN.
+  const vendedora = getMarketplaceSellerStatus();
+  if (!vendedora.ready) {
     return res.status(503).json({
-      error:
-        "Falta vincular la cuenta de Mercado Pago de la artista en Ajustes → Mercado Pago. No se generó ningún cobro.",
+      error: vendedora.modeMismatch
+        ? "La cuenta de Mercado Pago vinculada no coincide con el modo configurado (live/prueba). Vuelve a vincularla en Ajustes → Mercado Pago. No se generó ningún cobro."
+        : "Falta vincular la cuenta de Mercado Pago de la artista en Ajustes → Mercado Pago. No se generó ningún cobro.",
     });
   }
 
@@ -84,10 +87,7 @@ router.post("/:id/accept", requireAdmin, async (req, res) => {
     }
 
     const pref = await crearPreferenciaVendedor().create({ body: preferenceBody });
-    const isTestToken = process.env.MP_ACCESS_TOKEN?.startsWith("TEST-");
-    paymentUrl = isTestToken
-      ? pref.sandbox_init_point || pref.init_point
-      : pref.init_point || pref.sandbox_init_point;
+    paymentUrl = urlDePago(pref, vendedora.sellerMode);
     if (!paymentUrl) throw new Error("Mercado Pago no devolvió una URL de pago.");
 
     await completarReservaPago(reservationId, { paymentUrl, mpPaymentId: pref.id });
@@ -177,10 +177,12 @@ router.post("/:id/request-balance", requireAdmin, async (req, res) => {
   }
 
   // Split 1:1 requiere el token OAuth del vendedor vinculado, no el token de la plataforma.
-  if (!marketplaceSellerIsConnected()) {
+  const vendedora = getMarketplaceSellerStatus();
+  if (!vendedora.ready) {
     return res.status(503).json({
-      error:
-        "El Split 1:1 todavía no está habilitado: falta vincular la cuenta vendedora por OAuth. No se generó ningún cobro.",
+      error: vendedora.modeMismatch
+        ? "La cuenta de Mercado Pago vinculada no coincide con el modo configurado (live/prueba). Vuelve a vincularla en Ajustes → Mercado Pago. No se generó ningún cobro."
+        : "El Split 1:1 todavía no está habilitado: falta vincular la cuenta vendedora por OAuth. No se generó ningún cobro.",
     });
   }
 
@@ -265,10 +267,7 @@ router.post("/:id/request-balance", requireAdmin, async (req, res) => {
       try {
         const sellerPreference = crearPreferenciaVendedor();
         const pref = await sellerPreference.create({ body: preferenceBody });
-        const isTestToken = process.env.MP_ACCESS_TOKEN?.startsWith("TEST-");
-        paymentUrl = isTestToken
-          ? pref.sandbox_init_point || pref.init_point
-          : pref.init_point || pref.sandbox_init_point;
+        paymentUrl = urlDePago(pref, vendedora.sellerMode);
         if (!paymentUrl) throw new Error("Mercado Pago no devolvió una URL de pago.");
         await completarReservaPago(reservationId, { paymentUrl, mpPaymentId: pref.id });
       } catch (error) {

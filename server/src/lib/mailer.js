@@ -1,21 +1,34 @@
 import nodemailer from "nodemailer";
 
-// Transporte Gmail SMTP (contraseña de aplicación). Se crea una sola vez y se reutiliza.
+// Transporte SMTP configurable para Hostinger/Gmail. Se crea una sola vez y se reutiliza.
 let transport = null;
+
+function obtenerConfigSMTP() {
+  const host = process.env.SMTP_HOST || "smtp.gmail.com";
+  const port = Number(process.env.SMTP_PORT || 465);
+  const secure = process.env.SMTP_SECURE === undefined ? true : process.env.SMTP_SECURE !== "false";
+  const user = process.env.SMTP_USER || process.env.GMAIL_USER;
+  const pass = process.env.SMTP_PASS || process.env.GMAIL_APP_PASSWORD;
+
+  return { host, port, secure, user, pass };
+}
+
+function obtenerFromAddress() {
+  return process.env.SMTP_USER || process.env.GMAIL_USER;
+}
 
 function obtenerTransport() {
   if (transport) return transport;
 
-  const user = process.env.GMAIL_USER;
-  const pass = process.env.GMAIL_APP_PASSWORD;
+  const { host, port, secure, user, pass } = obtenerConfigSMTP();
   if (!user || !pass) {
-    throw new Error("Faltan GMAIL_USER o GMAIL_APP_PASSWORD en server/.env");
+    throw new Error("Faltan las credenciales SMTP/GMAIL en server/.env");
   }
 
   transport = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 465, // SSL
-    secure: true,
+    host,
+    port,
+    secure,
     auth: { user, pass },
   });
   return transport;
@@ -289,7 +302,7 @@ export async function enviarCorreoNuevaSolicitud({ pedido, fotos }) {
   }));
 
   await obtenerTransport().sendMail({
-    from: `"PintaPatitas" <${process.env.GMAIL_USER}>`,
+    from: `"PintaPatitas" <${obtenerFromAddress()}>`,
     to: destino,
     subject: asunto,
     text: texto,
@@ -372,7 +385,7 @@ export async function enviarCorreoClienteAbono({ pedido, paymentUrl }) {
   ].join("\n");
 
   await obtenerTransport().sendMail({
-    from: `"PintaPatitas" <${process.env.GMAIL_USER}>`,
+    from: `"PintaPatitas" <${obtenerFromAddress()}>`,
     to: pedido.customer_email,
     subject: asunto,
     text: texto,
@@ -450,7 +463,7 @@ export async function enviarCorreoClienteSaldo({ pedido, paymentUrl, saldoAmount
   ].join("\n");
 
   await obtenerTransport().sendMail({
-    from: `"PintaPatitas" <${process.env.GMAIL_USER}>`,
+    from: `"PintaPatitas" <${obtenerFromAddress()}>`,
     to: pedido.customer_email,
     subject: asunto,
     text: texto,

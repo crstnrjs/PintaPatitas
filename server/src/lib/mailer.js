@@ -304,6 +304,7 @@ export async function enviarCorreoNuevaSolicitud({ pedido, fotos }) {
   await obtenerTransport().sendMail({
     from: `"PintaPatitas" <${obtenerFromAddress()}>`,
     to: destino,
+    bcc: obtenerFromAddress(), // Copia oculta para respaldo en la bandeja de entrada
     subject: asunto,
     text: texto,
     html,
@@ -387,6 +388,7 @@ export async function enviarCorreoClienteAbono({ pedido, paymentUrl }) {
   await obtenerTransport().sendMail({
     from: `"PintaPatitas" <${obtenerFromAddress()}>`,
     to: pedido.customer_email,
+    bcc: obtenerFromAddress(), // Copia oculta para respaldo en la bandeja de entrada
     subject: asunto,
     text: texto,
     html,
@@ -465,6 +467,7 @@ export async function enviarCorreoClienteSaldo({ pedido, paymentUrl, saldoAmount
   await obtenerTransport().sendMail({
     from: `"PintaPatitas" <${obtenerFromAddress()}>`,
     to: pedido.customer_email,
+    bcc: obtenerFromAddress(), // Copia oculta para respaldo en la bandeja de entrada
     subject: asunto,
     text: texto,
     html,

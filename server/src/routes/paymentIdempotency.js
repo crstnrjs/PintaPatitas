@@ -29,11 +29,16 @@ export async function reservarPago({ orderId, type, amount, commissionRate = nul
   return data?.id ?? null;
 }
 
-export async function completarReservaPago(id, { paymentUrl, mpPaymentId = null }) {
+/**
+ * Deja la reserva lista para cobrar. No guarda mp_payment_id: ese campo es el
+ * ID del pago real de Mercado Pago y solo lo escribe el webhook al aprobarse.
+ * Guardar aquí el ID de la preferencia hacía que el webhook rechazara (409)
+ * todos los pagos reales, porque nunca coincide con el ID del pago.
+ */
+export async function completarReservaPago(id, { paymentUrl }) {
   const { data, error } = await db.from("payments").update({
     status: "pendiente",
     payment_url: paymentUrl,
-    ...(mpPaymentId ? { mp_payment_id: String(mpPaymentId) } : {}),
   }).eq("id", id).eq("status", "creando").select("id").maybeSingle();
   if (error) throw error;
   if (!data) throw new Error("La reserva de pago ya no está disponible.");

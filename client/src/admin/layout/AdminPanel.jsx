@@ -3,6 +3,8 @@ import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-do
 import { ExternalLink, Images, LayoutDashboard, LogOut, Menu, Package, StoreIcon, WalletCards, X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { initials } from "@/admin/shared/ui";
+import { useExpiracionSesion } from "@/admin/auth/useExpiracionSesion";
+import { limpiarMarcasSesion } from "@/admin/auth/sesionAdmin";
 
 const menu = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard, end: true },
@@ -110,6 +112,7 @@ export default function AdminPanel() {
   const { pathname } = useLocation();
   const [admin, setAdmin] = useState(null);
   const [drawer, setDrawer] = useState(false);
+  useExpiracionSesion();
 
   useEffect(() => {
     async function loadAdmin() {
@@ -137,6 +140,7 @@ export default function AdminPanel() {
   }, [drawer]);
 
   async function handleLogout() {
+    limpiarMarcasSesion();
     await supabase.auth.signOut();
     navigate("/admin/login");
   }

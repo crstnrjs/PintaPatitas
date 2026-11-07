@@ -21,7 +21,8 @@ test("completa la reserva y conserva la URL para reintentos", async () => {
   const db = crearSupabaseFalso();
   configurarDbPagos(db);
   const id = await reservarPago({ orderId: "order-2", type: "saldo", amount: 2500, commissionRate: 7, commissionAmount: 200 });
-  await completarReservaPago(id, { paymentUrl: "https://checkout.example/p/1", mpPaymentId: "pref-1" });
+  await completarReservaPago(id, { paymentUrl: "https://checkout.example/p/1" });
+  // mp_payment_id queda vacío: solo el webhook lo escribe con el ID del pago real.
   assert.deepEqual(db.state.payments[0], {
     id,
     order_id: "order-2",
@@ -31,7 +32,6 @@ test("completa la reserva y conserva la URL para reintentos", async () => {
     commission_rate: 7,
     commission_amount: 200,
     payment_url: "https://checkout.example/p/1",
-    mp_payment_id: "pref-1",
   });
   restablecerDbPagos();
 });

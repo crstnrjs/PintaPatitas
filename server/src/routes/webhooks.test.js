@@ -88,6 +88,25 @@ test("aprueba pago válido y transiciona la orden", async () => {
   assert.equal(result.db.state.orders[0].status, "en_proceso");
 });
 
+test("aprueba el pago de una reserva creada por el flujo real de cobro", async () => {
+  // Regresión: antes completarReservaPago guardaba el ID de la preferencia en
+  // mp_payment_id y el webhook respondía 409 a todo pago real.
+  const { configurarDbPagos, restablecerDbPagos, reservarPago, completarReservaPago } = await import("./paymentIdempotency.js");
+  const reservaDb = crearSupabaseFalso();
+  configurarDbPagos(reservaDb);
+  try {
+    const id = await reservarPago({ orderId: "order-1", type: "abono", amount: 1000 });
+    await completarReservaPago(id, { paymentUrl: "https://checkout.example/p/1" });
+  } finally {
+    restablecerDbPagos();
+  }
+  const result = await callWebhook({ payment: approved, payments: reservaDb.state.payments.map((p) => ({ ...p })) });
+  assert.equal(result.status, 200);
+  assert.equal(result.db.state.payments[0].status, "aprobado");
+  assert.equal(result.db.state.payments[0].mp_payment_id, paymentId);
+  assert.equal(result.db.state.orders[0].status, "en_proceso");
+});
+
 test("rechaza discrepancia de ID firmado", async () => {
   const result = await callWebhook({ payment: approved, request: makeReq({ id: paymentId, signatureId: "otro-id" }) });
   assert.equal(result.status, 401);

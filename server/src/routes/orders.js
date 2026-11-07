@@ -90,7 +90,7 @@ router.post("/:id/accept", requireAdmin, async (req, res) => {
     paymentUrl = urlDePago(pref, vendedora.sellerMode);
     if (!paymentUrl) throw new Error("Mercado Pago no devolvió una URL de pago.");
 
-    await completarReservaPago(reservationId, { paymentUrl, mpPaymentId: pref.id });
+    await completarReservaPago(reservationId, { paymentUrl });
     const { data: updatedOrder, error: errUpdate } = await supabase
       .from("orders")
       .update({ status: "pendiente_abono" })
@@ -269,7 +269,7 @@ router.post("/:id/request-balance", requireAdmin, async (req, res) => {
         const pref = await sellerPreference.create({ body: preferenceBody });
         paymentUrl = urlDePago(pref, vendedora.sellerMode);
         if (!paymentUrl) throw new Error("Mercado Pago no devolvió una URL de pago.");
-        await completarReservaPago(reservationId, { paymentUrl, mpPaymentId: pref.id });
+        await completarReservaPago(reservationId, { paymentUrl });
       } catch (error) {
         try { await eliminarReservaPago(reservationId); } catch (cleanupError) {
           console.error("No se pudo liberar la reserva del saldo:", cleanupError);

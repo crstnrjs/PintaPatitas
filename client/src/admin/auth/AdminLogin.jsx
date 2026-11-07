@@ -2,7 +2,19 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowRight, Eye, EyeOff, Lock, Mail } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import {
+  borrarMotivoCierre,
+  cerrarSesionExpirada,
+  marcarInicioSesion,
+  motivoCierrePendiente,
+  motivoExpiracion,
+} from "./sesionAdmin";
 // import Logo from "@/components/Logo"; // ajusta la ruta a tu componente
+
+const AVISOS_CIERRE = {
+  inactividad: "Tu sesión se cerró por inactividad. Vuelve a ingresar.",
+  duracion: "Tu sesión expiró. Por seguridad, vuelve a ingresar.",
+};
 
 const fieldClass =
   "flex h-13.5 items-center gap-3 rounded-[14px] border border-(color:--line) bg-(--white) px-4 text-(color:--mid) transition focus-within:border-(color:--mid) focus-within:shadow-[0_0_0_4px_rgba(82,137,160,.1)]";
@@ -17,11 +29,21 @@ export default function AdminLogin() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [aviso, setAviso] = useState(() => AVISOS_CIERRE[motivoCierrePendiente()] ?? "");
 
-  // Si ya hay sesión, ir directo al panel
+  // Si ya hay una sesión vigente, ir directo al panel; si expiró, cerrarla.
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate("/admin", { replace: true });
+    borrarMotivoCierre();
+    supabase.auth.getSession().then(async ({ data }) => {
+      if (!data.session) return;
+      const motivo = motivoExpiracion(data.session);
+      if (motivo) {
+        await cerrarSesionExpirada(motivo);
+        setAviso(AVISOS_CIERRE[motivo]);
+        borrarMotivoCierre();
+        return;
+      }
+      navigate("/admin", { replace: true });
     });
   }, [navigate]);
   async function handleSubmit(e) {
@@ -42,6 +64,7 @@ export default function AdminLogin() {
       return;
     }
 
+    marcarInicioSesion();
     navigate("/admin");
   }
 
@@ -90,6 +113,12 @@ export default function AdminLogin() {
               Ingresa tus datos para gestionar las solicitudes y los pagos de la plataforma.
             </p>
           </header>
+
+          {aviso && !error && (
+            <p role="status" className="mb-5 rounded-[14px] border border-(color:--line) bg-(--white) px-4 py-3 text-sm text-(--ink)">
+              {aviso}
+            </p>
+          )}
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-5">
             <label className="flex flex-col gap-2 text-xs font-bold text-(--ink)">

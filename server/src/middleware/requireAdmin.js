@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "../lib/supabase.js";
+import { sesionExpirada } from "../lib/sesionAdmin.js";
 
 export async function requireAdmin(req, res, next) {
   const header = req.headers.authorization ?? "";
@@ -7,6 +8,10 @@ export async function requireAdmin(req, res, next) {
 
   const { data, error } = await supabaseAdmin.auth.getUser(token);
   if (error || !data?.user) return res.status(401).json({ error: "Sesión no válida." });
+  // El token ya fue verificado por getUser; se revisa cuánto lleva la sesión.
+  if (sesionExpirada(token)) {
+    return res.status(401).json({ error: "Tu sesión expiró. Vuelve a iniciar sesión." });
+  }
 
   const { data: admin, error: errAdmin } = await supabaseAdmin
     .from("admins")

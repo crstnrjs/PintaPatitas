@@ -49,6 +49,7 @@ const INICIAL = {
   idea: "",
   fotos: [],
   contacto: CONTACTO_INICIAL,
+  aceptaEnvio: false,
 };
 
 export default function PedidoWizard() {
@@ -232,6 +233,7 @@ export default function PedidoWizard() {
                   onEnviar={enviar}
                   enviando={enviando}
                   aviso={errorEnvio}
+                  onAceptaEnvio={(aceptaEnvio) => setDatos((d) => ({ ...d, aceptaEnvio }))}
                 />
               ) : (
                 <p className="rounded-2xl bg-amber-50 p-6 text-center text-sm text-amber-800">

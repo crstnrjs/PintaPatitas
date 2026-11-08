@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { colorDe } from "./techniqueColors";
 import { modalOverlay, modalPanel } from "@/admin/shared/ui";
+import { MP_PORCENTAJE, pct, useCobros } from "@/admin/shared/useCobros";
 
 const BUCKET = "catalog";
 const CANTIDADES = [1, 2, 3, 4];
@@ -49,6 +50,7 @@ function Paso({ n, titulo, ayuda, children }) {
 // producto = null → crear; producto = fila de admin_catalog_items → editar
 export default function ProductModal({ tecnicas, producto, onClose, onSaved }) {
   const editando = Boolean(producto);
+  const cobros = useCobros();
 
   const [tecnicaId, setTecnicaId] = useState(producto?.technique_id ?? "");
   const [cantidad, setCantidad] = useState(producto?.pet_count ?? 1);
@@ -188,18 +190,16 @@ export default function ProductModal({ tecnicas, producto, onClose, onSaved }) {
 
   const price = parseInt(precio, 10);
 
-  // Proyección de comisiones para que la amiga decida el precio
-  const MP_PCT    = 3.8;
-  const CHRIS_PCT = 6.2;
+  // Proyección de comisiones para que la amiga decida el precio. Usa los mismos porcentajes
+  // con que cobra el servidor (COMISION_PORCENTAJE y ABONO_PORCENTAJE).
   let proyeccion = null;
-  if (price > 0) {
-    const abonoPct   = 50; // porcentaje de abono configurado en el servidor
-    const abonoMonto = Math.round(price * abonoPct / 100);
+  if (price > 0 && cobros.comision != null && cobros.abono != null) {
+    const abonoMonto = Math.round(price * cobros.abono / 100);
     const saldoMonto = price - abonoMonto;
-    const mpAbono    = Math.round(abonoMonto * MP_PCT / 100);
-    const mpSaldo    = Math.round(saldoMonto * MP_PCT / 100);
+    const mpAbono    = Math.round(abonoMonto * MP_PORCENTAJE / 100);
+    const mpSaldo    = Math.round(saldoMonto * MP_PORCENTAJE / 100);
     const mpTotal    = mpAbono + mpSaldo;
-    const chris      = Math.round(price * CHRIS_PCT / 100);
+    const chris      = Math.round(price * cobros.comision / 100);
     const amiga      = Math.max(price - mpTotal - chris, 0);
     proyeccion = { mpTotal, chris, amiga };
   }
@@ -361,11 +361,11 @@ export default function ProductModal({ tecnicas, producto, onClose, onSaved }) {
               <div className="mt-3 rounded-xl border border-tinta/10 bg-bruma/40 px-4 py-3 text-xs space-y-1.5">
                 <p className="font-semibold text-tinta/55 uppercase tracking-wide mb-2">Distribución estimada</p>
                 <div className="flex justify-between text-tinta/55">
-                  <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#4f8fb0]" />Mercado Pago (3.8% × 2)</span>
+                  <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#4f8fb0]" />Mercado Pago (aprox. {pct(MP_PORCENTAJE)} × 2)</span>
                   <span className="font-medium text-tinta/80">−${clp(proyeccion.mpTotal)}</span>
                 </div>
                 <div className="flex justify-between text-tinta/55">
-                  <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#8a7bc0]" />Christian (6.2%)</span>
+                  <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#8a7bc0]" />Christian ({pct(cobros.comision)})</span>
                   <span className="font-medium text-tinta/80">−${clp(proyeccion.chris)}</span>
                 </div>
                 <div className="flex justify-between font-semibold text-[#2d6844] border-t border-tinta/10 pt-1.5">
@@ -379,7 +379,7 @@ export default function ProductModal({ tecnicas, producto, onClose, onSaved }) {
           <Paso
             n={5}
             titulo="Foto del producto"
-            ayuda={`Opcional. Si no subes una foto, el sitio usará la foto predeterminada para ${mascotas(cantidad)}.`}
+            ayuda="Opcional, pero recomendada: el cliente la ve como ejemplo al elegir su retrato y en la sección de estilos de la página de inicio. Si no hay foto, se muestra un ícono."
           >
             <div className="flex items-center gap-4">
               <div className="h-28 w-24 shrink-0 overflow-hidden rounded-2xl bg-bruma/60">

@@ -18,11 +18,15 @@ export default function StepResumen({
   onEnviar,
   enviando,
   aviso,
+  onAceptaEnvio,
 }) {
   const c = datos.contacto;
   const tel = normalizarTelefono(c.telefono);
   const telefono = `+56 ${tel.slice(0, 1)} ${tel.slice(1, 5)} ${tel.slice(5)}`;
-  const direccion = `${c.calle} ${c.numero}${c.depto ? `, ${c.depto}` : ""}, ${c.comuna}, ${c.region}`;
+  const enSucursal = c.entrega_tipo === "sucursal";
+  const direccion = enSucursal
+    ? `Retiro en sucursal Starken: ${c.sucursal.trim()}, ${c.comuna}, ${c.region}`
+    : `${c.calle} ${c.numero}${c.depto ? `, ${c.depto}` : ""}, ${c.comuna}, ${c.region}`;
   const nombresMascotas = (datos.nombres ?? [])
     .map((s) => (s ?? "").trim())
     .filter(Boolean)
@@ -75,9 +79,26 @@ export default function StepResumen({
           <Fila etiqueta="Nombre" valor={`${c.nombre} ${c.apellido}`} />
           <Fila etiqueta="Correo" valor={c.correo} />
           <Fila etiqueta="Celular" valor={telefono} />
-          <Fila etiqueta="Envío a" valor={direccion} />
+          <Fila etiqueta="RUT" valor={c.rut} />
+          <Fila etiqueta={enSucursal ? "Retiro" : "Envío a"} valor={direccion} />
         </dl>
       </div>
+
+      {producto.foto && (
+        <figure className="flex items-center gap-4 rounded-2xl border border-slate-200 p-3">
+          <img
+            src={producto.foto}
+            alt={`Ejemplo de retrato en ${estilo.name}`}
+            loading="lazy"
+            className="h-20 w-24 shrink-0 rounded-xl object-cover sm:h-24 sm:w-32"
+          />
+          <figcaption className="text-sm leading-snug text-slate-600">
+            <strong className="block font-semibold text-slate-900">Así lucen nuestros retratos en {estilo.name}</strong>
+            {datos.formato ? `${datos.formato.etiqueta} · ` : ""}
+            Foto de referencia: el tuyo será único, pintado a partir de las fotos de tu mascota.
+          </figcaption>
+        </figure>
+      )}
 
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-[#f5fafb] px-5 py-4">
         <div>
@@ -87,9 +108,21 @@ export default function StepResumen({
           </p>
         </div>
         <p className="max-w-[16rem] text-xs text-slate-500">
-          El costo de envío se cotiza al confirmar tu pedido.
+          + envío Starken por pagar: lo pagas al recibir el cuadro.
         </p>
       </div>
+
+      <label className="flex items-start gap-3 rounded-2xl border border-slate-200 p-4 text-sm leading-snug text-slate-700">
+        <input
+          type="checkbox"
+          className="mt-0.5 size-5 shrink-0 accent-[#2d6583]"
+          checked={datos.aceptaEnvio}
+          onChange={(e) => onAceptaEnvio(e.target.checked)}
+        />
+        <span>
+          Entiendo que el envío es <strong>por pagar</strong>: el costo de Starken lo pago al recibir el cuadro.
+        </span>
+      </label>
 
       {aviso && (
         <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-800">
@@ -100,7 +133,7 @@ export default function StepResumen({
       <button
         type="button"
         onClick={onEnviar}
-        disabled={enviando}
+        disabled={enviando || !datos.aceptaEnvio}
         className="w-full rounded-full bg-[#2d6583] py-3.5 font-semibold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {enviando ? "Enviando..." : "Enviar solicitud"}

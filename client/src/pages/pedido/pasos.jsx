@@ -8,12 +8,18 @@ export const clp = (n) =>
     maximumFractionDigits: 0,
   }).format(n);
 
+// Si al menos una opción tiene foto en el catálogo, todas se muestran como tarjetas con foto.
+const algunaFoto = (opciones) => opciones.some((o) => o.foto);
+
 export function StepEstilo({ estilos, seleccionado, onElegir }) {
+  const conFoto = algunaFoto(estilos);
   return (
     <div className="grid gap-3 sm:grid-cols-2">
       {estilos.map((e) => (
         <OpcionCard
           key={e.id}
+          conFoto={conFoto}
+          foto={e.foto}
           icono={<IconGota />}
           titulo={e.name}
           subtitulo={`Desde ${clp(e.desde)}`}
@@ -26,11 +32,14 @@ export function StepEstilo({ estilos, seleccionado, onElegir }) {
 }
 
 export function StepFormato({ formatos, seleccionado, onElegir }) {
+  const conFoto = algunaFoto(formatos);
   return (
     <div className="grid gap-3 sm:grid-cols-2">
       {formatos.map((f) => (
         <OpcionCard
           key={f.clave}
+          conFoto={conFoto}
+          foto={f.foto}
           icono={<IconImagen />}
           titulo={f.etiqueta}
           subtitulo={`Desde ${clp(f.desde)}`}
@@ -61,9 +70,11 @@ export function StepMascotas({
         {productos.map((p) => (
           <OpcionCard
             key={p.id}
+            conFoto={algunaFoto(productos)}
+            foto={p.foto}
             icono={<IconPata />}
-            titulo={String(p.pet_count)}
-            subtitulo={`${p.pet_count === 1 ? "mascota" : "mascotas"} · ${clp(p.price)}`}
+            titulo={`${p.pet_count} ${p.pet_count === 1 ? "mascota" : "mascotas"}`}
+            subtitulo={clp(p.price)}
             seleccionada={seleccionado === p.pet_count}
             onClick={() => onElegir(p.pet_count)}
           />

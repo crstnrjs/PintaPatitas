@@ -249,8 +249,8 @@ function Testimonios({ testimonios }) {
 
 function Envios() {
   const datos = [
-    [MapPinIcon, "Por Starken", "A la dirección que indiques."],
-    [TruckIcon, "Lo paga el cliente", "Se cotiza según el destino al confirmar."],
+    [MapPinIcon, "Por Starken", "A tu domicilio o a la sucursal que elijas."],
+    [TruckIcon, "Envío por pagar", "Lo pagas al recibir, a domicilio o en una sucursal Starken."],
     [ClockIcon, "Tiempo de trabajo", `${TIEMPO_PRODUCCION[0].toUpperCase()}${TIEMPO_PRODUCCION.slice(1)}, aprox.`],
   ];
   return (

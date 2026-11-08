@@ -2,6 +2,8 @@ import { Router } from "express";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { supabaseAdmin as supabase } from "../lib/supabase.js";
 import { crearConsultaPagoVendedor } from "../lib/mercadopago.js";
+import { crearRepoVentas, procesarPagoCuadro } from "../lib/ventasCuadros.js";
+import { notificarVentaCuadro } from "../lib/correosCuadros.js";
 
 export function firmaValida(req, secretOverride = process.env.MP_WEBHOOK_SECRET) {
   const secret = secretOverride;
@@ -31,6 +33,8 @@ export function crearRouterWebhooks({
   db = supabase,
   crearConsulta = crearConsultaPagoVendedor,
   webhookSecret,
+  repoCuadros,
+  notificarCuadro = notificarVentaCuadro,
 } = {}) {
   const router = Router();
 
@@ -66,6 +70,20 @@ export function crearRouterWebhooks({
     const paymentType = paymentInfo.metadata?.payment_type; // 'abono' o 'saldo'
     if (paymentInfo.currency_id !== "CLP") {
       return res.status(422).json({ error: "La moneda del pago no coincide." });
+    }
+
+    // Venta de cuadros listos: tiene su propia tabla y lógica (lib/ventasCuadros.js).
+    if (paymentType === "cuadro") {
+      const resultado = await procesarPagoCuadro({
+        paymentInfo,
+        paymentId,
+        repo: repoCuadros ?? crearRepoVentas(db),
+        notificar: notificarCuadro,
+      });
+      console.log(`[Webhook MP] Pago de cuadro ${paymentId}: status=${status} → ${resultado.status}`);
+      return typeof resultado.body === "string"
+        ? res.status(resultado.status).send(resultado.body)
+        : res.status(resultado.status).json(resultado.body);
     }
 
     console.log(`[Webhook MP] Pago ${paymentId}: status=${status}, orderId=${orderId}, type=${paymentType}`);

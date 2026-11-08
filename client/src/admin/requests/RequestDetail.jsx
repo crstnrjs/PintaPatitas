@@ -22,6 +22,7 @@ import {
 import { supabase } from "@/lib/supabase";
 import { Aviso, EmptyState, Panel, Skeleton, StatusBadge, btn, formatDate, initials, money, orderCode } from "@/admin/shared/ui";
 import { apiUrl } from "@/lib/api";
+import { MP_PORCENTAJE, pct, useCobros } from "@/admin/shared/useCobros";
 
 const sumAmount = (list) => list.reduce((acc, p) => acc + p.amount, 0);
 
@@ -45,6 +46,7 @@ export default function RequestDetail() {
   const [version, setVersion] = useState(0); // al cambiarlo, se recargan los datos
   const [tracking, setTracking] = useState("");
   const [copied, setCopied] = useState(false);
+  const cobros = useCobros();
 
   useEffect(() => {
     let ignore = false;
@@ -256,20 +258,21 @@ export default function RequestDetail() {
   const saldoPaid = sumAmount(approved.filter((p) => p.type === "saldo"));
   const pending = Math.max(order.total_amount - abonoPaid - saldoPaid, 0);
 
-  // Comisiones sobre el precio total
-  const MP_PCT = 3.8;    // Mercado Pago cobra 3.8% por transacción
-  const CHRIS_PCT = 6.2; // Christian cobra 6.2% sobre el total
+  const saldoPayment = payments.find((p) => p.type === "saldo");
 
   // MP cobra su comisión dos veces: una al cobrar el abono y otra al cobrar el saldo
   const abonoRef         = Number(order.deposit_amount) || 0;
   const saldoRef         = Math.max(Number(order.total_amount) - abonoRef, 0);
-  const comisionMpAbono  = Math.round(abonoRef * MP_PCT / 100);
-  const comisionMpSaldo  = Math.round(saldoRef * MP_PCT / 100);
+  const comisionMpAbono  = Math.round(abonoRef * MP_PORCENTAJE / 100);
+  const comisionMpSaldo  = Math.round(saldoRef * MP_PORCENTAJE / 100);
   const comisionMpTotal  = comisionMpAbono + comisionMpSaldo;
-  const comisionChris    = Math.round(Number(order.total_amount) * CHRIS_PCT / 100);
-  const recibeAmiga      = Math.max(Number(order.total_amount) - comisionMpTotal - comisionChris, 0);
-
-  const saldoPayment = payments.find((p) => p.type === "saldo");
+  // Comisión de la plataforma: la que quedó registrada al crear el cobro del saldo; si aún
+  // no existe, la que usará el servidor (COMISION_PORCENTAJE).
+  const comisionPct      = saldoPayment?.commission_rate != null ? Number(saldoPayment.commission_rate) : cobros.comision;
+  const comisionChris    = saldoPayment?.commission_amount != null
+    ? Number(saldoPayment.commission_amount)
+    : comisionPct == null ? null : Math.round(Number(order.total_amount) * comisionPct / 100);
+  const recibeAmiga      = Math.max(Number(order.total_amount) - comisionMpTotal - (comisionChris ?? 0), 0);
   const abonoPayment = payments.find((p) => p.type === "abono");
   const saldoApproved = saldoPaid > 0;
   const paintingDone = Boolean(order.painting_done_at);
@@ -280,6 +283,7 @@ export default function RequestDetail() {
   ]
     .filter(Boolean)
     .join(", ");
+  const enSucursal = order.delivery_type === "sucursal";
 
   const timeline = [
     {
@@ -540,9 +544,11 @@ export default function RequestDetail() {
             </div>
           </Panel>
 
-          <Panel title="Dirección de envío">
+          <Panel title="Envío Starken (por pagar)">
             <dl className="space-y-3 text-sm">
-              <Row label="Dirección" value={address} />
+              <Row label="Entrega" value={enSucursal ? "Retiro en sucursal" : "A domicilio"} />
+              {enSucursal ? <Row label="Sucursal" value={order.starken_branch} /> : <Row label="Dirección" value={address} />}
+              {order.customer_rut && <Row label="RUT" value={order.customer_rut} />}
               <Row label="Comuna" value={order.commune} />
               <Row label="Región" value={order.region} />
             </dl>
@@ -567,7 +573,7 @@ export default function RequestDetail() {
               <div className="flex justify-between gap-3 text-tinta/70">
                 <span className="flex items-center gap-1.5">
                   <span className="size-2 shrink-0 rounded-full bg-[#4f8fb0]" />
-                  Mercado Pago (3.8% × 2 cobros)
+                  Mercado Pago (aprox. {pct(MP_PORCENTAJE)} × 2 cobros)
                 </span>
                 <span className="font-medium text-tinta">−{money(comisionMpTotal)}</span>
               </div>
@@ -585,9 +591,9 @@ export default function RequestDetail() {
               <div className="flex justify-between gap-3 border-t border-tinta/8 pt-2 text-tinta/70">
                 <span className="flex items-center gap-1.5">
                   <span className="size-2 shrink-0 rounded-full bg-[#8a7bc0]" />
-                  Christian (6.2% del total)
+                  Christian ({pct(comisionPct)} del total)
                 </span>
-                <span className="font-medium text-tinta">−{money(comisionChris)}</span>
+                <span className="font-medium text-tinta">{comisionChris == null ? "—" : `−${money(comisionChris)}`}</span>
               </div>
 
               <div className="flex justify-between gap-3 border-t border-tinta/8 pt-2 font-semibold text-[#2d6844]">

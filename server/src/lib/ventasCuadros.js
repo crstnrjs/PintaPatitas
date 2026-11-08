@@ -1,6 +1,7 @@
 // Venta de cuadros listos: reserva temporal del cuadro (stock 1), cobro total con
 // Mercado Pago (split con comisión de plataforma) y aprobación desde el webhook.
 // Toda la lógica recibe sus dependencias para poder probarla sin Supabase ni Mercado Pago.
+import { normalizarRut } from "./rut.js";
 
 export const MINUTOS_RESERVA = 20;
 const REGEX_CORREO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -8,25 +9,8 @@ const REGEX_SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
 const texto = (v, max = 120) => (typeof v === "string" ? v.trim().replace(/\s+/g, " ").slice(0, max) : "");
 
-/* ---------- RUT ---------- */
-
-// Devuelve el RUT normalizado (12345678-5) o null si el dígito verificador no cuadra.
-export function normalizarRut(valor) {
-  const limpio = String(valor ?? "").replace(/[^0-9kK]/g, "").toUpperCase();
-  if (limpio.length < 2 || limpio.length > 9) return null;
-  const cuerpo = limpio.slice(0, -1);
-  const dv = limpio.slice(-1);
-  if (!/^\d+$/.test(cuerpo)) return null;
-  let suma = 0;
-  let factor = 2;
-  for (let i = cuerpo.length - 1; i >= 0; i--) {
-    suma += Number(cuerpo[i]) * factor;
-    factor = factor === 7 ? 2 : factor + 1;
-  }
-  const resto = 11 - (suma % 11);
-  const esperado = resto === 11 ? "0" : resto === 10 ? "K" : String(resto);
-  return dv === esperado ? `${Number(cuerpo)}-${dv}` : null;
-}
+// El RUT se valida igual en cuadros listos y en pedidos de retratos.
+export { normalizarRut };
 
 /* ---------- Datos del comprador ---------- */
 

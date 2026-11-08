@@ -74,7 +74,18 @@ export default function Estilos({ cargando, error, estilos, formatosDe }) {
                     // Móvil: tarjeta horizontal con la muestra a la izquierda. Desde md: vertical.
                     <li key={e.id} className="arcilla flex gap-4 rounded-[22px] p-2.5 md:flex-col md:gap-0 md:rounded-[28px] md:p-3">
                       <div className="w-24 shrink-0 overflow-hidden rounded-[16px] md:h-36 md:w-auto md:rounded-[20px]">
-                        <Muestra slug={e.slug} />
+                        {/* Foto real del catálogo si la artista subió una; si no, la muestra ilustrada. */}
+                        {e.foto ? (
+                          <img
+                            src={e.foto}
+                            alt={`Ejemplo de retrato en ${e.name}`}
+                            loading="lazy"
+                            decoding="async"
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <Muestra slug={e.slug} />
+                        )}
                       </div>
                       <div className="flex min-w-0 flex-1 flex-col py-1.5 pr-1.5 md:px-4 md:pt-6 md:pb-4">
                         <div className="flex flex-col md:flex-row md:items-baseline md:justify-between md:gap-3">

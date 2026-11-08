@@ -4,6 +4,8 @@ import { Copy, Ellipsis, Eye, EyeOff, Pencil, Plus, Search, Trash2 } from "lucid
 import ProductModal from "./ProductModal";
 import { EmptyState, PageHeader, Panel, Skeleton, Toast, btn, inputClass, modalOverlay, modalPanel } from "@/admin/shared/ui";
 import { colorDe } from "./techniqueColors";
+// "porcentaje" porque este componente ya tiene un estado llamado pct (ajuste masivo de precios).
+import { MP_PORCENTAJE, pct as porcentaje, useCobros } from "@/admin/shared/useCobros";
 
 const clp = (n) => new Intl.NumberFormat("es-CL").format(n);
 const mascotas = (n) => `${n} ${n === 1 ? "mascota" : "mascotas"}`;
@@ -21,6 +23,7 @@ const BTN =
   "inline-flex min-h-10 items-center justify-center gap-1.5 rounded-full border border-tinta/12 bg-white px-3.5 text-sm font-medium text-acento-oscuro transition hover:bg-bruma/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento";
 
 export default function AdminCatalog() {
+  const cobros = useCobros();
   const [items, setItems] = useState([]);
   const [tecnicas, setTecnicas] = useState([]);
   const [cargando, setCargando] = useState(true);
@@ -271,11 +274,12 @@ export default function AdminCatalog() {
             const foto = imagenUrl(p.image_path);
             const c = colorDe(p.technique_slug);
             const marcado = seleccion.has(p.id);
-            const MP_PCT = 3.8, CHRIS_PCT = 6.2, ABONO_PCT = 50;
-            const abono = Math.round(p.price * ABONO_PCT / 100);
+            // Mismos porcentajes con que cobra el servidor; sin ellos no se muestra la proyección.
+            const proyeccion = cobros.comision != null && cobros.abono != null;
+            const abono = Math.round(p.price * (cobros.abono ?? 0) / 100);
             const saldo = p.price - abono;
-            const mpTotal = Math.round(abono * MP_PCT / 100) + Math.round(saldo * MP_PCT / 100);
-            const chris = Math.round(p.price * CHRIS_PCT / 100);
+            const mpTotal = Math.round(abono * MP_PORCENTAJE / 100) + Math.round(saldo * MP_PORCENTAJE / 100);
+            const chris = Math.round(p.price * (cobros.comision ?? 0) / 100);
             const amiga = Math.max(p.price - mpTotal - chris, 0);
             return (
               <li
@@ -327,10 +331,12 @@ export default function AdminCatalog() {
                     <small className="text-xs text-tinta/45">Actualizado {hace(p.updated_at)}</small>
                   </div>
                   {/* Proyección de lo que recibe la amiga */}
-                  <p className="mt-1 text-[11px] leading-tight text-tinta/45">
-                    Recibes <span className="font-semibold text-[#2d6844]">${clp(amiga)}</span>
-                    <span className="ml-1">(MP −${clp(mpTotal)} · Chris −${clp(chris)})</span>
-                  </p>
+                  {proyeccion && (
+                    <p className="mt-1 text-[11px] leading-tight text-tinta/45">
+                      Recibes <span className="font-semibold text-[#2d6844]">${clp(amiga)}</span>
+                      <span className="ml-1">(MP −${clp(mpTotal)} · Chris {porcentaje(cobros.comision)} −${clp(chris)})</span>
+                    </p>
+                  )}
 
                   <div className="relative mt-auto flex gap-2 pt-4">
                     <button className={`${BTN} flex-1`} onClick={() => setModal({ producto: p })}>

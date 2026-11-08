@@ -1,6 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
+// Fotos de ejemplo que la artista sube a cada producto en Admin → Catálogo.
+export const fotoCatalogo = (path) =>
+  path ? supabase.storage.from("catalog").getPublicUrl(path).data.publicUrl : null;
+
+// La foto que mejor representa a un grupo de productos: la del retrato más simple
+// (menos mascotas, menor tamaño) que tenga foto.
+function fotoRepresentativa(productos) {
+  const conFoto = productos
+    .filter((f) => f.image_path)
+    .sort((a, b) => a.pet_count - b.pet_count || (a.width_cm ?? 0) * (a.height_cm ?? 0) - (b.width_cm ?? 0) * (b.height_cm ?? 0));
+  return fotoCatalogo(conFoto[0]?.image_path);
+}
+
 export function useCatalogoPublico() {
   const [filas, setFilas] = useState([]);
   const [cargando, setCargando] = useState(true);
@@ -10,7 +23,7 @@ export function useCatalogoPublico() {
     supabase
       .from("price_list")
       .select(
-        "id, pet_count, width_cm, height_cm, size_label, price, techniques!inner(id, name, slug, has_size, sort_order)"
+        "id, pet_count, width_cm, height_cm, size_label, price, image_path, techniques!inner(id, name, slug, has_size, sort_order)"
       )
       .eq("is_active", true)
       .eq("techniques.is_active", true)
@@ -30,7 +43,9 @@ export function useCatalogoPublico() {
       if (!actual) mapa.set(t.id, { ...t, desde: f.price });
       else actual.desde = Math.min(actual.desde, f.price);
     }
-    return [...mapa.values()].sort((a, b) => a.sort_order - b.sort_order);
+    return [...mapa.values()]
+      .map((e) => ({ ...e, foto: fotoRepresentativa(filas.filter((f) => f.techniques.id === e.id)) }))
+      .sort((a, b) => a.sort_order - b.sort_order);
   }, [filas]);
 
   // Medidas disponibles de una técnica, de menor a mayor
@@ -47,10 +62,16 @@ export function useCatalogoPublico() {
           alto: f.height_cm,
           etiqueta: f.size_label,
           desde: f.price,
+          productos: [f],
         });
-      } else actual.desde = Math.min(actual.desde, f.price);
+      } else {
+        actual.desde = Math.min(actual.desde, f.price);
+        actual.productos.push(f);
+      }
     }
-    return [...mapa.values()].sort((a, b) => a.ancho * a.alto - b.ancho * b.alto);
+    return [...mapa.values()]
+      .map(({ productos, ...formato }) => ({ ...formato, foto: fotoRepresentativa(productos) }))
+      .sort((a, b) => a.ancho * a.alto - b.ancho * b.alto);
   }
 
   // Productos (uno por cantidad de mascotas) para una técnica y unas medidas
@@ -63,6 +84,7 @@ export function useCatalogoPublico() {
           (f.width_cm ?? null) === (ancho ?? null) &&
           (f.height_cm ?? null) === (alto ?? null)
       )
+      .map((f) => ({ ...f, foto: fotoCatalogo(f.image_path) }))
       .sort((a, b) => a.pet_count - b.pet_count);
   }
 

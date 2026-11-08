@@ -101,6 +101,10 @@ export async function enviarCorreoNuevaSolicitud({ pedido, fotos }) {
 
   const direccion = [pedido.street, pedido.street_number].filter(Boolean).join(" ");
   const direccionCompleta = [direccion, pedido.apartment].filter(Boolean).join(" · ");
+  // Retiro en sucursal Starken: no hay dirección, sino el nombre de la sucursal.
+  const enSucursal = pedido.delivery_type === "sucursal";
+  const etiquetaDestino = enSucursal ? "Sucursal Starken" : "Dirección";
+  const lugarEntrega = enSucursal ? pedido.starken_branch : direccionCompleta;
 
   // Normalizar teléfono para WhatsApp
   const telDigits = (pedido.customer_phone || "").replace(/\D/g, "");
@@ -174,6 +178,7 @@ export async function enviarCorreoNuevaSolicitud({ pedido, fotos }) {
                   "Datos del Cliente",
                   "👤",
                   filaItem("Nombre", pedido.customer_name) +
+                  filaItem("RUT", pedido.customer_rut) +
                   filaItemHTML(
                     "Correo",
                     pedido.customer_email
@@ -222,9 +227,10 @@ export async function enviarCorreoNuevaSolicitud({ pedido, fotos }) {
 
                 <!-- Tarjeta 4: Dirección de Despacho -->
                 ${tarjetaSeccion(
-                  "Dirección de Despacho",
+                  "Envío Starken (por pagar)",
                   "📍",
-                  filaItem("Dirección", direccionCompleta) +
+                  filaItem("Entrega", enSucursal ? "Retiro en sucursal" : "A domicilio") +
+                  filaItem(etiquetaDestino, lugarEntrega) +
                   filaItem("Comuna", pedido.commune) +
                   filaItem("Región", pedido.region, true)
                 )}
@@ -272,6 +278,7 @@ export async function enviarCorreoNuevaSolicitud({ pedido, fotos }) {
     `Nombre: ${pedido.customer_name ?? "—"}`,
     `Correo: ${pedido.customer_email ?? "—"}`,
     `Celular: ${pedido.customer_phone ?? "—"}`,
+    `RUT: ${pedido.customer_rut ?? "—"}`,
     "",
     "OBRA",
     `Producto: ${pedido.product ?? "—"}`,
@@ -285,8 +292,9 @@ export async function enviarCorreoNuevaSolicitud({ pedido, fotos }) {
     `Precio total: ${clp(pedido.total_amount)}`,
     `Abono a cobrar: ${clp(pedido.deposit_amount)}`,
     "",
-    "DIRECCIÓN DE ENVÍO",
-    `Dirección: ${direccionCompleta || "—"}`,
+    "ENVÍO STARKEN (POR PAGAR)",
+    `Entrega: ${enSucursal ? "Retiro en sucursal" : "A domicilio"}`,
+    `${etiquetaDestino}: ${lugarEntrega || "—"}`,
     `Comuna: ${pedido.commune ?? "—"}`,
     `Región: ${pedido.region ?? "—"}`,
     "",

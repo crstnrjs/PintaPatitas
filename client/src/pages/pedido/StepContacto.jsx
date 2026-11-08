@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatearRut, rutValido } from "@/lib/rut";
 
 export const REGIONES = [
   "Arica y Parinacota",
@@ -24,11 +25,14 @@ export const CONTACTO_INICIAL = {
   apellido: "",
   correo: "",
   telefono: "",
+  rut: "",
+  entrega_tipo: "domicilio",
   region: "",
   comuna: "",
   calle: "",
   numero: "",
   depto: "",
+  sucursal: "",
 };
 
 // Deja solo los 9 dígitos del celular (quita +56, espacios y guiones)
@@ -46,10 +50,15 @@ export function validarContacto(c) {
   if (!/^9\d{8}$/.test(normalizarTelefono(c.telefono))) {
     e.telefono = "Ingresa un celular chileno, por ejemplo 9 1234 5678";
   }
+  if (!rutValido(c.rut)) e.rut = "Revisa tu RUT";
   if (!c.region) e.region = "Elige tu región";
   if (c.comuna.trim().length < 2) e.comuna = "Ingresa tu comuna";
-  if (c.calle.trim().length < 2) e.calle = "Ingresa tu calle";
-  if (!c.numero.trim()) e.numero = "Ingresa el número";
+  if (c.entrega_tipo === "sucursal") {
+    if (c.sucursal.trim().length < 3) e.sucursal = "Indica la sucursal Starken";
+  } else {
+    if (c.calle.trim().length < 2) e.calle = "Ingresa tu calle";
+    if (!c.numero.trim()) e.numero = "Ingresa el número";
+  }
   return e;
 }
 
@@ -130,16 +139,58 @@ export default function StepContacto({ valor, onChange }) {
               />
             </div>
           </Campo>
+          <Campo etiqueta="RUT" error={err("rut")}>
+            <input
+              className={clase("rut")}
+              placeholder="12.345.678-5"
+              maxLength={12}
+              value={valor.rut}
+              onChange={cambiar("rut")}
+              onBlur={() => {
+                onChange({ ...valor, rut: formatearRut(valor.rut) });
+                tocar("rut")();
+              }}
+            />
+            {!err("rut") && <span className="mt-1 block text-xs text-slate-500">Lo pide Starken para el envío.</span>}
+          </Campo>
         </div>
       </section>
 
       <section className="space-y-4">
         <div>
-          <h2 className="font-semibold text-[#1d4e68]">Dirección de envío</h2>
+          <h2 className="font-semibold text-[#1d4e68]">Envío por Starken</h2>
           <p className="text-xs text-slate-500">
-            El costo de envío se cotiza al confirmar tu pedido.
+            El envío es por pagar: su costo lo pagas al recibir el cuadro.
           </p>
         </div>
+
+        <fieldset>
+          <legend className="text-sm text-slate-600">¿Cómo lo recibes?</legend>
+          <div className="mt-1 grid grid-cols-2 gap-2 rounded-xl bg-[#eef4f6] p-1">
+            {[
+              ["domicilio", "A domicilio"],
+              ["sucursal", "Sucursal Starken"],
+            ].map(([opcion, etiqueta]) => (
+              <label
+                key={opcion}
+                className={`flex min-h-11 cursor-pointer items-center justify-center rounded-lg px-3 text-center text-sm font-medium transition has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-[#2d6583] ${
+                  valor.entrega_tipo === opcion ? "bg-white text-[#1d4e68] shadow-sm" : "text-slate-500 hover:text-slate-800"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="entrega_tipo"
+                  value={opcion}
+                  checked={valor.entrega_tipo === opcion}
+                  onChange={cambiar("entrega_tipo")}
+                  className="sr-only"
+                />
+                {etiqueta}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+
         <div className="grid gap-4 sm:grid-cols-2">
           <Campo etiqueta="Región" error={err("region")}>
             <select
@@ -162,26 +213,43 @@ export default function StepContacto({ valor, onChange }) {
               onBlur={tocar("comuna")}
             />
           </Campo>
-          <Campo etiqueta="Calle" error={err("calle")} className="sm:col-span-2">
-            <input
-              className={clase("calle")}
-              autoComplete="address-line1"
-              value={valor.calle}
-              onChange={cambiar("calle")}
-              onBlur={tocar("calle")}
-            />
-          </Campo>
-          <Campo etiqueta="Número" error={err("numero")}>
-            <input
-              className={clase("numero")}
-              value={valor.numero}
-              onChange={cambiar("numero")}
-              onBlur={tocar("numero")}
-            />
-          </Campo>
-          <Campo etiqueta="Depto / casa (opcional)">
-            <input className={`${BASE} ${OK}`} value={valor.depto} onChange={cambiar("depto")} />
-          </Campo>
+          {valor.entrega_tipo === "sucursal" ? (
+            <Campo etiqueta="Sucursal Starken" error={err("sucursal")} className="sm:col-span-2">
+              <input
+                className={clase("sucursal")}
+                placeholder="Ej: Starken Viña del Mar Centro"
+                value={valor.sucursal}
+                onChange={cambiar("sucursal")}
+                onBlur={tocar("sucursal")}
+              />
+              {!err("sucursal") && (
+                <span className="mt-1 block text-xs text-slate-500">Nombre o dirección de la sucursal donde lo retirarás.</span>
+              )}
+            </Campo>
+          ) : (
+            <>
+              <Campo etiqueta="Calle" error={err("calle")} className="sm:col-span-2">
+                <input
+                  className={clase("calle")}
+                  autoComplete="address-line1"
+                  value={valor.calle}
+                  onChange={cambiar("calle")}
+                  onBlur={tocar("calle")}
+                />
+              </Campo>
+              <Campo etiqueta="Número" error={err("numero")}>
+                <input
+                  className={clase("numero")}
+                  value={valor.numero}
+                  onChange={cambiar("numero")}
+                  onBlur={tocar("numero")}
+                />
+              </Campo>
+              <Campo etiqueta="Depto / casa (opcional)">
+                <input className={`${BASE} ${OK}`} value={valor.depto} onChange={cambiar("depto")} />
+              </Campo>
+            </>
+          )}
         </div>
       </section>
     </div>

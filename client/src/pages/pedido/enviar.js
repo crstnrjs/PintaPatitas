@@ -20,10 +20,15 @@ export function armarFormData(datos, estilo) {
   fd.append("pet_name", nombres);
   fd.append("idea", datos.idea.trim());
 
-  for (const campo of ["nombre", "apellido", "correo", "region", "comuna", "calle", "numero", "depto"]) {
+  for (const campo of ["nombre", "apellido", "correo", "rut", "region", "comuna"]) {
     fd.append(campo, c[campo].trim());
   }
   fd.append("telefono", `+56${normalizarTelefono(c.telefono)}`);
+  fd.append("entrega_tipo", c.entrega_tipo);
+  // Solo se envían los datos del destino elegido.
+  const camposDestino = c.entrega_tipo === "sucursal" ? ["sucursal"] : ["calle", "numero", "depto"];
+  for (const campo of camposDestino) fd.append(campo, c[campo].trim());
+  fd.append("acepta_envio", datos.aceptaEnvio ? "true" : "false");
 
   datos.fotos.forEach((f, i) => fd.append("fotos", f.blob, `mascota-${i + 1}.webp`));
   return fd;

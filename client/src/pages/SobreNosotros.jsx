@@ -8,7 +8,8 @@ import { CONTACTO } from "@/lib/contacto";
 const enfoque = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tinta";
 
 const datos = [
-  [PaintBrushIcon, "Pintado a mano", "Cada retrato lo pinta Fernanda, uno a uno: no hay filtros ni plantillas."],
+  // No todo es pintado a mano: también hay retratos digitales, hechos igual por ella.
+  [PaintBrushIcon, "Hecho por una artista", "Cada retrato lo crea Fernanda, uno a uno: no hay filtros ni plantillas."],
   [MapPinIcon, `Desde ${CONTACTO.ciudad}`, `El taller está en ${CONTACTO.ciudad}, región de ${CONTACTO.region}.`],
   [TruckIcon, "Envíos a todo Chile", "Despachamos por Starken a tu domicilio o a la sucursal que elijas."],
 ];

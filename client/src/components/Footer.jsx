@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Lock } from "lucide-react";
-import { enlacesLanding } from "./navegacion";
+import { destinoEnlace, enlacesLanding } from "./navegacion";
 import { useContenidoLanding } from "@/pages/landing/useContenidoLanding";
 
 export default function Footer() {
@@ -16,9 +16,9 @@ export default function Footer() {
         </div>
 
         <nav aria-label="Secciones" className="flex flex-col gap-1">
-          {enlacesLanding.map(({ hash, label }) => (
-            <Link key={hash} to={{ pathname: "/", hash }} className="py-1.5 transition hover:text-white">
-              {label}
+          {enlacesLanding.map((enlace) => (
+            <Link key={enlace.label} to={destinoEnlace(enlace)} className="py-1.5 transition hover:text-white">
+              {enlace.label}
             </Link>
           ))}
           <Link to="/catalogo" className="py-1.5 font-medium text-white transition hover:text-cielo">

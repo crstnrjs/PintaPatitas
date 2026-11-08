@@ -473,3 +473,17 @@ export async function enviarCorreoClienteSaldo({ pedido, paymentUrl, saldoAmount
     html,
   });
 }
+
+/**
+ * Envío genérico con el mismo remitente y copia de respaldo. Lo usan los correos de cuadros listos.
+ */
+export async function enviarCorreo({ to, subject, html, text }) {
+  await obtenerTransport().sendMail({
+    from: `"PintaPatitas" <${obtenerFromAddress()}>`,
+    to,
+    bcc: obtenerFromAddress(), // Copia oculta para respaldo en la bandeja de entrada
+    subject,
+    text,
+    html,
+  });
+}

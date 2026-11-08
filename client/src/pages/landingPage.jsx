@@ -10,6 +10,7 @@ import { obras as obrasIniciales } from "./landing/contenido";
 import { BotonPedido, Encabezado, FaltaMaterial, Huella, Imagen, Ramita, Revelar } from "./landing/ui";
 import Galeria from "./landing/Galeria";
 import FotoAObra from "./landing/FotoAObra";
+import CuadrosDisponibles from "./landing/CuadrosDisponibles";
 import Estilos from "./landing/Estilos";
 import Preguntas from "./landing/Preguntas";
 
@@ -314,7 +315,7 @@ export default function LandingPage() {
     <div className="fondo-acuarela text-tinta">
       <Portada desde={desde} fraseConfianza={contenido.fraseConfianza} />
       <Galeria estilos={catalogo.estilos} obras={contenido.obras} cargado={contenido.cargado} />
-      {/* Futuro: <ObrasDisponibles /> (obras ya pintadas a la venta) encaja aquí, junto a la galería. */}
+      <CuadrosDisponibles />
       <FotoAObra comparaciones={contenido.comparaciones} />
       <ComoFunciona />
       <Estilos {...catalogo} />

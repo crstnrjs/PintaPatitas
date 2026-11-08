@@ -5,7 +5,7 @@ import TarjetaCuadro from "./TarjetaCuadro";
 import { useCuadrosDisponibles, useInstagramUrl } from "./datos";
 
 const promesas = [
-  [SparklesIcon, "Obra única", "Pintada a mano. No hay otra igual."],
+  [SparklesIcon, "Obra única", "Original, hecha por Fernanda. No hay otra igual."],
   [HeartIcon, "Lista para llevar", "Ya está terminada, no hay que esperar."],
   [TruckIcon, "Envío por Starken", "A todo Chile. El envío lo pagas al recibir."],
 ];

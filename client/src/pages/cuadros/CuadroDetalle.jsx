@@ -258,7 +258,12 @@ export default function CuadroDetalle() {
             <ul className="mt-7 space-y-4">
               {[
                 [TruckIcon, "Envío por Starken a todo Chile", "Se despacha por pagar: el costo del envío lo pagas al recibirlo."],
-                [SparklesIcon, "Pintado a mano", "Es la única copia. Cuando se vende, sale de la tienda."],
+                // Un cuadro digital no está "pintado a mano": se describe como obra original.
+                [
+                  SparklesIcon,
+                  cuadro.tecnicaSlug === "digital" ? "Obra original" : "Pintado a mano",
+                  "Es la única copia. Cuando se vende, sale de la tienda.",
+                ],
               ].map(([Icono, titulo, texto]) => (
                 <li key={titulo} className="flex gap-4">
                   <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-bruma text-acento-oscuro">

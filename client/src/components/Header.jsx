@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
-import { enlacesLanding } from "./navegacion";
+import { destinoEnlace, enlacesLanding } from "./navegacion";
 
 const enfoque = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tinta";
 
@@ -20,16 +20,20 @@ export default function Header() {
 
   const enlaces = (
     <>
-      {enlacesLanding.map(({ hash: h, label }) => (
-        <Link
-          key={h}
-          to={{ pathname: "/", hash: h }}
-          onClick={() => setAbierto(false)}
-          className={`flex min-h-11 items-center rounded-full px-3 text-tinta/75 transition hover:text-tinta ${enfoque}`}
-        >
-          {label}
-        </Link>
-      ))}
+      {enlacesLanding.map((enlace) => {
+        const activo = enlace.to && pathname.startsWith(enlace.to);
+        return (
+          <Link
+            key={enlace.label}
+            to={destinoEnlace(enlace)}
+            onClick={() => setAbierto(false)}
+            aria-current={activo ? "page" : undefined}
+            className={`flex min-h-11 items-center rounded-full px-3 transition hover:text-tinta ${activo ? "font-medium text-tinta" : "text-tinta/75"} ${enfoque}`}
+          >
+            {enlace.label}
+          </Link>
+        );
+      })}
     </>
   );
 

@@ -5,6 +5,7 @@ import { randomUUID } from "node:crypto";
 import { supabaseAdmin as supabase } from "../lib/supabase.js";
 import { resolvePrice } from "../pricing.js";
 import { enviarCorreoNuevaSolicitud } from "../lib/mailer.js";
+import { normalizarRut } from "../lib/rut.js";
 
 const BUCKET = "pet-photos";
 const MAX_FOTOS = 6;
@@ -40,7 +41,7 @@ function tipoReal(buf) {
 
 const texto = (v, max = 120) => (typeof v === "string" ? v.trim().slice(0, max) : "");
 
-function leerCampos(b) {
+export function leerCampos(b) {
   return {
     technique_slug: texto(b.technique_slug, 60),
     pet_count: typeof b.pet_count === "string" && /^\d+$/.test(b.pet_count) ? Number(b.pet_count) : NaN,
@@ -51,6 +52,10 @@ function leerCampos(b) {
     nombre: texto(b.nombre, 60),
     apellido: texto(b.apellido, 60),
     correo: texto(b.correo, 120).toLowerCase(),
+    rut: normalizarRut(b.rut),
+    entrega_tipo: b.entrega_tipo === "sucursal" ? "sucursal" : b.entrega_tipo === "domicilio" ? "domicilio" : "",
+    sucursal: texto(b.sucursal, 160),
+    acepta_envio: b.acepta_envio === "true",
     telefono: texto(b.telefono, 20),
     region: texto(b.region, 80),
     comuna: texto(b.comuna, 80),
@@ -60,7 +65,20 @@ function leerCampos(b) {
   };
 }
 
-function validar(c, fotos) {
+// Domicilio: calle y número. Sucursal: solo el nombre de la sucursal Starken.
+export function destinoEnvio(c) {
+  const sucursal = c.entrega_tipo === "sucursal";
+  return {
+    customer_rut: c.rut,
+    delivery_type: c.entrega_tipo,
+    starken_branch: sucursal ? c.sucursal : null,
+    street: sucursal ? null : c.calle,
+    street_number: sucursal ? null : c.numero,
+    apartment: sucursal ? null : c.depto || null,
+  };
+}
+
+export function validar(c, fotos) {
   if (!c.technique_slug) return "Falta el estilo.";
   if (!Number.isInteger(c.pet_count) || c.pet_count < 1 || c.pet_count > 20) return "La cantidad de mascotas debe estar entre 1 y 20.";
   if (Number.isNaN(c.width_cm) || Number.isNaN(c.height_cm)) return "El formato no es válido.";
@@ -70,9 +88,16 @@ function validar(c, fotos) {
   if (c.nombre.length < 2 || c.apellido.length < 2) return "Ingresa tu nombre y apellido.";
   if (!REGEX_CORREO.test(c.correo)) return "El correo no es válido.";
   if (!/^\+569\d{8}$/.test(c.telefono)) return "El celular no es válido.";
-  if (!c.region || c.comuna.length < 2 || c.calle.length < 2 || !c.numero) {
+  if (!c.rut) return "El RUT no es válido.";
+  if (!c.entrega_tipo) return "Elige si lo recibes a domicilio o en una sucursal Starken.";
+  if (!c.region || c.comuna.length < 2) return "Completa la región y la comuna.";
+  if (c.entrega_tipo === "domicilio" && (c.calle.length < 2 || !c.numero)) {
     return "Completa la dirección de envío.";
   }
+  if (c.entrega_tipo === "sucursal" && c.sucursal.length < 3) {
+    return "Indica la sucursal Starken donde lo retirarás.";
+  }
+  if (!c.acepta_envio) return "Debes aceptar que el envío se paga al recibir en Starken.";
   if (fotos.length < 1) return "Sube al menos una foto de tu mascota.";
   return null;
 }
@@ -129,9 +154,7 @@ router.post("/", limitador, upload.array("fotos", MAX_FOTOS), async (req, res) =
         pet_count: n,
         region: c.region,
         commune: c.comuna,
-        street: c.calle,
-        street_number: c.numero,
-        apartment: c.depto || null,
+        ...destinoEnvio(c),
       })
       .select("id, order_number, created_at")
       .single();
@@ -183,9 +206,7 @@ router.post("/", limitador, upload.array("fotos", MAX_FOTOS), async (req, res) =
         deposit_amount: abono,
         region: c.region,
         commune: c.comuna,
-        street: c.calle,
-        street_number: c.numero,
-        apartment: c.depto || null,
+        ...destinoEnvio(c),
       },
       fotos: fotosAdjuntas,
     })

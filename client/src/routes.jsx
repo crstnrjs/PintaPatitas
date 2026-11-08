@@ -6,6 +6,10 @@ const PedidoWizard = lazy(() => import("./pages/pedido/PedidoWizard"));
 const CuadrosListosPage = lazy(() => import("./pages/cuadros/CuadrosListosPage"));
 const CuadroDetalle = lazy(() => import("./pages/cuadros/CuadroDetalle"));
 const ResultadoPago = lazy(() => import("./pages/ResultadoPago"));
+const NoEncontrada = lazy(() => import("./pages/NoEncontrada"));
+const SobreNosotros = lazy(() => import("./pages/SobreNosotros"));
+const Contacto = lazy(() => import("./pages/Contacto"));
+const Soporte = lazy(() => import("./pages/Soporte"));
 const AdminLogin = lazy(() => import("./admin/auth/AdminLogin"));
 const AdminRoute = lazy(() => import("./admin/auth/AdminRoute"));
 const AdminPanel = lazy(() => import("./admin/layout/AdminPanel"));
@@ -23,12 +27,16 @@ const routes = [
     children: [
       { path: "/catalogo", element: <PedidoWizard /> },
       { path: "/terminos", element: <Terminos /> },
+      { path: "/sobre-nosotros", element: <SobreNosotros /> },
+      { path: "/contacto", element: <Contacto /> },
+      { path: "/soporte", element: <Soporte /> },
       { path: "/cuadros-listos", element: <CuadrosListosPage /> },
       { path: "/cuadros-listos/:slug", element: <CuadroDetalle /> },
       { path: "/pago-exitoso", element: <ResultadoPago resultado="exitoso" /> },
       { path: "/pago-pendiente", element: <ResultadoPago resultado="pendiente" /> },
       { path: "/pago-fallido", element: <ResultadoPago resultado="fallido" /> },
       { path: "/", element: <LandingPage /> },
+      { path: "*", element: <NoEncontrada /> },
     ],
   },
   { path: "/admin/login", element: <AdminLogin /> },

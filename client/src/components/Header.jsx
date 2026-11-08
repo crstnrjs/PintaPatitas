@@ -18,6 +18,10 @@ export default function Header() {
     return () => window.removeEventListener("keydown", cerrar);
   }, [abierto]);
 
+  const enCuadros = pathname.startsWith("/cuadros-listos");
+
+  // "Cuadros listos" es una página propia: va como botón junto a "Crear mi retrato" (desde sm).
+  // En celular, donde no cabe el botón, se mantiene dentro del menú.
   const enlaces = (
     <>
       {enlacesLanding.map((enlace) => {
@@ -28,7 +32,7 @@ export default function Header() {
             to={destinoEnlace(enlace)}
             onClick={() => setAbierto(false)}
             aria-current={activo ? "page" : undefined}
-            className={`flex min-h-11 items-center rounded-full px-3 transition hover:text-tinta ${activo ? "font-medium text-tinta" : "text-tinta/75"} ${enfoque}`}
+            className={`items-center rounded-full px-3 transition hover:text-tinta ${enlace.to ? "flex sm:hidden" : "flex"} min-h-11 ${activo ? "font-medium text-tinta" : "text-tinta/75"} ${enfoque}`}
           >
             {enlace.label}
           </Link>
@@ -49,6 +53,17 @@ export default function Header() {
         </nav>
 
         <div className="flex items-center gap-1 sm:gap-2">
+          <Link
+            to="/cuadros-listos"
+            aria-current={enCuadros ? "page" : undefined}
+            className={`hidden min-h-11 items-center whitespace-nowrap rounded-full border px-5 text-sm font-semibold transition sm:inline-flex ${
+              enCuadros
+                ? "border-acento/40 bg-bruma text-acento-oscuro"
+                : "border-tinta/12 bg-white/80 text-acento-oscuro hover:border-acento/30 hover:bg-white"
+            } ${enfoque}`}
+          >
+            Cuadros listos
+          </Link>
           {!enPedido && (
             <Link
               to="/catalogo"

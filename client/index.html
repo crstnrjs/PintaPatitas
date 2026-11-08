@@ -28,19 +28,195 @@
     <meta name="twitter:description" content="Pinturas de perros y gatos hechas a pedido, con envío a todo Chile." />
     <meta name="twitter:image" content="https://pintapatitas.com/img/banner.webp" />
 
+    <!--
+      Datos estructurados. Las preguntas frecuentes deben coincidir con
+      src/pages/landing/Preguntas.jsx y el contenido inicial de más abajo.
+    -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
-        "@type": "Organization",
-        "name": "PintaPatitas",
-        "url": "https://pintapatitas.com/",
-        "description": "Retratos y pinturas personalizadas de mascotas hechas a pedido en Chile.",
-        "areaServed": { "@type": "Country", "name": "Chile" }
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://pintapatitas.com/#organizacion",
+            "name": "PintaPatitas",
+            "url": "https://pintapatitas.com/",
+            "logo": "https://pintapatitas.com/favicon.svg",
+            "image": "https://pintapatitas.com/img/banner.webp",
+            "description": "Retratos y pinturas personalizadas de mascotas hechas a pedido en La Serena, con envío a todo Chile.",
+            "telephone": "+56954341467",
+            "email": "pinta.patitas@gmail.com",
+            "address": {
+              "@type": "PostalAddress",
+              "addressLocality": "La Serena",
+              "addressRegion": "Coquimbo",
+              "addressCountry": "CL"
+            },
+            "contactPoint": {
+              "@type": "ContactPoint",
+              "contactType": "customer service",
+              "telephone": "+56954341467",
+              "email": "pinta.patitas@gmail.com",
+              "availableLanguage": "es",
+              "url": "https://pintapatitas.com/contacto"
+            },
+            "founder": { "@type": "Person", "name": "Fernanda", "jobTitle": "Artista" },
+            "areaServed": { "@type": "Country", "name": "Chile" },
+            "sameAs": [
+              "https://www.instagram.com/pintaa.patitas",
+              "https://wa.me/56954341467"
+            ]
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://pintapatitas.com/#sitio",
+            "name": "PintaPatitas",
+            "url": "https://pintapatitas.com/",
+            "inLanguage": "es-CL",
+            "publisher": { "@id": "https://pintapatitas.com/#organizacion" }
+          },
+          {
+            "@type": "Service",
+            "@id": "https://pintapatitas.com/#retratos",
+            "name": "Retratos personalizados de mascotas",
+            "serviceType": "Pintura personalizada de mascotas a partir de fotos",
+            "description": "El cliente envía fotos de su perro o gato y su idea; el artista la revisa y pinta un retrato único en la técnica y el tamaño elegidos. Envío por Starken a todo Chile.",
+            "provider": { "@id": "https://pintapatitas.com/#organizacion" },
+            "areaServed": { "@type": "Country", "name": "Chile" },
+            "url": "https://pintapatitas.com/catalogo",
+            "hasOfferCatalog": {
+              "@type": "OfferCatalog",
+              "name": "Técnicas disponibles",
+              "itemListElement": [
+                { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Retrato en acrílico" } },
+                { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Retrato en lápiz" } },
+                { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Retrato digital" } }
+              ]
+            }
+          },
+          {
+            "@type": "FAQPage",
+            "@id": "https://pintapatitas.com/#preguntas",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "¿Cómo hago mi pedido?",
+                "acceptedAnswer": { "@type": "Answer", "text": "Toca “Crear mi retrato”, elige estilo y tamaño, cuéntanos tu idea y sube sus fotos. El artista revisa tu solicitud y, si la acepta, te llega por correo el enlace de pago." }
+              },
+              {
+                "@type": "Question",
+                "name": "¿Cuánto cuesta?",
+                "acceptedAnswer": { "@type": "Answer", "text": "Depende de la técnica, el tamaño y cuántas mascotas incluyas. Antes de enviar tu solicitud ves el precio exacto." }
+              },
+              {
+                "@type": "Question",
+                "name": "¿Cuántas fotos puedo subir?",
+                "acceptedAnswer": { "@type": "Answer", "text": "Hasta 6 fotos de máximo 20 MB cada una. Con una basta para continuar." }
+              },
+              {
+                "@type": "Question",
+                "name": "¿Cuándo y cómo pago?",
+                "acceptedAnswer": { "@type": "Answer", "text": "Al enviar la solicitud no pagas nada, y si no es aceptada no se cobra. Si el artista la acepta, pagas un abono por Mercado Pago (débito, crédito o dinero en cuenta) y el saldo cuando la obra está lista, antes del envío." }
+              },
+              {
+                "@type": "Question",
+                "name": "¿Puedo pedir cambios?",
+                "acceptedAnswer": { "@type": "Answer", "text": "Sí: avísanos cuanto antes, antes de que avance la obra. Si se puede modificar depende de su etapa. El detalle está en los Términos y condiciones." }
+              }
+            ]
+          }
+        ]
       }
     </script>
+
+    <!--
+      El contenido inicial existe en el HTML para buscadores y agentes que no ejecutan JavaScript.
+      Quien sí lo ejecuta no lo ve (la app lo reemplaza al cargar), así no hay parpadeo.
+    -->
+    <script>
+      document.documentElement.classList.add("js");
+    </script>
+    <style>
+      .js #contenido-inicial { display: none; }
+      #contenido-inicial { max-width: 46rem; margin: 0 auto; padding: 2rem 1.25rem 4rem; color: #13303d; background: #f2f7f9; font: 16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif; }
+      #contenido-inicial nav, #contenido-inicial footer { display: flex; flex-wrap: wrap; gap: 0.75rem 1.25rem; font-size: 0.95rem; }
+      #contenido-inicial a { color: #2e6a85; }
+      #contenido-inicial h1 { font-size: clamp(2rem, 7vw, 3rem); line-height: 1.08; margin: 1.5rem 0 1rem; }
+      #contenido-inicial h2 { font-size: 1.35rem; margin: 2.25rem 0 0.5rem; }
+      #contenido-inicial footer { margin-top: 3rem; padding-top: 1.25rem; border-top: 1px solid #dcecf1; }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Contenido para quien lee el sitio sin JavaScript (buscadores, agentes). React lo reemplaza al cargar. -->
+      <div id="contenido-inicial">
+        <header>
+          <a href="/"><strong>PintaPatitas</strong></a>
+          <nav aria-label="Principal">
+            <a href="/#como-funciona">Cómo funciona</a>
+            <a href="/#estilos">Estilos</a>
+            <a href="/#galeria">Galería</a>
+            <a href="/cuadros-listos">Cuadros listos</a>
+            <a href="/#preguntas">Preguntas</a>
+            <a href="/catalogo">Crear mi retrato</a>
+          </nav>
+        </header>
+
+        <main>
+          <p>Retratos personalizados de mascotas en Chile</p>
+          <h1>Un retrato de tu mascota para tenerla siempre cerca.</h1>
+          <p>
+            Nos envías sus fotos y un artista la retrata en el estilo que elijas: acrílico, lápiz o digital.
+            Solo pagas si el artista acepta tu solicitud. <a href="/catalogo">Crear mi retrato</a>
+          </p>
+
+          <h2>Cómo funciona</h2>
+          <ol>
+            <li><strong>Elige tu estilo:</strong> técnica, tamaño y cuántas mascotas.</li>
+            <li><strong>Envía sus fotos y tu idea:</strong> hasta 6 fotos y cómo te la imaginas.</li>
+            <li><strong>El artista la revisa:</strong> hasta que la acepta, no pagas nada.</li>
+            <li><strong>Pagas y comienza tu obra:</strong> abono para comenzar, saldo antes del envío.</li>
+          </ol>
+
+          <h2>Directo a tu pared: cuadros listos</h2>
+          <p>
+            Obras originales que ya están pintadas y listas para llevar. Hay solo una de cada una.
+            <a href="/cuadros-listos">Ver cuadros disponibles</a>
+          </p>
+
+          <h2>Envíos a todo Chile</h2>
+          <p>
+            Despachamos por Starken a tu domicilio o a la sucursal que elijas. El envío es por pagar: lo pagas al recibir.
+            El tiempo de trabajo de un retrato es de alrededor de una semana y media.
+          </p>
+
+          <h2>Preguntas frecuentes</h2>
+          <dl>
+            <dt>¿Cómo hago mi pedido?</dt>
+            <dd>Toca “Crear mi retrato”, elige estilo y tamaño, cuéntanos tu idea y sube sus fotos. El artista revisa tu solicitud y, si la acepta, te llega por correo el enlace de pago.</dd>
+            <dt>¿Cuánto cuesta?</dt>
+            <dd>Depende de la técnica, el tamaño y cuántas mascotas incluyas. Antes de enviar tu solicitud ves el precio exacto.</dd>
+            <dt>¿Cuántas fotos puedo subir?</dt>
+            <dd>Hasta 6 fotos de máximo 20 MB cada una. Con una basta para continuar.</dd>
+            <dt>¿Cuándo y cómo pago?</dt>
+            <dd>Al enviar la solicitud no pagas nada, y si no es aceptada no se cobra. Si el artista la acepta, pagas un abono por Mercado Pago y el saldo cuando la obra está lista, antes del envío.</dd>
+            <dt>¿Puedo pedir cambios?</dt>
+            <dd>Sí: avísanos cuanto antes, antes de que avance la obra. El detalle está en los <a href="/terminos">Términos y condiciones</a>.</dd>
+          </dl>
+        </main>
+
+        <footer>
+          <a href="/sobre-nosotros">Sobre nosotros</a>
+          <a href="/contacto">Contacto</a>
+          <a href="/soporte">Soporte</a>
+          <a href="/terminos">Términos y condiciones</a>
+          <a href="https://www.instagram.com/pintaa.patitas" rel="noopener noreferrer">Instagram</a>
+          <a href="https://api.whatsapp.com/send/?phone=56954341467&amp;text&amp;type=phone_number&amp;app_absent=0" rel="noopener noreferrer">WhatsApp +56 9 5434 1467</a>
+          <a href="mailto:pinta.patitas@gmail.com">pinta.patitas@gmail.com</a>
+          <span>La Serena, región de Coquimbo · Envíos a todo Chile</span>
+        </footer>
+      </div>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

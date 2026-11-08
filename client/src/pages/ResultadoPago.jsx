@@ -91,6 +91,19 @@ export default function ResultadoPago({ resultado }) {
             Volver al inicio
           </Link>
         </div>
+
+        {resultado !== "exitoso" && (
+          <p className="relative mt-7 text-sm leading-relaxed text-tinta/60">
+            ¿Tuviste un problema con el pago?{" "}
+            <Link
+              to="/soporte?motivo=pago"
+              className="font-medium text-acento underline underline-offset-4 hover:text-acento-oscuro"
+            >
+              Escríbenos a soporte
+            </Link>
+            .
+          </p>
+        )}
       </div>
     </div>
   );

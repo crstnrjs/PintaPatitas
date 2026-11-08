@@ -72,11 +72,14 @@ export default function AdminLogin() {
     <main className="grid min-h-screen bg-(--surface) lg:grid-cols-[.95fr_1.05fr]">
       {/* Panel izquierdo (solo en pantallas grandes) */}
       <aside className="relative m-4 hidden min-h-[calc(100vh-2rem)] overflow-hidden rounded-[28px] bg-(--deep) lg:block">
-        {/* <img
-          src="/login-visual.jpg"
+        {/* Foto horizontal en un panel alto: se recorta centrada en el gato. */}
+        <img
+          src="/img/login-gato.webp"
+          width={1448}
+          height={1086}
           alt=""
-          className="absolute inset-0 size-full object-cover"
-        /> */}
+          className="absolute inset-0 size-full object-cover object-[68%_center]"
+        />
         <div className="absolute inset-0 bg-linear-to-b from-[rgba(33,74,93,.04)] from-35% to-[rgba(22,51,64,.88)]" />
         <div className="absolute -top-26.25 -right-21.25 size-70 rounded-full border border-white/20" />
 

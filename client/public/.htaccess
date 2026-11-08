@@ -1,5 +1,15 @@
-Options -MultiViews
+Options -MultiViews -Indexes
 RewriteEngine On
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^ index.html [QSA,L]
+
+# Una URL que no existe responde con estado 404 real (no 200). Se entrega la app igual,
+# para que React muestre la página "no encontrada" con el menú del sitio.
+ErrorDocument 404 /index.html
+
+# Archivos y carpetas reales (assets, imágenes, robots.txt, sitemap.xml) se sirven tal cual.
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Rutas de React Router (client/src/routes.jsx). Si agregas una página nueva, súmala aquí;
+# si no, en producción responderá 404.
+RewriteRule ^(catalogo|terminos|sobre-nosotros|contacto|soporte|cuadros-listos(/[a-z0-9-]+)?|pago-(exitoso|pendiente|fallido)|admin(/.*)?)/?$ index.html [QSA,L]

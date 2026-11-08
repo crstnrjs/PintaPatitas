@@ -8,6 +8,7 @@ import ordersRouter from './routes/orders.js'
 import webhooksRouter from './routes/webhooks.js'
 import oauthRouter from './routes/oauth.js'
 import cuadrosRouter from './routes/cuadros.js'
+import soporteRouter from './routes/soporte.js'
 import configuracionRouter from './routes/configuracion.js'
 
 const app = express()
@@ -48,6 +49,7 @@ app.use('/api/orders', ordersRouter)
 app.use('/api/webhooks', webhooksRouter)
 app.use('/api/oauth', oauthRouter)
 app.use('/api/cuadros', cuadrosRouter)
+app.use('/api/soporte', soporteRouter)
 app.use('/api/configuracion', configuracionRouter)
 
 const PORT = Number(process.env.PORT) || 3001

@@ -1,4 +1,11 @@
+# Content-Signal (contentsignals.org): se permite aparecer en buscadores y que los asistentes
+# de IA usen el contenido para responder (citando el sitio), pero no entrenar modelos con él.
 User-agent: *
+Content-Signal: search=yes, ai-input=yes, ai-train=no
+Allow: /
 Disallow: /admin
+Disallow: /pago-exitoso
+Disallow: /pago-pendiente
+Disallow: /pago-fallido
 
 Sitemap: https://pintapatitas.com/sitemap.xml

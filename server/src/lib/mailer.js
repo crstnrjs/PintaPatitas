@@ -485,11 +485,12 @@ export async function enviarCorreoClienteSaldo({ pedido, paymentUrl, saldoAmount
 /**
  * Envío genérico con el mismo remitente y copia de respaldo. Lo usan los correos de cuadros listos.
  */
-export async function enviarCorreo({ to, subject, html, text }) {
+export async function enviarCorreo({ to, subject, html, text, replyTo }) {
   await obtenerTransport().sendMail({
     from: `"PintaPatitas" <${obtenerFromAddress()}>`,
     to,
     bcc: obtenerFromAddress(), // Copia oculta para respaldo en la bandeja de entrada
+    ...(replyTo ? { replyTo } : {}), // Al responder, el correo va directo a esta dirección
     subject,
     text,
     html,

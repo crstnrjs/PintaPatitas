@@ -143,38 +143,48 @@ export default function PedidoWizard() {
     }
   }
 
-  if (cargando)
-    return <p className="p-10 text-center text-slate-500">Cargando...</p>;
-  if (error) return <p className="p-10 text-center text-red-600">{error}</p>;
-  if (estilos.length === 0) {
+  if (cargando || error || estilos.length === 0) {
     return (
-      <p className="p-10 text-center text-slate-600">
-        Estamos preparando nuestro catálogo. Vuelve a visitarnos pronto.
-      </p>
+      <div className="bg-lino px-4 py-16">
+        <p
+          role={error ? "alert" : "status"}
+          className={`mx-auto max-w-md rounded-2xl bg-papel p-6 text-center ${error ? "text-red-700" : "text-tinta/70"}`}
+        >
+          {cargando
+            ? "Cargando..."
+            : error || "Estamos preparando nuestro catálogo. Vuelve a visitarnos pronto."}
+        </p>
+      </div>
     );
   }
-
-  
 
   const [titulo, subtitulo] = TEXTOS[actual.id];
 
   return (
-    <main className="bg-[#e8f0f3] px-4 py-8">
-      <div className="mx-auto max-w-5xl">
+    <div className="bg-lino px-4 pt-5 pb-12 sm:px-6 sm:pt-10 sm:pb-16">
+      <div className="mx-auto max-w-3xl">
         <Progreso pasos={pasos} actual={paso} />
 
-        <section className="mx-auto mt-8 max-w-3xl rounded-[2rem] border border-slate-200 bg-white px-6 py-10 sm:px-12">
-          <p className="text-center text-[11px] font-bold tracking-[0.2em] text-[#2d6583]">
-            PASO {paso + 1} DE {pasos.length}
-          </p>
-          <h1 className="mt-4 text-center text-3xl text-[#1d4e68] sm:text-4xl">
-            {titulo}
-          </h1>
-          <p className="mx-auto mt-3 max-w-md text-center text-slate-500">
-            {subtitulo}
-          </p>
+        <section
+          aria-labelledby="paso-titulo"
+          className="mt-5 rounded-3xl border border-white/80 bg-papel px-4 py-7 shadow-[0_24px_48px_-32px_rgb(27_68_88/0.55)] sm:mt-8 sm:rounded-[2rem] sm:px-10 sm:py-10"
+        >
+          <header className="px-1 text-center">
+            <p className="hidden text-[11px] font-bold tracking-[0.2em] text-acento sm:block">
+              PASO {paso + 1} DE {pasos.length}
+            </p>
+            <h1
+              id="paso-titulo"
+              className="font-display text-[clamp(1.6rem,6.5vw,2.4rem)] leading-tight text-balance text-tinta sm:mt-3"
+            >
+              {titulo}
+            </h1>
+            <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-pretty text-tinta/65 sm:mt-3 sm:text-base">
+              {subtitulo}
+            </p>
+          </header>
 
-          <div className="mt-10">
+          <div className="mt-7 sm:mt-10">
             {actual.id === "estilo" && (
               <StepEstilo
                 estilos={estilos}
@@ -242,12 +252,14 @@ export default function PedidoWizard() {
               ))}
           </div>
 
-          <div className="mt-10 flex items-center justify-between border-t border-slate-200 pt-6">
+          <div className="mt-8 flex items-center gap-3 border-t border-tinta/10 pt-5 sm:mt-10 sm:justify-between sm:pt-6">
             <button
               type="button"
               disabled={paso === 0}
               onClick={() => setPaso(paso - 1)}
-              className="rounded-full border border-slate-300 px-7 py-3 font-semibold text-[#1d4e68] hover:bg-slate-50 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-300 disabled:hover:bg-transparent"
+              className={`min-h-12 rounded-full border border-tinta/20 bg-white px-5 font-semibold text-acento-oscuro transition hover:border-tinta/40 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-tinta disabled:cursor-not-allowed disabled:border-tinta/10 disabled:bg-transparent disabled:text-tinta/30 sm:px-7 ${
+                ultimo ? "w-full sm:w-auto" : ""
+              }`}
             >
               Anterior
             </button>
@@ -256,7 +268,7 @@ export default function PedidoWizard() {
                 type="button"
                 disabled={!puedeContinuar}
                 onClick={() => setPaso(paso + 1)}
-                className="flex items-center gap-2 rounded-full bg-[#2d6583] px-7 py-3 font-semibold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+                className="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full bg-acento px-6 font-semibold text-white shadow-[0_4px_0_-1px_var(--color-acento-oscuro)] transition hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-[0_2px_0_-1px_var(--color-acento-oscuro)] focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-tinta disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none sm:flex-none sm:px-8"
               >
                 Continuar <IconFlecha />
               </button>
@@ -264,7 +276,7 @@ export default function PedidoWizard() {
           </div>
         </section>
       </div>
-          {pedido && <PedidoEnviado numero={pedido.orderNumber} />}
-    </main>
+      {pedido && <PedidoEnviado numero={pedido.orderNumber} />}
+    </div>
   );
 }

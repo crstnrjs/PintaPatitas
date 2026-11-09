@@ -1,16 +1,32 @@
 import { clp } from "./pasos";
 import { normalizarTelefono } from "./StepContacto";
 
-function Fila({ etiqueta, valor }) {
+/* Bloque del resumen: título corto + contenido. En móvil todo va apilado para que nada se salga. */
+function Bloque({ titulo, children }) {
   return (
-    <div className="flex gap-4 py-2.5">
-      <dt className="w-24 shrink-0 text-slate-500">{etiqueta}</dt>
-      <dd className="min-w-0 whitespace-pre-wrap wrap-break-words text-slate-900">
+    <section className="rounded-2xl border border-tinta/10 bg-white p-4 sm:p-5">
+      <h2 className="text-xs font-semibold tracking-[0.14em] text-acento uppercase">{titulo}</h2>
+      <div className="mt-3">{children}</div>
+    </section>
+  );
+}
+
+// Etiqueta arriba y valor abajo: así los textos largos (correo, dirección) siempre tienen todo el ancho.
+function Dato({ etiqueta, valor, ancho = false, cortarEnCualquierParte = false }) {
+  return (
+    <div className={`min-w-0 ${ancho ? "col-span-full" : ""}`}>
+      <dt className="text-xs text-tinta/55">{etiqueta}</dt>
+      <dd
+        className={`mt-0.5 text-[0.95rem] leading-snug font-medium text-tinta ${
+          cortarEnCualquierParte ? "wrap-anywhere" : "wrap-break-word"
+        }`}
+      >
         {valor}
       </dd>
     </div>
   );
 }
+
 export default function StepResumen({
   datos,
   estilo,
@@ -31,91 +47,106 @@ export default function StepResumen({
     .map((s) => (s ?? "").trim())
     .filter(Boolean)
     .join(", ");
-  const [principal, ...otras] = datos.fotos;
+  const idea = datos.idea.trim();
+  const cantidadFotos = datos.fotos.length;
 
   return (
-    <div className="space-y-6">
-      <div className="grid gap-6 rounded-3xl border border-slate-200 p-4 sm:grid-cols-[220px_1fr] sm:p-6">
-        <div>
-          {principal && (
-            <img
-              src={principal.preview}
-              alt="Foto de tu mascota"
-              className="aspect-4/5 w-full rounded-2xl object-cover"
-            />
-          )}
-          {otras.length > 0 && (
-            <div className="mt-2 flex gap-2">
-              {otras.slice(0, 4).map((f) => (
-                <img
-                  key={f.id}
-                  src={f.preview}
-                  alt=""
-                  className="h-12 w-12 rounded-lg object-cover"
-                />
+    <div className="space-y-4 sm:space-y-5">
+      <Bloque titulo="Tu retrato">
+        {cantidadFotos > 0 && (
+          <div className="mb-4">
+            <ul className="grid grid-cols-4 gap-2 sm:grid-cols-6">
+              {datos.fotos.map((f, i) => (
+                <li key={f.id} className="min-w-0">
+                  <img
+                    src={f.preview}
+                    alt={i === 0 ? "Foto de tu mascota" : ""}
+                    className="aspect-square w-full rounded-xl object-cover ring-1 ring-tinta/10"
+                  />
+                </li>
               ))}
-            </div>
-          )}
-          <p className="mt-2 text-xs text-slate-500">
-            {datos.fotos.length} {datos.fotos.length === 1 ? "foto" : "fotos"}
-          </p>
-        </div>
+            </ul>
+            <p className="mt-2 text-xs text-tinta/55">
+              {cantidadFotos} {cantidadFotos === 1 ? "foto subida" : "fotos subidas"}
+            </p>
+          </div>
+        )}
 
-        <dl className="divide-y divide-slate-100 text-sm">
-          <Fila etiqueta="Estilo" valor={estilo.name} />
+        <dl className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3">
+          <Dato etiqueta="Estilo" valor={estilo.name} />
           {estilo.has_size && datos.formato && (
-            <Fila etiqueta="Formato" valor={datos.formato.etiqueta} />
+            <Dato etiqueta="Formato" valor={datos.formato.etiqueta} />
           )}
-          <Fila etiqueta="Mascotas" valor={datos.mascotas} />
+          <Dato
+            etiqueta="Mascotas"
+            valor={`${datos.mascotas} ${datos.mascotas === 1 ? "mascota" : "mascotas"}`}
+          />
           {nombresMascotas && (
-            <Fila
-              etiqueta={datos.mascotas === 1 ? "Mascota" : "Mascotas"}
+            <Dato
+              ancho
+              etiqueta={datos.mascotas === 1 ? "Nombre" : "Nombres"}
               valor={nombresMascotas}
             />
           )}
-          {datos.idea.trim() && (
-            <Fila etiqueta="Tu idea" valor={datos.idea.trim()} />
-          )}
-          <Fila etiqueta="Nombre" valor={`${c.nombre} ${c.apellido}`} />
-          <Fila etiqueta="Correo" valor={c.correo} />
-          <Fila etiqueta="Celular" valor={telefono} />
-          <Fila etiqueta="RUT" valor={c.rut} />
-          <Fila etiqueta={enSucursal ? "Retiro" : "Envío a"} valor={direccion} />
         </dl>
-      </div>
+      </Bloque>
+
+      {idea && (
+        <Bloque titulo="Tu idea">
+          <p className="border-l-2 border-cielo pl-3 text-sm leading-relaxed whitespace-pre-wrap text-tinta/80 wrap-break-word">
+            {idea}
+          </p>
+        </Bloque>
+      )}
+
+      <Bloque titulo="Contacto y envío">
+        <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
+          <Dato etiqueta="Nombre" valor={`${c.nombre} ${c.apellido}`} />
+          <Dato etiqueta="Correo" valor={c.correo} cortarEnCualquierParte />
+          <Dato etiqueta="Celular" valor={telefono} />
+          <Dato etiqueta="RUT" valor={c.rut} />
+          <Dato ancho etiqueta={enSucursal ? "Retiro" : "Envío a"} valor={direccion} />
+        </dl>
+      </Bloque>
 
       {producto.foto && (
-        <figure className="flex items-center gap-4 rounded-2xl border border-slate-200 p-3">
+        <figure className="flex items-center gap-3 rounded-2xl bg-bruma/60 p-3 sm:gap-4">
           <img
             src={producto.foto}
             alt={`Ejemplo de retrato en ${estilo.name}`}
             loading="lazy"
-            className="h-20 w-24 shrink-0 rounded-xl object-cover sm:h-24 sm:w-32"
+            className="size-20 shrink-0 rounded-xl object-cover sm:h-24 sm:w-32"
           />
-          <figcaption className="text-sm leading-snug text-slate-600">
-            <strong className="block font-semibold text-slate-900">Así lucen nuestros retratos en {estilo.name}</strong>
+          <figcaption className="min-w-0 text-[0.8rem] leading-snug text-tinta/70 sm:text-sm">
+            <strong className="block font-semibold text-tinta">
+              Así lucen nuestros retratos en {estilo.name}
+            </strong>
             {datos.formato ? `${datos.formato.etiqueta} · ` : ""}
             Foto de referencia: el tuyo será único, pintado a partir de las fotos de tu mascota.
           </figcaption>
         </figure>
       )}
 
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-[#f5fafb] px-5 py-4">
+      <div className="rounded-2xl bg-acento-oscuro px-5 py-4 text-white sm:flex sm:items-center sm:justify-between sm:gap-6">
         <div>
-          <p className="text-sm text-slate-500">Precio del cuadro</p>
-          <p className="text-2xl font-semibold text-[#1d4e68]">
-            {clp(producto.price)}
-          </p>
+          <p className="text-sm text-white/70">Precio del cuadro</p>
+          <p className="font-display text-3xl font-semibold tracking-tight">{clp(producto.price)}</p>
         </div>
-        <p className="max-w-[16rem] text-xs text-slate-500">
+        <p className="mt-2 text-xs leading-snug text-white/75 sm:mt-0 sm:max-w-[15rem] sm:text-right">
           + envío Starken por pagar: lo pagas al recibir el cuadro.
         </p>
       </div>
 
-      <label className="flex items-start gap-3 rounded-2xl border border-slate-200 p-4 text-sm leading-snug text-slate-700">
+      <label
+        className={`flex cursor-pointer items-start gap-3 rounded-2xl border p-4 text-sm leading-snug transition ${
+          datos.aceptaEnvio
+            ? "border-acento bg-lino text-tinta"
+            : "border-tinta/15 bg-white text-tinta/80 hover:border-tinta/30"
+        }`}
+      >
         <input
           type="checkbox"
-          className="mt-0.5 size-5 shrink-0 accent-[#2d6583]"
+          className="mt-0.5 size-5 shrink-0 accent-acento"
           checked={datos.aceptaEnvio}
           onChange={(e) => onAceptaEnvio(e.target.checked)}
         />
@@ -125,7 +156,7 @@ export default function StepResumen({
       </label>
 
       {aviso && (
-        <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-800">
+        <p role="alert" className="rounded-xl bg-amber-50 p-3 text-sm text-amber-800">
           {aviso}
         </p>
       )}
@@ -134,10 +165,13 @@ export default function StepResumen({
         type="button"
         onClick={onEnviar}
         disabled={enviando || !datos.aceptaEnvio}
-        className="w-full rounded-full bg-[#2d6583] py-3.5 font-semibold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+        className="min-h-13 w-full rounded-full bg-acento px-6 text-base font-semibold text-white shadow-[0_5px_0_-1px_var(--color-acento-oscuro)] transition hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-[0_2px_0_-1px_var(--color-acento-oscuro)] focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-tinta disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-45 disabled:shadow-none"
       >
         {enviando ? "Enviando..." : "Enviar solicitud"}
       </button>
+      <p className="text-center text-xs text-tinta/55">
+        Solo pagas si el artista acepta tu solicitud.
+      </p>
     </div>
   );
 }

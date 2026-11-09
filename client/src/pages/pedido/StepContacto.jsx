@@ -62,16 +62,18 @@ export function validarContacto(c) {
   return e;
 }
 
-const BASE = "mt-1 block w-full rounded-xl border bg-white p-3 text-slate-900 outline-none focus:ring-1";
-const OK = "border-slate-300 focus:border-[#2d6583] focus:ring-[#2d6583]";
+// text-base en móvil evita que iOS haga zoom al enfocar el campo
+const BASE =
+  "mt-1.5 block w-full min-w-0 rounded-xl border bg-white px-3.5 py-3 text-base text-tinta outline-none placeholder:text-tinta/35 focus:ring-1 sm:text-sm";
+const OK = "border-tinta/20 focus:border-acento focus:ring-acento";
 const MAL = "border-red-400 focus:border-red-400 focus:ring-red-400";
 
 function Campo({ etiqueta, error, className = "", children }) {
   return (
-    <label className={`block text-sm text-slate-600 ${className}`}>
+    <label className={`block min-w-0 text-sm font-medium text-tinta/75 ${className}`}>
       {etiqueta}
       {children}
-      {error && <span className="mt-1 block text-xs text-red-600">{error}</span>}
+      {error && <span className="mt-1 block text-xs font-normal text-red-600">{error}</span>}
     </label>
   );
 }
@@ -86,9 +88,9 @@ export default function StepContacto({ valor, onChange }) {
   const clase = (campo) => `${BASE} ${err(campo) ? MAL : OK}`;
 
   return (
-    <div className="space-y-8">
-      <section className="space-y-4">
-        <h2 className="font-semibold text-[#1d4e68]">Tus datos</h2>
+    <div className="space-y-5 sm:space-y-6">
+      <section className="space-y-4 rounded-2xl border border-tinta/10 bg-white p-4 sm:p-6">
+        <h2 className="text-xs font-semibold tracking-[0.14em] text-acento uppercase">Datos personales</h2>
         <div className="grid gap-4 sm:grid-cols-2">
           <Campo etiqueta="Nombre" error={err("nombre")}>
             <input
@@ -120,19 +122,19 @@ export default function StepContacto({ valor, onChange }) {
           </Campo>
           <Campo etiqueta="Celular" error={err("telefono")}>
             <div
-              className={`mt-1 flex items-center rounded-xl border bg-white focus-within:ring-1 ${
+              className={`mt-1.5 flex min-w-0 items-center rounded-xl border bg-white focus-within:ring-1 ${
                 err("telefono")
                   ? "border-red-400 focus-within:ring-red-400"
-                  : "border-slate-300 focus-within:border-[#2d6583] focus-within:ring-[#2d6583]"
+                  : "border-tinta/20 focus-within:border-acento focus-within:ring-acento"
               }`}
             >
-              <span className="pl-3 text-slate-400">+56</span>
+              <span className="border-r border-tinta/10 py-1 pr-2.5 pl-3.5 text-base font-normal text-tinta/50 sm:text-sm">+56</span>
               <input
                 type="tel"
                 inputMode="tel"
                 autoComplete="tel-national"
                 placeholder="9 1234 5678"
-                className="w-full rounded-xl bg-transparent p-3 text-slate-900 outline-none"
+                className="w-full min-w-0 rounded-xl bg-transparent px-3 py-3 text-base text-tinta outline-none placeholder:text-tinta/35 sm:text-sm"
                 value={valor.telefono}
                 onChange={cambiar("telefono")}
                 onBlur={tocar("telefono")}
@@ -151,30 +153,30 @@ export default function StepContacto({ valor, onChange }) {
                 tocar("rut")();
               }}
             />
-            {!err("rut") && <span className="mt-1 block text-xs text-slate-500">Lo pide Starken para el envío.</span>}
+            {!err("rut") && <span className="mt-1 block text-xs font-normal text-tinta/50">Lo pide Starken para el envío.</span>}
           </Campo>
         </div>
       </section>
 
-      <section className="space-y-4">
+      <section className="space-y-4 rounded-2xl border border-tinta/10 bg-white p-4 sm:p-6">
         <div>
-          <h2 className="font-semibold text-[#1d4e68]">Envío por Starken</h2>
-          <p className="text-xs text-slate-500">
+          <h2 className="text-xs font-semibold tracking-[0.14em] text-acento uppercase">Envío por Starken</h2>
+          <p className="mt-1 text-xs text-tinta/55">
             El envío es por pagar: su costo lo pagas al recibir el cuadro.
           </p>
         </div>
 
         <fieldset>
-          <legend className="text-sm text-slate-600">¿Cómo lo recibes?</legend>
-          <div className="mt-1 grid grid-cols-2 gap-2 rounded-xl bg-[#eef4f6] p-1">
+          <legend className="text-sm font-medium text-tinta/75">¿Cómo lo recibes?</legend>
+          <div className="mt-1.5 grid grid-cols-2 gap-1 rounded-xl bg-bruma/70 p-1">
             {[
               ["domicilio", "A domicilio"],
               ["sucursal", "Sucursal Starken"],
             ].map(([opcion, etiqueta]) => (
               <label
                 key={opcion}
-                className={`flex min-h-11 cursor-pointer items-center justify-center rounded-lg px-3 text-center text-sm font-medium transition has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-[#2d6583] ${
-                  valor.entrega_tipo === opcion ? "bg-white text-[#1d4e68] shadow-sm" : "text-slate-500 hover:text-slate-800"
+                className={`flex min-h-11 cursor-pointer items-center justify-center rounded-lg px-3 text-center text-sm font-medium transition has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-acento ${
+                  valor.entrega_tipo === opcion ? "bg-white text-acento-oscuro shadow-sm" : "text-tinta/60 hover:text-tinta"
                 }`}
               >
                 <input
@@ -223,7 +225,7 @@ export default function StepContacto({ valor, onChange }) {
                 onBlur={tocar("sucursal")}
               />
               {!err("sucursal") && (
-                <span className="mt-1 block text-xs text-slate-500">Nombre o dirección de la sucursal donde lo retirarás.</span>
+                <span className="mt-1 block text-xs font-normal text-tinta/50">Nombre o dirección de la sucursal donde lo retirarás.</span>
               )}
             </Campo>
           ) : (

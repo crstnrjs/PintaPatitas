@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { MAX_FOTOS, MAX_ORIGINAL_MB, aWebp } from "./imagenes";
+import { IconImagen } from "./iconos";
 
 const TIPOS = ["image/jpeg", "image/png", "image/webp"];
 const nuevoId = () => crypto.randomUUID?.() ?? Math.random().toString(36).slice(2);
@@ -59,14 +60,18 @@ export default function StepFotos({ fotos, onAgregar, onQuitar }) {
           setArrastrando(false);
           procesar(e.dataTransfer.files);
         }}
-        className={`flex cursor-pointer flex-col items-center gap-2 rounded-2xl border-2 border-dashed px-6 py-10 text-center transition ${
-          arrastrando ? "border-[#2d6583] bg-[#f5fafb]" : "border-slate-300 hover:border-slate-400"
+        aria-label="Elegir fotos de tu mascota"
+        className={`flex cursor-pointer flex-col items-center gap-2 rounded-2xl border-2 border-dashed px-5 py-8 text-center transition focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-tinta sm:px-6 sm:py-10 ${
+          arrastrando ? "border-acento bg-lino" : "border-tinta/20 bg-white hover:border-acento/60 hover:bg-lino/60"
         }`}
       >
-        <p className="font-semibold text-[#1d4e68]">
+        <span aria-hidden="true" className="mb-1 flex size-12 items-center justify-center rounded-full bg-bruma text-acento">
+          <IconImagen />
+        </span>
+        <p className="font-semibold text-pretty text-tinta">
           {procesando ? "Procesando fotos..." : "Arrastra tus fotos aquí o toca para elegirlas"}
         </p>
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-tinta/55">
           JPG, PNG o WebP · hasta {MAX_FOTOS} fotos · {fotos.length}/{MAX_FOTOS} subidas
         </p>
         <input
@@ -87,13 +92,13 @@ export default function StepFotos({ fotos, onAgregar, onQuitar }) {
       {fotos.length > 0 && (
         <ul className="grid grid-cols-3 gap-3 sm:grid-cols-4">
           {fotos.map((f) => (
-            <li key={f.id} className="relative aspect-square overflow-hidden rounded-2xl bg-slate-100">
+            <li key={f.id} className="relative aspect-square overflow-hidden rounded-2xl bg-bruma ring-1 ring-tinta/10">
               <img src={f.preview} alt={f.nombre} className="h-full w-full object-cover" />
               <button
                 type="button"
                 onClick={() => onQuitar(f.id)}
                 aria-label="Quitar foto"
-                className="absolute right-1.5 top-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-lg leading-none text-slate-600 shadow hover:text-red-600"
+                className="absolute top-1.5 right-1.5 flex size-8 items-center justify-center rounded-full bg-white/95 text-lg leading-none text-tinta/70 shadow transition hover:text-red-600 focus-visible:outline-2 focus-visible:outline-tinta"
               >
                 ×
               </button>
@@ -102,8 +107,8 @@ export default function StepFotos({ fotos, onAgregar, onQuitar }) {
         </ul>
       )}
 
-      <p className="text-xs text-slate-500">
-        Mejores resultados: fotos con buena luz, donde se vea bien la cara y sin filtros. Necesitas al
+      <p className="rounded-xl bg-bruma/60 p-3 text-xs leading-relaxed text-tinta/70">
+        <strong className="font-semibold text-tinta">Mejores resultados:</strong> fotos con buena luz, donde se vea bien la cara y sin filtros. Necesitas al
         menos una foto para continuar.
       </p>
     </div>

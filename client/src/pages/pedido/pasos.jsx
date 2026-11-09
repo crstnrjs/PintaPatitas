@@ -10,11 +10,13 @@ export const clp = (n) =>
 
 // Si al menos una opción tiene foto en el catálogo, todas se muestran como tarjetas con foto.
 const algunaFoto = (opciones) => opciones.some((o) => o.foto);
+// Con fotos, dos columnas incluso en móvil (tarjetas compactas); sin fotos, una fila por opción.
+const grilla = (conFoto) => (conFoto ? "grid grid-cols-2 gap-3 sm:gap-4" : "grid gap-3 sm:grid-cols-2");
 
 export function StepEstilo({ estilos, seleccionado, onElegir }) {
   const conFoto = algunaFoto(estilos);
   return (
-    <div className="grid gap-3 sm:grid-cols-2">
+    <div className={grilla(conFoto)}>
       {estilos.map((e) => (
         <OpcionCard
           key={e.id}
@@ -34,7 +36,7 @@ export function StepEstilo({ estilos, seleccionado, onElegir }) {
 export function StepFormato({ formatos, seleccionado, onElegir }) {
   const conFoto = algunaFoto(formatos);
   return (
-    <div className="grid gap-3 sm:grid-cols-2">
+    <div className={grilla(conFoto)}>
       {formatos.map((f) => (
         <OpcionCard
           key={f.clave}
@@ -64,13 +66,14 @@ export function StepMascotas({
     onNombres(nuevos);
   }
 
+  const conFoto = algunaFoto(productos);
   return (
     <div className="space-y-6">
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className={grilla(conFoto)}>
         {productos.map((p) => (
           <OpcionCard
             key={p.id}
-            conFoto={algunaFoto(productos)}
+            conFoto={conFoto}
             foto={p.foto}
             icono={<IconPata />}
             titulo={`${p.pet_count} ${p.pet_count === 1 ? "mascota" : "mascotas"}`}
@@ -82,16 +85,16 @@ export function StepMascotas({
       </div>
 
       {seleccionado != null && (
-        <div className="rounded-2xl border border-slate-200 bg-[#f5fafb] p-5">
-          <p className="text-sm font-semibold text-[#1d4e68]">
+        <div className="rounded-2xl border border-tinta/10 bg-white p-4 sm:p-5">
+          <p className="text-sm font-semibold text-tinta">
             {seleccionado === 1
               ? "El nombre de tu mascota"
               : "Los nombres de tus mascotas"}
           </p>
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-1 text-xs text-tinta/55">
             Opcional, pero nos ayuda a personalizar tu retrato.
           </p>
-          <div className="mt-4 space-y-3">
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
             {Array.from({ length: seleccionado }).map((_, i) => (
               <input
                 key={i}
@@ -104,7 +107,8 @@ export function StepMascotas({
                     ? "Ej: Luna"
                     : `Ej: nombre de la mascota ${i + 1}`
                 }
-                className="w-full rounded-xl border border-slate-300 bg-white p-3 text-sm outline-none focus:border-[#2d6583] focus:ring-1 focus:ring-[#2d6583]"
+                aria-label={seleccionado === 1 ? "Nombre de tu mascota" : `Nombre de la mascota ${i + 1}`}
+                className="w-full rounded-xl border border-tinta/20 bg-white px-3.5 py-3 text-base text-tinta outline-none placeholder:text-tinta/35 focus:border-acento focus:ring-1 focus:ring-acento sm:text-sm"
               />
             ))}
           </div>
@@ -132,29 +136,35 @@ export function StepIdea({ valor, onChange }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap gap-2">
+      <p className="text-xs font-medium text-tinta/60">Toca una idea para sumarla:</p>
+      <div className="-mt-1 flex flex-wrap gap-2">
         {IDEAS.map((idea) => (
           <button
             key={idea}
             type="button"
             onClick={() => agregar(idea)}
-            className="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50"
+            className={`min-h-9 rounded-full border px-3.5 py-1.5 text-sm transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tinta ${
+              valor.includes(idea)
+                ? "border-acento bg-lino text-acento-oscuro"
+                : "border-tinta/15 bg-white text-tinta/70 hover:border-tinta/35 hover:text-tinta"
+            }`}
           >
             + {idea.replace(/\.$/, "")}
           </button>
         ))}
       </div>
       <textarea
-        rows={7}
+        rows={6}
+        aria-label="Cómo imaginas tu pintura"
         maxLength={MAX}
         value={valor}
         onChange={(e) => onChange(e.target.value)}
         placeholder="Ej: fondo azul suave, una aureola sobre la cabeza de mi perro, que se vea con su pañuelo rojo..."
-        className="w-full rounded-2xl border border-slate-300 p-4 text-sm outline-none focus:border-[#2d6583] focus:ring-1 focus:ring-[#2d6583]"
+        className="w-full resize-y rounded-2xl border border-tinta/20 bg-white p-4 text-base leading-relaxed text-tinta outline-none placeholder:text-tinta/35 focus:border-acento focus:ring-1 focus:ring-acento sm:text-sm"
       />
-      <div className="flex justify-between text-xs text-slate-500">
+      <div className="flex justify-between gap-4 text-xs text-tinta/55">
         <span>Es opcional, pero mientras más detalles, mejor.</span>
-        <span>
+        <span className="shrink-0 tabular-nums">
           {valor.length}/{MAX}
         </span>
       </div>

@@ -1,28 +1,36 @@
+/* Progreso del asistente: en móvil, nombre del paso + barra segmentada; desde sm, cada segmento con su nombre. */
 export default function Progreso({ pasos, actual }) {
-  const pct = ((actual + 1) / pasos.length) * 100;
   return (
-    <div>
-      <div className="h-1 w-full overflow-hidden rounded-full bg-slate-300/70">
-        <div
-          className="h-full rounded-full bg-[#2d6583] transition-all duration-300"
-          style={{ width: `${pct}%` }}
-        />
+    <nav aria-label="Progreso del pedido">
+      <div className="flex items-baseline justify-between gap-3 sm:hidden">
+        <span className="min-w-0 truncate text-sm font-semibold text-tinta">{pasos[actual].nombre}</span>
+        <span className="shrink-0 text-xs text-tinta/60">
+          Paso {actual + 1} de {pasos.length}
+        </span>
       </div>
-      <ol className="mt-3 hidden justify-between text-xs sm:flex">
-        {pasos.map((p, i) => (
-          <li
-            key={p.id}
-            className={
-              i === actual ? "font-bold text-[#1d4e68]" : i < actual ? "text-slate-600" : "text-slate-400"
-            }
-          >
-            {p.nombre}
-          </li>
-        ))}
+      <ol className="mt-2.5 flex gap-1.5 sm:mt-0 sm:gap-2">
+        {pasos.map((p, i) => {
+          const hecho = i < actual;
+          const enCurso = i === actual;
+          return (
+            <li key={p.id} className="min-w-0 flex-1" aria-current={enCurso ? "step" : undefined}>
+              <span
+                className={`block h-1.5 rounded-full transition-colors duration-300 ${
+                  hecho ? "bg-acento" : enCurso ? "bg-acento-oscuro" : "bg-bastidor"
+                }`}
+              />
+              <span
+                className={`mt-2 hidden truncate text-xs sm:block ${
+                  enCurso ? "font-semibold text-tinta" : hecho ? "text-tinta/70" : "text-tinta/40"
+                }`}
+              >
+                <span className="sr-only">{hecho ? "Completado: " : enCurso ? "Paso actual: " : ""}</span>
+                {p.nombre}
+              </span>
+            </li>
+          );
+        })}
       </ol>
-      <p className="mt-3 text-center text-xs font-semibold text-[#1d4e68] sm:hidden">
-        {pasos[actual].nombre}
-      </p>
-    </div>
+    </nav>
   );
 }

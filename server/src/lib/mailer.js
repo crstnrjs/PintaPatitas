@@ -17,6 +17,28 @@ function obtenerFromAddress() {
   return process.env.SMTP_USER || process.env.GMAIL_USER;
 }
 
+// Remitente propio para soporte (SOPORTE_SMTP_USER / SOPORTE_SMTP_PASS), con el mismo servidor SMTP.
+// Si no está configurado, se usa el remitente general. Hostinger solo deja enviar "desde" la
+// casilla con la que se autentica, por eso necesita sus propias credenciales.
+let transportSoporte = null;
+
+export function obtenerConfigSoporte(env = process.env) {
+  const user = env.SOPORTE_SMTP_USER?.trim();
+  const pass = env.SOPORTE_SMTP_PASS;
+  return user && pass ? { user, pass } : null;
+}
+
+function obtenerRemitente(remitente) {
+  const soporte = remitente === "soporte" ? obtenerConfigSoporte() : null;
+  if (!soporte) return { transport: obtenerTransport(), from: obtenerFromAddress() };
+
+  if (!transportSoporte) {
+    const { host, port, secure } = obtenerConfigSMTP();
+    transportSoporte = nodemailer.createTransport({ host, port, secure, auth: soporte });
+  }
+  return { transport: transportSoporte, from: soporte.user };
+}
+
 function obtenerTransport() {
   if (transport) return transport;
 
@@ -483,13 +505,16 @@ export async function enviarCorreoClienteSaldo({ pedido, paymentUrl, saldoAmount
 }
 
 /**
- * Envío genérico con el mismo remitente y copia de respaldo. Lo usan los correos de cuadros listos.
+ * Envío genérico con copia de respaldo. Lo usan los correos de cuadros listos y de soporte.
+ * remitente: "soporte" envía desde la casilla de soporte si está configurada.
+ * respaldo: false omite la copia oculta (por ejemplo, si el destinatario ya es esa misma casilla).
  */
-export async function enviarCorreo({ to, subject, html, text, replyTo }) {
-  await obtenerTransport().sendMail({
-    from: `"PintaPatitas" <${obtenerFromAddress()}>`,
+export async function enviarCorreo({ to, subject, html, text, replyTo, remitente, respaldo = true }) {
+  const { transport: t, from } = obtenerRemitente(remitente);
+  await t.sendMail({
+    from: `"PintaPatitas" <${from}>`,
     to,
-    bcc: obtenerFromAddress(), // Copia oculta para respaldo en la bandeja de entrada
+    ...(respaldo ? { bcc: from } : {}), // Copia oculta para respaldo en la bandeja de entrada
     ...(replyTo ? { replyTo } : {}), // Al responder, el correo va directo a esta dirección
     subject,
     text,

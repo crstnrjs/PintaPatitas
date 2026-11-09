@@ -94,8 +94,12 @@ export async function enviarMensajeSoporte(datos, { destino = CORREO_SOPORTE, en
     fila("N° de pedido", datos.pedido || "—"),
   ].join("");
 
+  // Ambos correos salen desde soporte@ (si SOPORTE_SMTP_USER está configurado), así nada de
+  // soporte pasa por la casilla de pedidos. El aviso al equipo ya llega a soporte@: sin copia oculta.
   await enviar({
     to: destino,
+    remitente: "soporte",
+    respaldo: false,
     replyTo: `"${datos.nombre.replaceAll('"', "")}" <${datos.email}>`,
     subject: asunto,
     html: plantilla({
@@ -120,6 +124,8 @@ export async function enviarMensajeSoporte(datos, { destino = CORREO_SOPORTE, en
 
   enviar({
     to: datos.email,
+    remitente: "soporte",
+    respaldo: false, // El equipo ya tiene el mensaje en el aviso: sin copia oculta a soporte@
     replyTo: destino,
     subject: "Recibimos tu mensaje — PintaPatitas",
     html: plantilla({

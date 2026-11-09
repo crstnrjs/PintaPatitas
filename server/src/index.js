@@ -10,6 +10,7 @@ import oauthRouter from './routes/oauth.js'
 import cuadrosRouter from './routes/cuadros.js'
 import soporteRouter from './routes/soporte.js'
 import configuracionRouter from './routes/configuracion.js'
+import { programarConservacion } from './lib/conservacion.js'
 
 const app = express()
 app.use(helmet())
@@ -56,3 +57,6 @@ const PORT = Number(process.env.PORT) || 3001
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Servidor en http://0.0.0.0:${PORT}`)
 })
+
+// Borra fotos y datos personales pasado el plazo de conservación (una vez al día)
+programarConservacion()

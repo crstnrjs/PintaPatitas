@@ -53,6 +53,21 @@ test("envía al correo de soporte con 'responder a' el cliente, y una copia al c
   assert.match(enviados[0].replyTo, /ana@example\.com/);
   assert.match(enviados[0].subject, /\[Soporte\] Envío — Ana Pérez \(#PP-12\)/);
   assert.equal(enviados[1].to, "ana@example.com");
+  // Ambos salen desde la casilla de soporte y sin copia oculta: soporte@ recibe solo el aviso.
+  assert.equal(enviados[0].remitente, "soporte");
+  assert.equal(enviados[0].respaldo, false);
+  assert.equal(enviados[1].remitente, "soporte");
+  assert.equal(enviados[1].respaldo, false);
+});
+
+test("el remitente de soporte solo se usa si tiene usuario y contraseña", async () => {
+  const { obtenerConfigSoporte } = await import("./mailer.js");
+  assert.equal(obtenerConfigSoporte({}), null);
+  assert.equal(obtenerConfigSoporte({ SOPORTE_SMTP_USER: "soporte@pintapatitas.com" }), null);
+  assert.deepEqual(obtenerConfigSoporte({ SOPORTE_SMTP_USER: " soporte@pintapatitas.com ", SOPORTE_SMTP_PASS: "x" }), {
+    user: "soporte@pintapatitas.com",
+    pass: "x",
+  });
 });
 
 test("escapa el HTML que escribe el cliente", async () => {

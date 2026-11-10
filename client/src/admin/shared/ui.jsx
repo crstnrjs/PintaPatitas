@@ -198,9 +198,9 @@ export function Toast({ tipo = "ok", children, onClose }) {
 
 /* Overlay y panel de modal compartidos. */
 export const modalOverlay =
-  "fixed inset-0 z-40 flex items-end justify-center bg-tinta/35 backdrop-blur-[3px] sm:items-center sm:p-4 motion-safe:animate-in motion-safe:fade-in";
+  "fixed inset-0 z-40 flex items-end justify-center bg-tinta/50 sm:items-center sm:p-4 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-150";
 export const modalPanel =
-  "w-full rounded-t-[28px] border border-white/80 bg-papel shadow-[0_40px_80px_-30px_rgb(19_48_61/0.6)] sm:rounded-[28px] motion-safe:animate-in motion-safe:zoom-in-95 motion-safe:slide-in-from-bottom-4";
+  "w-full rounded-t-[28px] border border-white/80 bg-papel shadow-[0_40px_80px_-30px_rgb(19_48_61/0.6)] sm:rounded-[28px] motion-safe:animate-in motion-safe:zoom-in-95 motion-safe:duration-150";
 
 /* ---------- Lista de pedidos: tabla en escritorio, tarjetas en móvil ---------- */
 

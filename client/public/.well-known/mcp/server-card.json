@@ -1,0 +1,16 @@
+{
+  "name": "PintaPatitas",
+  "version": "1.0.0",
+  "description": "PintaPatitas no expone un servidor MCP. Este archivo cumple con SEP-1649 para indicar ausencia intencional.",
+  "endpoint": null,
+  "capabilities": [],
+  "contact": {
+    "name": "Fernanda",
+    "email": "pinta.patitas@gmail.com",
+    "url": "https://pintapatitas.com/contacto"
+  },
+  "repository": "https://github.com/crstnrjs/PintaPatitas",
+  "homepage": "https://pintapatitas.com/",
+  "protocolVersion": "2025-06-18",
+  "mcpServer": false
+}

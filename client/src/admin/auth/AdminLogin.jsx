@@ -180,6 +180,13 @@ export default function AdminLogin() {
               {loading ? "Ingresando..." : "Ingresar al panel"}
               {!loading && <ArrowRight size={18} />}
             </button>
+
+            <Link
+              to="/admin/crear-contrasena"
+              className="text-center text-[13px] font-semibold text-muted-foreground transition hover:text-(--deep)"
+            >
+              ¿Olvidaste tu contraseña o es tu primer ingreso?
+            </Link>
           </form>
         </div>
       </section>

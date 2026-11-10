@@ -4,6 +4,7 @@ import { supabaseAdmin as supabase } from "../lib/supabase.js";
 import { crearConsultaPagoVendedor } from "../lib/mercadopago.js";
 import { crearRepoVentas, procesarPagoCuadro } from "../lib/ventasCuadros.js";
 import { notificarVentaCuadro } from "../lib/correosCuadros.js";
+import { enviarAlertaPagoRechazado } from "../lib/soporte.js";
 
 export function firmaValida(req, secretOverride = process.env.MP_WEBHOOK_SECRET) {
   const secret = secretOverride;
@@ -35,8 +36,33 @@ export function crearRouterWebhooks({
   webhookSecret,
   repoCuadros,
   notificarCuadro = notificarVentaCuadro,
+  alertarPagoRechazado = enviarAlertaPagoRechazado,
 } = {}) {
   const router = Router();
+
+  // Si el abono se aprobó pero el pedido ya estaba rechazado (el cliente pagó con un enlace enviado
+  // antes), el pedido no cambia de estado: se avisa al buzón interno para devolver el dinero.
+  // Nunca lanza: un fallo aquí no debe alterar la respuesta al webhook ni el cobro.
+  async function avisarSiPedidoRechazado({ orderId, paymentType, paymentInfo, paymentId }) {
+    try {
+      const { data: pedido, error } = await db
+        .from("orders")
+        .select("id, order_number, status, customer_name, customer_email")
+        .eq("id", orderId)
+        .maybeSingle();
+      if (error) throw error;
+      if (pedido?.status !== "rechazado") return;
+      console.warn(`[Webhook MP] Pago ${paymentId} aprobado para el pedido rechazado ${orderId}: hay que devolverlo.`);
+      alertarPagoRechazado({
+        pedido,
+        tipoPago: paymentType,
+        monto: paymentInfo.transaction_amount,
+        mpPaymentId: String(paymentId),
+      }).catch((err) => console.error("[Webhook MP] No se pudo enviar la alerta de pago a pedido rechazado:", err));
+    } catch (err) {
+      console.error("[Webhook MP] No se pudo revisar si el pedido estaba rechazado:", err);
+    }
+  }
 
   // Webhook de Mercado Pago: recibe notificaciones de eventos (ej. pago aprobado)
   router.post("/mercadopago", async (req, res) => {
@@ -136,14 +162,20 @@ export function crearRouterWebhooks({
 
       // Reintentar siempre la transición del pedido: un fallo previo no debe dejarlo atascado.
       if (paymentType === "abono") {
-        const { error: errOrder } = await db
+        const { data: transicionado, error: errOrder } = await db
           .from("orders")
           .update({ status: "en_proceso" })
           .eq("id", orderId)
-          .eq("status", "pendiente_abono");
+          .eq("status", "pendiente_abono")
+          .select("id")
+          .maybeSingle();
 
         if (errOrder) throw errOrder;
-        console.log(`[Webhook MP] ¡Éxito! Pedido ${orderId} actualizado a 'en_proceso'`);
+        if (transicionado) {
+          console.log(`[Webhook MP] ¡Éxito! Pedido ${orderId} actualizado a 'en_proceso'`);
+        } else {
+          await avisarSiPedidoRechazado({ orderId, paymentType, paymentInfo, paymentId });
+        }
       }
     }
     return res.status(200).send("OK");

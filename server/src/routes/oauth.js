@@ -6,7 +6,7 @@ import {
   exchangeMarketplaceAuthorizationCode,
   getMarketplaceOAuthConfigurationStatus,
 } from "../lib/marketplaceOAuth.js";
-import { saveMarketplaceSellerCredentials } from "../lib/marketplaceCredentials.js";
+import { cargarCredencialesVendedor, saveMarketplaceSellerCredentials } from "../lib/marketplaceCredentials.js";
 import { getMarketplaceSellerStatus } from "../lib/marketplaceSeller.js";
 
 const router = Router();
@@ -105,7 +105,7 @@ router.get("/mercadopago/callback", async (req, res) => {
       return res.status(502).send("La autorización no incluyó refresh_token. No se guardó; revisa los permisos OAuth de la aplicación.");
     }
 
-    saveMarketplaceSellerCredentials({
+    await saveMarketplaceSellerCredentials({
       access_token: tokenData.access_token,
       refresh_token: tokenData.refresh_token,
       public_key: tokenData.public_key ?? null,
@@ -134,7 +134,9 @@ router.get("/mercadopago/callback", async (req, res) => {
   }
 });
 
-router.get("/mercadopago/status", requireAdmin, (_req, res) => {
+router.get("/mercadopago/status", requireAdmin, async (_req, res) => {
+  // Relee la credencial desde Supabase para que el panel muestre lo que hay guardado.
+  await cargarCredencialesVendedor();
   const config = getMarketplaceOAuthConfigurationStatus();
   // Misma regla que usan los cobros en orders.js
   const { ready, mode, sellerMode, modeMismatch } = getMarketplaceSellerStatus();

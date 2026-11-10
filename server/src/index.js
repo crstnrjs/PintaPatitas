@@ -11,6 +11,7 @@ import cuadrosRouter from './routes/cuadros.js'
 import soporteRouter from './routes/soporte.js'
 import configuracionRouter from './routes/configuracion.js'
 import { programarConservacion } from './lib/conservacion.js'
+import { cargarCredencialesVendedor } from './lib/marketplaceCredentials.js'
 
 const app = express()
 app.use(helmet())
@@ -52,6 +53,10 @@ app.use('/api/oauth', oauthRouter)
 app.use('/api/cuadros', cuadrosRouter)
 app.use('/api/soporte', soporteRouter)
 app.use('/api/configuracion', configuracionRouter)
+
+// La credencial de la cuenta vendedora vive en Supabase; se carga antes de atender cobros.
+const origenCredencial = await cargarCredencialesVendedor()
+console.info(`[MP OAuth] Credencial de la cuenta vendedora: ${origenCredencial}`)
 
 const PORT = Number(process.env.PORT) || 3001
 app.listen(PORT, '0.0.0.0', () => {

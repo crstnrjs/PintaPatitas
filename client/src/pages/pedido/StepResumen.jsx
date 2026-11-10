@@ -31,6 +31,7 @@ export default function StepResumen({
   datos,
   estilo,
   producto,
+  esMeme = false,
   onEnviar,
   enviando,
   aviso,
@@ -52,7 +53,7 @@ export default function StepResumen({
 
   return (
     <div className="space-y-4 sm:space-y-5">
-      <Bloque titulo="Tu retrato">
+      <Bloque titulo={esMeme ? "Tu meme" : "Tu retrato"}>
         {cantidadFotos > 0 && (
           <div className="mb-4">
             <ul className="grid grid-cols-4 gap-2 sm:grid-cols-6">
@@ -60,14 +61,17 @@ export default function StepResumen({
                 <li key={f.id} className="min-w-0">
                   <img
                     src={f.preview}
-                    alt={i === 0 ? "Foto de tu mascota" : ""}
+                    alt={i === 0 ? (esMeme ? "Tu meme" : "Foto de tu mascota") : ""}
                     className="aspect-square w-full rounded-xl object-cover ring-1 ring-tinta/10"
                   />
                 </li>
               ))}
             </ul>
             <p className="mt-2 text-xs text-tinta/55">
-              {cantidadFotos} {cantidadFotos === 1 ? "foto subida" : "fotos subidas"}
+              {cantidadFotos}{" "}
+              {esMeme
+                ? cantidadFotos === 1 ? "imagen subida" : "imágenes subidas"
+                : cantidadFotos === 1 ? "foto subida" : "fotos subidas"}
             </p>
           </div>
         )}
@@ -77,11 +81,15 @@ export default function StepResumen({
           {estilo.has_size && datos.formato && (
             <Dato etiqueta="Formato" valor={datos.formato.etiqueta} />
           )}
-          <Dato
-            etiqueta="Mascotas"
-            valor={`${datos.mascotas} ${datos.mascotas === 1 ? "mascota" : "mascotas"}`}
-          />
-          {nombresMascotas && (
+          {esMeme ? (
+            <Dato etiqueta="Técnica" valor="Acrílico" />
+          ) : (
+            <Dato
+              etiqueta="Mascotas"
+              valor={`${datos.mascotas} ${datos.mascotas === 1 ? "mascota" : "mascotas"}`}
+            />
+          )}
+          {!esMeme && nombresMascotas && (
             <Dato
               ancho
               etiqueta={datos.mascotas === 1 ? "Nombre" : "Nombres"}
@@ -113,16 +121,21 @@ export default function StepResumen({
         <figure className="flex items-center gap-3 rounded-2xl bg-bruma/60 p-3 sm:gap-4">
           <img
             src={producto.foto}
-            alt={`Ejemplo de retrato en ${estilo.name}`}
+            alt={esMeme ? "Ejemplo de cuadro de meme" : `Ejemplo de retrato en ${estilo.name}`}
             loading="lazy"
             className="size-20 shrink-0 rounded-xl object-cover sm:h-24 sm:w-32"
           />
           <figcaption className="min-w-0 text-[0.8rem] leading-snug text-tinta/70 sm:text-sm">
             <strong className="block font-semibold text-tinta">
-              {producto.name ?? `Así lucen nuestros retratos en ${estilo.name}`}
+              {producto.name ??
+                (esMeme
+                  ? "Así lucen nuestros cuadros de meme"
+                  : `Así lucen nuestros retratos en ${estilo.name}`)}
             </strong>
             {datos.formato ? `${datos.formato.etiqueta} · ` : ""}
-            Foto de referencia: el tuyo será único, pintado a partir de las fotos de tu mascota.
+            {esMeme
+              ? "Foto de referencia: el tuyo será único, pintado en acrílico a partir de tu meme."
+              : "Foto de referencia: el tuyo será único, pintado a partir de las fotos de tu mascota."}
           </figcaption>
         </figure>
       )}

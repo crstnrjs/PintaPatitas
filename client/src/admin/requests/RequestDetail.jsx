@@ -26,6 +26,9 @@ import { MP_PORCENTAJE, pct, useCobros } from "@/admin/shared/useCobros";
 
 const sumAmount = (list) => list.reduce((acc, p) => acc + p.amount, 0);
 
+// Los pedidos del estilo Meme no tienen cantidad ni nombre de mascotas
+const esMemePedido = (o) => o?.style === "Meme" || o?.product === "Cuadro de meme";
+
 // Botones sobre la tarjeta "Siguiente paso" (fondo azul)
 const primaryBtn =
   "inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-white px-5 text-sm font-semibold text-acento-oscuro shadow-[0_8px_18px_-10px_rgb(0_0_0/0.5)] transition hover:bg-papel active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:cursor-not-allowed disabled:opacity-60";
@@ -457,11 +460,11 @@ export default function RequestDetail() {
             <span className="text-sm text-tinta/50">Recibida el {formatDate(order.created_at)}</span>
           </div>
           <h1 className="mt-3 font-display text-3xl text-tinta md:text-[2.5rem] md:leading-tight">
-            {order.pet_name ? `Retrato de ${order.pet_name}` : "Solicitud"}{" "}
+            {esMemePedido(order) ? "Cuadro de meme" : order.pet_name ? `Retrato de ${order.pet_name}` : "Solicitud"}{" "}
             <span className="text-tinta/35">{orderCode(order.order_number)}</span>
           </h1>
           <p className="mt-1.5 text-tinta/60">
-            {[order.style, order.size, order.pet_count && `${order.pet_count} ${order.pet_count === 1 ? "mascota" : "mascotas"}`]
+            {[order.style, order.size, !esMemePedido(order) && order.pet_count && `${order.pet_count} ${order.pet_count === 1 ? "mascota" : "mascotas"}`]
               .filter(Boolean)
               .join(" · ")}
           </p>
@@ -502,13 +505,13 @@ export default function RequestDetail() {
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="min-w-0 space-y-6">
           <Panel
-            title="Fotos de la mascota"
+            title={esMemePedido(order) ? "Imagen del meme" : "Fotos de la mascota"}
             description={photos.length ? `${photos.length} ${photos.length === 1 ? "foto" : "fotos"} · toca una para verla en grande` : undefined}
           >
             {photos.length === 0 ? (
               <EmptyState compact title="Esta solicitud no tiene fotos" />
             ) : (
-              <GaleriaFotos photos={photos} nombre={order.pet_name} />
+              <GaleriaFotos photos={photos} nombre={order.pet_name} meme={esMemePedido(order)} />
             )}
           </Panel>
 
@@ -517,8 +520,12 @@ export default function RequestDetail() {
               {[
                 ["Estilo", order.style],
                 ["Tamaño", order.size],
-                ["Mascotas", order.pet_count],
-                ["Nombre", order.pet_name],
+                ...(esMemePedido(order)
+                  ? []
+                  : [
+                      ["Mascotas", order.pet_count],
+                      ["Nombre", order.pet_name],
+                    ]),
                 ["Producto", order.product],
               ].map(([k, v]) => (
                 <div key={k} className="rounded-2xl bg-bruma/45 px-4 py-3">
@@ -716,10 +723,10 @@ function ModalRechazo({ codigo, email, saving, error, onConfirm, onClose }) {
 }
 
 /* Fotos grandes: la primera destacada, el resto en grilla. Visor con flechas y teclado. */
-function GaleriaFotos({ photos, nombre }) {
+function GaleriaFotos({ photos, nombre, meme = false }) {
   const [abierta, setAbierta] = useState(null);
   const dialogo = useRef(null);
-  const alt = (i) => `Foto ${i + 1} de ${nombre || "la mascota"}`;
+  const alt = (i) => (meme ? `Imagen ${i + 1} del meme` : `Foto ${i + 1} de ${nombre || "la mascota"}`);
 
   function abrir(i) {
     setAbierta(i);

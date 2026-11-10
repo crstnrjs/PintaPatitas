@@ -126,9 +126,17 @@ const IDEAS = [
   "Mirando de frente.",
   "Mirando de perfil.",
 ];
+const IDEAS_MEME = [
+  "Mantener el texto del meme tal cual.",
+  "Cambiar el texto por otro.",
+  "Con el fondo original.",
+  "Con colores más vivos.",
+  "Sin texto, solo la imagen.",
+];
 const MAX = 800;
 
-export function StepIdea({ valor, onChange }) {
+export function StepIdea({ valor, onChange, esMeme = false }) {
+  const ideas = esMeme ? IDEAS_MEME : IDEAS;
   function agregar(frase) {
     if (valor.includes(frase)) return;
     const nuevo = valor ? `${valor.trimEnd()} ${frase}` : frase;
@@ -139,7 +147,7 @@ export function StepIdea({ valor, onChange }) {
     <div className="space-y-4">
       <p className="text-xs font-medium text-tinta/60">Toca una idea para sumarla:</p>
       <div className="-mt-1 flex flex-wrap gap-2">
-        {IDEAS.map((idea) => (
+        {ideas.map((idea) => (
           <button
             key={idea}
             type="button"
@@ -156,15 +164,23 @@ export function StepIdea({ valor, onChange }) {
       </div>
       <textarea
         rows={6}
-        aria-label="Cómo imaginas tu pintura"
+        aria-label={esMeme ? "Cambios que quieres en tu meme" : "Cómo imaginas tu pintura"}
         maxLength={MAX}
         value={valor}
         onChange={(e) => onChange(e.target.value)}
-        placeholder="Ej: fondo azul suave, una aureola sobre la cabeza de mi perro, que se vea con su pañuelo rojo..."
+        placeholder={
+          esMeme
+            ? "Ej: dejar el texto igual, pero con el fondo más colorido..."
+            : "Ej: fondo azul suave, una aureola sobre la cabeza de mi perro, que se vea con su pañuelo rojo..."
+        }
         className="w-full resize-y rounded-2xl border border-tinta/20 bg-white p-4 text-base leading-relaxed text-tinta outline-none placeholder:text-tinta/35 focus:border-acento focus:ring-1 focus:ring-acento sm:text-sm"
       />
       <div className="flex justify-between gap-4 text-xs text-tinta/55">
-        <span>Es opcional, pero mientras más detalles, mejor.</span>
+        <span>
+          {esMeme
+            ? "Es opcional; si no agregas nada, lo pintamos tal cual."
+            : "Es opcional, pero mientras más detalles, mejor."}
+        </span>
         <span className="shrink-0 tabular-nums">
           {valor.length}/{MAX}
         </span>

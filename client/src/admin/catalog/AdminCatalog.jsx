@@ -11,7 +11,11 @@ const clp = (n) => new Intl.NumberFormat("es-CL").format(n);
 const mascotas = (n) => `${n} ${n === 1 ? "mascota" : "mascotas"}`;
 const redondear = (n) => Math.round(n / 1000) * 1000;
 // Nombre puesto por la artista; si no hay, el título de siempre.
-const tituloDe = (p) => p.name || `Retrato de ${mascotas(p.pet_count)}`;
+// El estilo Meme es un cuadro sin cantidad de mascotas: no se muestra "1 mascota".
+const esMemeP = (p) => p.technique_slug === "meme";
+const cantidadTxt = (p, sep) => (esMemeP(p) ? "" : `${sep}${mascotas(p.pet_count)}`);
+const tituloDe = (p) =>
+  p.name || (esMemeP(p) ? "Cuadro de meme" : `Retrato de ${mascotas(p.pet_count)}`);
 const imagenUrl = (path) =>
   path ? supabase.storage.from("catalog").getPublicUrl(path).data.publicUrl : null;
 
@@ -77,7 +81,7 @@ export default function AdminCatalog() {
     return items.filter((p) => {
       if (filtro !== "todos" && p.technique_id !== filtro) return false;
       if (!q) return true;
-      return `${p.name ?? ""} ${p.technique_name} ${mascotas(p.pet_count)} ${p.size_label ?? ""}`
+      return `${p.name ?? ""} ${p.technique_name} ${esMemeP(p) ? "" : mascotas(p.pet_count)} ${p.size_label ?? ""}`
         .toLowerCase()
         .includes(q);
     });
@@ -115,7 +119,7 @@ export default function AdminCatalog() {
     if (lista.length === 0) return;
     const texto =
       lista.length === 1
-        ? `¿Eliminar "${lista[0].name ? lista[0].name + " · " : ""}${lista[0].technique_name} · ${mascotas(lista[0].pet_count)}${
+        ? `¿Eliminar "${lista[0].name ? lista[0].name + " · " : ""}${lista[0].technique_name}${cantidadTxt(lista[0], " · ")}${
             lista[0].size_label ? " · " + lista[0].size_label : ""
           }"?`
         : `¿Eliminar ${lista.length} productos?`;
@@ -299,7 +303,7 @@ export default function AdminCatalog() {
                   {foto ? (
                     <img
                       src={foto}
-                      alt={`${p.name ? p.name + ", " : ""}${p.technique_name}, ${mascotas(p.pet_count)}`}
+                      alt={`${p.name ? p.name + ", " : ""}${p.technique_name}${cantidadTxt(p, ", ")}`}
                       loading="lazy"
                       decoding="async"
                       className="aspect-[4/3] w-full object-cover"
@@ -313,7 +317,7 @@ export default function AdminCatalog() {
                       className="size-4 accent-acento"
                       checked={marcado}
                       onChange={() => alternarSeleccion(p.id)}
-                      aria-label={`Seleccionar ${p.name ? p.name + ", " : ""}${p.technique_name}, ${mascotas(p.pet_count)}`}
+                      aria-label={`Seleccionar ${p.name ? p.name + ", " : ""}${p.technique_name}${cantidadTxt(p, ", ")}`}
                     />
                   </label>
                   <span
@@ -332,7 +336,7 @@ export default function AdminCatalog() {
                   </span>
                   <h3 className="mt-2.5 text-lg font-semibold text-tinta">{tituloDe(p)}</h3>
                   <p className="text-sm text-tinta/55">
-                    {p.name ? `${mascotas(p.pet_count)} · ` : ""}
+                    {p.name && !esMemeP(p) ? `${mascotas(p.pet_count)} · ` : ""}
                     {p.size_label ?? "Sin medidas"}
                   </p>
 
@@ -409,7 +413,7 @@ export default function AdminCatalog() {
         <div className={modalOverlay} onClick={(e) => e.target === e.currentTarget && setDup(null)}>
           <form onSubmit={duplicar} className={`max-w-md space-y-5 p-6 ${modalPanel}`}>
             <h2 className="font-display text-2xl text-tinta">
-              Duplicar {dup.name ? `${dup.name} · ` : ""}{dup.technique_name} · {mascotas(dup.pet_count)}
+              Duplicar {dup.name ? `${dup.name} · ` : ""}{dup.technique_name}{cantidadTxt(dup, " · ")}
               {dup.size_label ? ` · ${dup.size_label}` : ""}
             </h2>
             <label className="block text-sm text-tinta/75">

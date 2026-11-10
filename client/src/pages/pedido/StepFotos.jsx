@@ -5,7 +5,7 @@ import { IconImagen } from "./iconos";
 const TIPOS = ["image/jpeg", "image/png", "image/webp"];
 const nuevoId = () => crypto.randomUUID?.() ?? Math.random().toString(36).slice(2);
 
-export default function StepFotos({ fotos, onAgregar, onQuitar }) {
+export default function StepFotos({ fotos, onAgregar, onQuitar, esMeme = false }) {
   const input = useRef(null);
   const [aviso, setAviso] = useState("");
   const [arrastrando, setArrastrando] = useState(false);
@@ -60,7 +60,7 @@ export default function StepFotos({ fotos, onAgregar, onQuitar }) {
           setArrastrando(false);
           procesar(e.dataTransfer.files);
         }}
-        aria-label="Elegir fotos de tu mascota"
+        aria-label={esMeme ? "Elegir la imagen de tu meme" : "Elegir fotos de tu mascota"}
         className={`flex cursor-pointer flex-col items-center gap-2 rounded-2xl border-2 border-dashed px-5 py-8 text-center transition focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-tinta sm:px-6 sm:py-10 ${
           arrastrando ? "border-acento bg-lino" : "border-tinta/20 bg-white hover:border-acento/60 hover:bg-lino/60"
         }`}
@@ -69,10 +69,16 @@ export default function StepFotos({ fotos, onAgregar, onQuitar }) {
           <IconImagen />
         </span>
         <p className="font-semibold text-pretty text-tinta">
-          {procesando ? "Procesando fotos..." : "Arrastra tus fotos aquí o toca para elegirlas"}
+          {procesando
+            ? esMeme ? "Procesando imagen..." : "Procesando fotos..."
+            : esMeme
+              ? "Arrastra tu meme aquí o toca para elegirlo"
+              : "Arrastra tus fotos aquí o toca para elegirlas"}
         </p>
         <p className="text-sm text-tinta/55">
-          JPG, PNG o WebP · hasta {MAX_FOTOS} fotos · {fotos.length}/{MAX_FOTOS} subidas
+          {esMeme
+            ? `JPG, PNG o WebP · hasta ${MAX_FOTOS} imágenes · ${fotos.length}/${MAX_FOTOS} subidas`
+            : `JPG, PNG o WebP · hasta ${MAX_FOTOS} fotos · ${fotos.length}/${MAX_FOTOS} subidas`}
         </p>
         <input
           ref={input}
@@ -108,8 +114,10 @@ export default function StepFotos({ fotos, onAgregar, onQuitar }) {
       )}
 
       <p className="rounded-xl bg-bruma/60 p-3 text-xs leading-relaxed text-tinta/70">
-        <strong className="font-semibold text-tinta">Mejores resultados:</strong> fotos con buena luz, donde se vea bien la cara y sin filtros. Necesitas al
-        menos una foto para continuar.
+        <strong className="font-semibold text-tinta">Mejores resultados:</strong>{" "}
+        {esMeme
+          ? "la imagen original, en buena resolución y sin recortes. Necesitas al menos una imagen para continuar."
+          : "fotos con buena luz, donde se vea bien la cara y sin filtros. Necesitas al menos una foto para continuar."}
       </p>
     </div>
   );

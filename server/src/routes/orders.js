@@ -69,7 +69,9 @@ router.post("/:id/accept", requireAdmin, async (req, res) => {
       items: [{
         id: `abono-${order.id}`,
         title: `Abono solicitud #PP-${order.order_number} (${order.style || "Retrato"})`,
-        description: `Abono inicial para retrato de ${order.pet_name || "mascota"}`,
+        description: order.product === "Cuadro de meme"
+          ? "Abono inicial para cuadro de meme"
+          : `Abono inicial para retrato de ${order.pet_name || "mascota"}`,
         quantity: 1,
         unit_price: Number(order.deposit_amount),
         currency_id: "CLP",
@@ -220,7 +222,9 @@ router.post("/:id/request-balance", requireAdmin, async (req, res) => {
           {
             id: `saldo-${order.id}`,
             title: `Saldo final pedido #PP-${order.order_number}`,
-            description: `Saldo por finalización de retrato de ${order.pet_name || "mascota"}`,
+            description: order.product === "Cuadro de meme"
+              ? "Saldo por finalización de cuadro de meme"
+              : `Saldo por finalización de retrato de ${order.pet_name || "mascota"}`,
             quantity: 1,
             unit_price: Number(saldoAmount),
             currency_id: "CLP",

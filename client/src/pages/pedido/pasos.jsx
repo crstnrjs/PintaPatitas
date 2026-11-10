@@ -75,6 +75,7 @@ export function StepMascotas({
             key={p.id}
             conFoto={conFoto}
             foto={p.foto}
+            nombre={p.name}
             icono={<IconPata />}
             titulo={`${p.pet_count} ${p.pet_count === 1 ? "mascota" : "mascotas"}`}
             subtitulo={clp(p.price)}

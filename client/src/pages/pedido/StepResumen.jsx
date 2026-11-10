@@ -119,7 +119,7 @@ export default function StepResumen({
           />
           <figcaption className="min-w-0 text-[0.8rem] leading-snug text-tinta/70 sm:text-sm">
             <strong className="block font-semibold text-tinta">
-              Así lucen nuestros retratos en {estilo.name}
+              {producto.name ?? `Así lucen nuestros retratos en ${estilo.name}`}
             </strong>
             {datos.formato ? `${datos.formato.etiqueta} · ` : ""}
             Foto de referencia: el tuyo será único, pintado a partir de las fotos de tu mascota.

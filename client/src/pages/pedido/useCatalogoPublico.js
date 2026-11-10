@@ -23,7 +23,7 @@ export function useCatalogoPublico() {
     supabase
       .from("price_list")
       .select(
-        "id, pet_count, width_cm, height_cm, size_label, price, image_path, techniques!inner(id, name, slug, has_size, sort_order)"
+        "id, name, pet_count, width_cm, height_cm, size_label, price, image_path, techniques!inner(id, name, slug, has_size, sort_order)"
       )
       .eq("is_active", true)
       .eq("techniques.is_active", true)

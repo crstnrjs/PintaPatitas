@@ -6,7 +6,7 @@ import { IconCheck } from "./iconos";
  */
 const ENFOQUE = "focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-tinta";
 
-export default function OpcionCard({ icono, titulo, subtitulo, seleccionada, onClick, foto, conFoto = false }) {
+export default function OpcionCard({ icono, titulo, subtitulo, seleccionada, onClick, foto, nombre, conFoto = false }) {
   const check = (
     <span
       aria-hidden="true"
@@ -31,6 +31,11 @@ export default function OpcionCard({ icono, titulo, subtitulo, seleccionada, onC
         aria-pressed={seleccionada}
         className={`group relative flex flex-col overflow-hidden rounded-2xl border p-2 text-left transition ${estado} ${ENFOQUE}`}
       >
+        {nombre && (
+          <span className="block px-1 pt-1 pb-2 pr-9 text-sm leading-snug font-semibold text-acento-oscuro wrap-break-word sm:px-2">
+            {nombre}
+          </span>
+        )}
         <span className="block overflow-hidden rounded-xl bg-bruma">
           {foto ? (
             <img
@@ -66,6 +71,7 @@ export default function OpcionCard({ icono, titulo, subtitulo, seleccionada, onC
         {icono}
       </span>
       <span className="min-w-0">
+        {nombre && <span className="block text-sm font-semibold text-acento-oscuro wrap-break-word">{nombre}</span>}
         <span className="block font-semibold text-tinta wrap-break-word">{titulo}</span>
         {subtitulo && <span className="block text-sm text-tinta/60">{subtitulo}</span>}
       </span>

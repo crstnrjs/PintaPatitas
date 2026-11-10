@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import express from "express";
-const { leerSoporte, enviarMensajeSoporte } = await import("./soporte.js");
+const { leerSoporte, enviarMensajeSoporte, enviarAlertaPagoRechazado } = await import("./soporte.js");
 const { crearRouterSoporte } = await import("../routes/soporte.js");
 
 const base = {
@@ -113,4 +113,17 @@ test("la ruta finge éxito ante un bot sin enviar correos", async () => {
 test("la ruta responde 502 si el correo no sale", async () => {
   const r = await post(crearRouterSoporte({ enviar: async () => { throw new Error("smtp caído"); } }), base);
   assert.equal(r.status, 502);
+});
+
+test("la alerta de pago a un pedido rechazado va al buzón interno con el número y el monto", async () => {
+  const enviados = [];
+  await enviarAlertaPagoRechazado(
+    { pedido: { order_number: 12, customer_name: "Ana", customer_email: "ana@example.com" }, tipoPago: "abono", monto: 15000, mpPaymentId: "999" },
+    { destino: "interno@pintapatitas.com", enviar: async (c) => { enviados.push(c); } },
+  );
+  assert.equal(enviados.length, 1);
+  assert.equal(enviados[0].to, "interno@pintapatitas.com");
+  assert.match(enviados[0].subject, /#PP-12/);
+  assert.match(enviados[0].text, /999/);
+  assert.match(enviados[0].text, /15/);
 });

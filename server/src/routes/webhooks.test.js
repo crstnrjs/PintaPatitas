@@ -29,7 +29,7 @@ function makeReq({ id = paymentId, signatureId = id, sig = true, type = "payment
   return req;
 }
 
-async function callWebhook({ payment, payments, orders, failOrderUpdate = false, request = makeReq(), getError } = {}) {
+async function callWebhook({ payment, payments, orders, failOrderUpdate = false, request = makeReq(), getError, alertarPagoRechazado = async () => {} } = {}) {
   process.env.MP_WEBHOOK_SECRET = secret;
   const db = crearSupabaseFalso({
     payments: payments ?? [{ id: "pay-row-1", order_id: "order-1", type: "abono", amount: 1000, status: "pendiente", mp_payment_id: null }],
@@ -42,6 +42,7 @@ async function callWebhook({ payment, payments, orders, failOrderUpdate = false,
   app.use("/webhooks", crearRouterWebhooks({
     db,
     webhookSecret: secret,
+    alertarPagoRechazado,
     crearConsulta: () => ({ get: async () => { calls += 1; if (getError) throw getError; return payment; } }),
   }));
   const server = app.listen(0);
@@ -144,4 +145,33 @@ test("reintento actualiza la orden si falló en una notificación previa", async
   const result = await callWebhook({ payment: approved, payments, failOrderUpdate: true });
   assert.equal(result.status, 500);
   assert.equal(result.db.state.payments[0].status, "aprobado");
+});
+
+test("pago aprobado de un pedido rechazado: avisa, no cambia el pedido y responde 200", async () => {
+  const alertas = [];
+  const orders = [{ id: "order-1", status: "rechazado", order_number: 7, customer_name: "Ana", customer_email: "ana@example.com" }];
+  const result = await callWebhook({ payment: approved, orders, alertarPagoRechazado: async (datos) => { alertas.push(datos); } });
+  assert.equal(result.status, 200);
+  assert.equal(result.db.state.orders[0].status, "rechazado");
+  assert.equal(result.db.state.payments[0].status, "aprobado");
+  assert.equal(alertas.length, 1);
+  assert.equal(alertas[0].pedido.order_number, 7);
+  assert.equal(alertas[0].tipoPago, "abono");
+  assert.equal(alertas[0].monto, 1000);
+  assert.equal(alertas[0].mpPaymentId, paymentId);
+});
+
+test("si falla el aviso por correo, el webhook igual responde 200", async () => {
+  const orders = [{ id: "order-1", status: "rechazado", order_number: 7, customer_name: "Ana", customer_email: "ana@example.com" }];
+  const result = await callWebhook({ payment: approved, orders, alertarPagoRechazado: async () => { throw new Error("SMTP caído"); } });
+  assert.equal(result.status, 200);
+  assert.equal(result.db.state.payments[0].status, "aprobado");
+});
+
+test("un pago normal no dispara la alerta de pedido rechazado", async () => {
+  const alertas = [];
+  const result = await callWebhook({ payment: approved, alertarPagoRechazado: async (d) => { alertas.push(d); } });
+  assert.equal(result.status, 200);
+  assert.equal(result.db.state.orders[0].status, "en_proceso");
+  assert.equal(alertas.length, 0);
 });

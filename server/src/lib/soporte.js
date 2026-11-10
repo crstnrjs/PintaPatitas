@@ -192,6 +192,48 @@ export async function enviarCorreosRechazo(
   return { fallos };
 }
 
+/**
+ * Alerta interna: Mercado Pago aprobó un pago de un pedido que ya estaba rechazado (el cliente
+ * pagó con un enlace enviado antes del rechazo). No toca el cobro: solo avisa para devolver el dinero.
+ */
+export async function enviarAlertaPagoRechazado(
+  { pedido, tipoPago, monto, mpPaymentId },
+  { destino = CORREO_RECHAZOS, enviar = enviarCorreo } = {},
+) {
+  const codigo = `#PP-${pedido.order_number}`;
+  const filas = [
+    ["Pedido", codigo],
+    ["Cliente", pedido.customer_name],
+    ["Correo", pedido.customer_email],
+    ["Tipo de pago", tipoPago],
+    ["Monto", clp(monto)],
+    ["ID de pago en Mercado Pago", mpPaymentId],
+  ];
+  await enviar({
+    to: destino,
+    remitente: "soporte",
+    respaldo: false,
+    replyTo: `"${String(pedido.customer_name ?? "").replaceAll('"', "")}" <${pedido.customer_email}>`,
+    subject: `⚠ Pago recibido de un pedido rechazado ${codigo}`,
+    html: plantilla({
+      titulo: "Pago de un pedido rechazado",
+      subtitulo: `Solicitud ${codigo}`,
+      cuerpo: `
+        <p style="margin:0 0 16px;color:#b45309;font-size:14px;line-height:1.6;">
+          Mercado Pago aprobó un pago de un pedido que ya estaba <strong>rechazado</strong>. El pedido no cambió de estado:
+          hay que devolver el dinero al cliente desde Mercado Pago.
+        </p>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${filas.map(([e, v]) => fila(e, v)).join("")}</table>`,
+    }),
+    text: [
+      `Mercado Pago aprobó un pago de un pedido ya rechazado (${codigo}).`,
+      "El pedido no cambió de estado: hay que devolver el dinero al cliente desde Mercado Pago.",
+      "",
+      ...filas.map(([e, v]) => `${e}: ${v}`),
+    ].join("\n"),
+  });
+}
+
 /** Envía el mensaje al equipo y una copia al cliente. La copia es opcional: si falla, no se reporta error. */
 export async function enviarMensajeSoporte(datos, { destino = CORREO_SOPORTE, enviar = enviarCorreo } = {}) {
   const motivo = MOTIVOS[datos.motivo];

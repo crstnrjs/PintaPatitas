@@ -41,3 +41,9 @@ Thumbs.db
 # Claude Code (archivos personales)
 CLAUDE.local.md
 .claude/settings.local.json
+.claude/launch.json
+.claude/skills/
+skills-lock.json
+
+# Instrucciones de Copilot (personales)
+.github/

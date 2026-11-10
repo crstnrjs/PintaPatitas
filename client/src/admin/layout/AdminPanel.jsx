@@ -3,6 +3,7 @@ import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-do
 import { ExternalLink, Frame, Images, LayoutDashboard, LogOut, Menu, Package, StoreIcon, WalletCards, X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { initials } from "@/admin/shared/ui";
+import BotonVolverArriba from "@/admin/shared/BotonVolverArriba";
 import { useExpiracionSesion } from "@/admin/auth/useExpiracionSesion";
 import { limpiarMarcasSesion } from "@/admin/auth/sesionAdmin";
 
@@ -205,6 +206,8 @@ export default function AdminPanel() {
           <Outlet />
         </div>
       </main>
+
+      <BotonVolverArriba />
     </div>
   );
 }

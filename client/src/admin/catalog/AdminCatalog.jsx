@@ -1,6 +1,6 @@
 ﻿import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { Copy, Ellipsis, Eye, EyeOff, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { Copy, Ellipsis, Eye, EyeOff, Pencil, Plus, Search, Trash2, X } from "lucide-react";
 import ProductModal from "./ProductModal";
 import { EmptyState, PageHeader, Panel, Skeleton, Toast, btn, inputClass, modalOverlay, modalPanel } from "@/admin/shared/ui";
 import { colorDe } from "./techniqueColors";
@@ -18,6 +18,20 @@ const tituloDe = (p) =>
   p.name || (esMemeP(p) ? "Cuadro de meme" : `Retrato de ${mascotas(p.pet_count)}`);
 const imagenUrl = (path) =>
   path ? supabase.storage.from("catalog").getPublicUrl(path).data.publicUrl : null;
+
+// Fila de filtros con su etiqueta; los chips se desplazan en horizontal si no caben
+function FilaFiltro({ etiqueta, children }) {
+  return (
+    <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-3">
+      <span className="w-20 shrink-0 text-xs font-semibold tracking-wide text-tinta/55 uppercase">{etiqueta}</span>
+      <div role="group" aria-label={`Filtrar por ${etiqueta.toLowerCase()}`} className="-mx-1 flex flex-1 gap-1 overflow-x-auto px-1 pb-0.5">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+const Cuenta = ({ n }) => <span className="text-xs tabular-nums opacity-70">{n}</span>;
 
 function hace(fecha) {
   const dias = Math.floor((Date.now() - new Date(fecha).getTime()) / 86400000);
@@ -145,6 +159,7 @@ export default function AdminCatalog() {
   const [mensaje, setMensaje] = useState(null);
   const [busqueda, setBusqueda] = useState("");
   const [filtro, setFiltro] = useState("todos"); // "todos" o id de técnica
+  const [cantidad, setCantidad] = useState("todas"); // "todas" o número de mascotas
   const [menu, setMenu] = useState(null);        // id del producto con el menú abierto
   const [modal, setModal] = useState(null);      // { producto } — producto null = nuevo
   const [dup, setDup] = useState(null);          // producto que se está duplicando
@@ -185,16 +200,60 @@ export default function AdminCatalog() {
     cargar();
   }, []);
 
-  const visibles = useMemo(() => {
+  // Cantidades de mascotas que existen en el catálogo (el Meme no cuenta: no lleva mascotas)
+  const cantidades = useMemo(
+    () => [...new Set(items.filter((p) => !esMemeP(p)).map((p) => p.pet_count))].sort((a, b) => a - b),
+    [items]
+  );
+
+  // Cada grupo de filtros cuenta sus productos respetando el filtro del otro grupo y la búsqueda
+  const { visibles, porTecnica, porCantidad, totalTecnica, totalCantidad } = useMemo(() => {
     const q = busqueda.trim().toLowerCase();
-    return items.filter((p) => {
-      if (filtro !== "todos" && p.technique_id !== filtro) return false;
-      if (!q) return true;
-      return `${p.name ?? ""} ${p.technique_name} ${esMemeP(p) ? "" : mascotas(p.pet_count)} ${p.size_label ?? ""}`
-        .toLowerCase()
-        .includes(q);
-    });
-  }, [items, busqueda, filtro]);
+    const base = q
+      ? items.filter((p) =>
+          `${p.name ?? ""} ${p.technique_name} ${esMemeP(p) ? "" : mascotas(p.pet_count)} ${p.size_label ?? ""}`
+            .toLowerCase()
+            .includes(q)
+        )
+      : items;
+    const okTecnica = (p) => filtro === "todos" || p.technique_id === filtro;
+    const okCantidad = (p) => cantidad === "todas" || (!esMemeP(p) && p.pet_count === cantidad);
+    const porTecnica = new Map();
+    const porCantidad = new Map();
+    let totalTecnica = 0;
+    let totalCantidad = 0;
+    for (const p of base) {
+      if (okCantidad(p)) {
+        porTecnica.set(p.technique_id, (porTecnica.get(p.technique_id) ?? 0) + 1);
+        totalTecnica++;
+      }
+      if (okTecnica(p)) {
+        totalCantidad++;
+        if (!esMemeP(p)) porCantidad.set(p.pet_count, (porCantidad.get(p.pet_count) ?? 0) + 1);
+      }
+    }
+    return {
+      visibles: base.filter((p) => okTecnica(p) && okCantidad(p)),
+      porTecnica,
+      porCantidad,
+      totalTecnica,
+      totalCantidad,
+    };
+  }, [items, busqueda, filtro, cantidad]);
+
+  const hayFiltros = filtro !== "todos" || cantidad !== "todas" || busqueda.trim() !== "";
+
+  function elegirFiltro(setter, valor) {
+    setter(valor);
+    setSeleccion(new Set());
+  }
+
+  function limpiarFiltros() {
+    setBusqueda("");
+    setFiltro("todos");
+    setCantidad("todas");
+    setSeleccion(new Set());
+  }
 
   const seleccionados = items.filter((p) => seleccion.has(p.id));
   const todosMarcados = visibles.length > 0 && visibles.every((p) => seleccion.has(p.id));
@@ -316,58 +375,92 @@ export default function AdminCatalog() {
         </button>
       </PageHeader>
 
-      <div className="vidrio flex flex-col gap-3 rounded-[24px] p-2.5 lg:flex-row lg:items-center">
-        <label className="relative lg:w-72">
-          <span className="sr-only">Buscar productos</span>
-          <Search size={18} className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-tinta/40" aria-hidden="true" />
-          <input
-            type="search"
-            placeholder="Buscar nombre, técnica, mascotas o medida"
-            className={`${inputClass} pl-11`}
-            value={busqueda}
-            onChange={(e) => {
-              setBusqueda(e.target.value);
-              setSeleccion(new Set());
-            }}
-          />
-        </label>
+      <div className="vidrio space-y-3 rounded-[24px] p-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <label className="relative sm:w-80">
+            <span className="sr-only">Buscar productos</span>
+            <Search size={18} className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-tinta/40" aria-hidden="true" />
+            <input
+              type="search"
+              placeholder="Buscar nombre, técnica, mascotas o medida"
+              className={`${inputClass} pl-11`}
+              value={busqueda}
+              onChange={(e) => {
+                setBusqueda(e.target.value);
+                setSeleccion(new Set());
+              }}
+            />
+          </label>
 
-        <div role="group" aria-label="Filtrar por técnica" className="-mx-1 flex flex-1 gap-1 overflow-x-auto px-1 pb-0.5">
-          <button
-            aria-pressed={filtro === "todos"}
-            onClick={() => {
-              setFiltro("todos");
-              setSeleccion(new Set());
-            }}
-            className={chip(filtro === "todos", "border-acento-oscuro bg-acento-oscuro text-white")}
-          >
-            Todos
-          </button>
-          {tecnicas.map((t) => {
-            const c = colorDe(t.slug);
-            const activo = filtro === t.id;
-            return (
-              <button
-                key={t.id}
-                aria-pressed={activo}
-                onClick={() => {
-                  setFiltro(t.id);
-                  setSeleccion(new Set());
-                }}
-                className={chip(activo, c.chipOn)}
-              >
-                {!activo && <span aria-hidden="true" className={`size-2.5 rounded-full ${c.dot}`} />}
-                {t.name}
+          <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
+            {hayFiltros && (
+              <button className={`${btn.ghost} shrink-0`} onClick={limpiarFiltros}>
+                <X size={16} aria-hidden="true" /> Limpiar filtros
               </button>
-            );
-          })}
+            )}
+            {visibles.length > 0 && (
+              <button className={`${btn.ghost} shrink-0`} onClick={marcarTodos}>
+                {todosMarcados ? "Quitar selección" : `Seleccionar todos (${visibles.length})`}
+              </button>
+            )}
+          </div>
         </div>
 
-        {visibles.length > 0 && (
-          <button className={`${btn.ghost} shrink-0`} onClick={marcarTodos}>
-            {todosMarcados ? "Quitar selección" : `Seleccionar todos (${visibles.length})`}
-          </button>
-        )}
+        <div className="space-y-2 border-t border-tinta/8 pt-3">
+          <FilaFiltro etiqueta="Pintura">
+            <button
+              aria-pressed={filtro === "todos"}
+              onClick={() => elegirFiltro(setFiltro, "todos")}
+              className={chip(filtro === "todos", "border-acento-oscuro bg-acento-oscuro text-white")}
+            >
+              Todos <Cuenta n={totalTecnica} />
+            </button>
+            {tecnicas.map((t) => {
+              const c = colorDe(t.slug);
+              const activo = filtro === t.id;
+              const n = porTecnica.get(t.id) ?? 0;
+              return (
+                <button
+                  key={t.id}
+                  aria-pressed={activo}
+                  onClick={() => elegirFiltro(setFiltro, t.id)}
+                  className={chip(activo, `${c.chipOn} ${n === 0 && !activo ? "opacity-50" : ""}`)}
+                >
+                  {!activo && <span aria-hidden="true" className={`size-2.5 rounded-full ${c.dot}`} />}
+                  {t.name} <Cuenta n={n} />
+                </button>
+              );
+            })}
+          </FilaFiltro>
+
+          <FilaFiltro etiqueta="Mascotas">
+            <button
+              aria-pressed={cantidad === "todas"}
+              onClick={() => elegirFiltro(setCantidad, "todas")}
+              className={chip(cantidad === "todas", "border-acento-oscuro bg-acento-oscuro text-white")}
+            >
+              Todas <Cuenta n={totalCantidad} />
+            </button>
+            {cantidades.map((k) => {
+              const activo = cantidad === k;
+              const n = porCantidad.get(k) ?? 0;
+              return (
+                <button
+                  key={k}
+                  aria-pressed={activo}
+                  onClick={() => elegirFiltro(setCantidad, k)}
+                  className={chip(activo, `border-acento bg-acento text-white ${n === 0 && !activo ? "opacity-50" : ""}`)}
+                >
+                  {mascotas(k)} <Cuenta n={n} />
+                </button>
+              );
+            })}
+          </FilaFiltro>
+        </div>
+
+        <p className="px-1 text-xs text-tinta/55" aria-live="polite">
+          Mostrando {visibles.length} de {items.length} {items.length === 1 ? "producto" : "productos"}
+        </p>
       </div>
 
       {seleccionados.length > 0 && (
@@ -396,7 +489,11 @@ export default function AdminCatalog() {
         </Panel>
       ) : visibles.length === 0 ? (
         <Panel>
-          <EmptyState compact title="Ningún producto coincide" text="Prueba con otra técnica o borra la búsqueda." />
+          <EmptyState compact title="Ningún producto coincide" text="Prueba con otros filtros o borra la búsqueda.">
+            <button className={btn.secondary} onClick={limpiarFiltros}>
+              Limpiar filtros
+            </button>
+          </EmptyState>
         </Panel>
       ) : (
         <ul className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">

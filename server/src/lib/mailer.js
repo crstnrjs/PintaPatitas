@@ -188,9 +188,11 @@ export async function enviarCorreoNuevaSolicitud({ pedido, fotos }) {
                   meme ? "La Obra" : "La Obra y Mascota",
                   "🎨",
                   (meme ? "" : filaItem("Mascota(s)", pedido.pet_name || "Sin nombre indicado")) +
-                  filaItem("Estilo / Técnica", meme ? "Meme (acrílico)" : pedido.style, meme && !pedido.description) +
-                  (meme ? "" : filaItem("Tamaño", pedido.size) +
-                    filaItem("Cantidad de mascotas", String(n), !pedido.description)) +
+                  filaItem("Estilo / Técnica", meme ? "Meme (acrílico)" : pedido.style, meme && !pedido.description && !pedido.size) +
+                  (meme
+                    ? pedido.size ? filaItem("Tamaño", pedido.size, !pedido.description) : ""
+                    : filaItem("Tamaño", pedido.size) +
+                      filaItem("Cantidad de mascotas", String(n), !pedido.description)) +
                   (pedido.description
                     ? `<tr>
                         <td colspan="2" style="padding:10px 0 2px;">

@@ -99,7 +99,8 @@ export async function enviarCorreosRechazo(
   { destinoRespaldo = CORREO_RECHAZOS, enviar = enviarCorreo } = {},
 ) {
   const codigo = `#PP-${pedido.order_number}`;
-  const mascota = pedido.pet_name || "tu mascota";
+  const esMeme = pedido.product === "Cuadro de meme" || pedido.style === "Meme";
+  const mascota = esMeme ? "tu meme" : pedido.pet_name || "tu mascota";
   const conLinkVigente = estadoPrevio === "pendiente_abono";
 
   const alCliente = enviar({
@@ -155,7 +156,7 @@ export async function enviarCorreosRechazo(
           fila("Cliente", pedido.customer_name),
           fila("Correo", pedido.customer_email),
           fila("Celular", pedido.customer_phone || "—"),
-          fila("Mascota", pedido.pet_name || "—"),
+          ...(esMeme ? [] : [fila("Mascota", pedido.pet_name || "—")]),
           fila("Estilo / tamaño", [pedido.style, pedido.size].filter(Boolean).join(" · ") || "—"),
           fila("Total", clp(pedido.total_amount)),
           fila("Estado anterior", estadoPrevio),
@@ -169,7 +170,7 @@ export async function enviarCorreosRechazo(
       `Cliente: ${pedido.customer_name}`,
       `Correo: ${pedido.customer_email}`,
       `Celular: ${pedido.customer_phone || "—"}`,
-      `Mascota: ${pedido.pet_name || "—"}`,
+      ...(esMeme ? [] : [`Mascota: ${pedido.pet_name || "—"}`]),
       `Estilo / tamaño: ${[pedido.style, pedido.size].filter(Boolean).join(" · ") || "—"}`,
       `Total: ${clp(pedido.total_amount)}`,
       `Estado anterior: ${estadoPrevio}`,

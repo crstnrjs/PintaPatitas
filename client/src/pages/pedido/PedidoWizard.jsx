@@ -11,6 +11,7 @@ import StepContacto, {
 import StepResumen from "./StepResumen";
 import { armarFormData, enviarPedido } from "./enviar";
 import PedidoEnviado from "./PedidoEnviado";
+import { esMeme as esEstiloMeme } from "./meme";
 
 
 const TEXTOS = {
@@ -38,6 +39,18 @@ const TEXTOS = {
   resumen: [
     "Resumen de tu pedido",
     "Revisa que todo esté bien antes de enviar.",
+  ],
+};
+
+// Textos propios del estilo Meme: reemplazan a los de arriba solo en esos pasos
+const TEXTOS_MEME = {
+  idea: [
+    "¿Quieres cambiarle algo a tu meme?",
+    "Cuéntanos si quieres otro texto, otros colores o algún detalle especial. Es opcional.",
+  ],
+  fotos: [
+    "Sube tu meme",
+    "Elige la imagen del meme que quieres ver pintado. Mientras más nítida, mejor queda.",
   ],
 };
 
@@ -71,18 +84,20 @@ export default function PedidoWizard() {
 
   const estilo = estilos.find((e) => e.id === datos.tecnicaId);
   const conFormato = estilo ? estilo.has_size : true;
+  const esMeme = esEstiloMeme(estilo);
 
+  // El Meme salta el paso de mascotas (cantidad y nombres): siempre es un solo cuadro
   const pasos = useMemo(
     () => [
       { id: "estilo", nombre: "Estilo" },
       ...(conFormato ? [{ id: "formato", nombre: "Formato" }] : []),
-      { id: "mascotas", nombre: "Mascotas" },
-      { id: "idea", nombre: "Tu idea" },
-      { id: "fotos", nombre: "Fotografías" },
+      ...(esMeme ? [] : [{ id: "mascotas", nombre: "Mascotas" }]),
+      { id: "idea", nombre: esMeme ? "Detalles" : "Tu idea" },
+      { id: "fotos", nombre: esMeme ? "Tu meme" : "Fotografías" },
       { id: "contacto", nombre: "Contacto" },
       { id: "resumen", nombre: "Resumen" },
     ],
-    [conFormato],
+    [conFormato, esMeme],
   );
 
   const actual = pasos[paso];
@@ -99,7 +114,8 @@ export default function PedidoWizard() {
         datos.formato?.alto ?? null,
       )
     : [];
-  const producto = productos.find((p) => p.pet_count === datos.mascotas);
+  // El Meme es siempre un solo cuadro: su producto del catálogo tiene pet_count = 1
+  const producto = productos.find((p) => p.pet_count === (esMeme ? 1 : datos.mascotas));
 
   const puedeContinuar = {
     estilo: datos.tecnicaId !== null,
@@ -113,7 +129,8 @@ export default function PedidoWizard() {
 
   function elegirEstilo(id) {
     // Cambiar de estilo invalida el formato y la cantidad ya elegidos
-    setDatos((d) => ({ ...d, tecnicaId: id, formato: null, mascotas: null }));
+    // y descarta los nombres de mascotas, que el Meme no usa
+    setDatos((d) => ({ ...d, tecnicaId: id, formato: null, mascotas: null, nombres: [] }));
   }
 
   function elegirFormato(f) {
@@ -158,7 +175,7 @@ export default function PedidoWizard() {
     );
   }
 
-  const [titulo, subtitulo] = TEXTOS[actual.id];
+  const [titulo, subtitulo] = (esMeme && TEXTOS_MEME[actual.id]) || TEXTOS[actual.id];
 
   return (
     <div className="bg-lino px-4 pt-5 pb-12 sm:px-6 sm:pt-10 sm:pb-16">
@@ -218,12 +235,14 @@ export default function PedidoWizard() {
             {actual.id === "idea" && (
               <StepIdea
                 valor={datos.idea}
+                esMeme={esMeme}
                 onChange={(idea) => setDatos((d) => ({ ...d, idea }))}
               />
             )}
             {actual.id === "fotos" && (
               <StepFotos
                 fotos={datos.fotos}
+                esMeme={esMeme}
                 onAgregar={agregarFotos}
                 onQuitar={quitarFoto}
               />
@@ -240,6 +259,7 @@ export default function PedidoWizard() {
                   datos={datos}
                   estilo={estilo}
                   producto={producto}
+                  esMeme={esMeme}
                   onEnviar={enviar}
                   enviando={enviando}
                   aviso={errorEnvio}

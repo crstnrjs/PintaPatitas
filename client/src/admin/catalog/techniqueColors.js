@@ -25,6 +25,12 @@ const PALETA = {
     sel: "border-[#8a7bc0] bg-[#ece8f5] text-[#463873]",
     chipOn: "border-[#6f60a8] bg-[#6f60a8] text-white",
   },
+  meme: {
+    dot: "bg-[#d9763a]",
+    pill: "bg-[#fbe9dc] text-[#8a4414]",
+    sel: "border-[#d9763a] bg-[#fbe9dc] text-[#6e3510]",
+    chipOn: "border-[#c0642a] bg-[#c0642a] text-white",
+  },
 };
 
 // Para técnicas nuevas que agregues desde Supabase y aún no tengan color

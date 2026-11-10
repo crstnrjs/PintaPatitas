@@ -73,6 +73,11 @@ function clp(v) {
   return "$" + n.toLocaleString("es-CL");
 }
 
+// El estilo "Meme" no lleva mascotas: los correos hablan de "tu meme" / "tu cuadro"
+function esPedidoMeme(pedido) {
+  return pedido?.product === "Cuadro de meme" || pedido?.style === "Meme";
+}
+
 function filaItem(etiqueta, valor, esUltimo = false) {
   return `
     <tr>
@@ -119,7 +124,10 @@ export async function enviarCorreoNuevaSolicitud({ pedido, fotos }) {
   const enlace = `${base}/admin/solicitudes/${pedido.id}`;
 
   const n = pedido.pet_count ?? 1;
-  const asunto = `🐾 ¡Nueva Solicitud #PP-${pedido.order_number}! — Retrato de ${esc(pedido.pet_name || (n === 1 ? "1 mascota" : `${n} mascotas`))}`;
+  const meme = esPedidoMeme(pedido);
+  const asunto = meme
+    ? `🐾 ¡Nueva Solicitud #PP-${pedido.order_number}! — Cuadro de meme`
+    : `🐾 ¡Nueva Solicitud #PP-${pedido.order_number}! — Retrato de ${esc(pedido.pet_name || (n === 1 ? "1 mascota" : `${n} mascotas`))}`;
 
   const direccion = [pedido.street, pedido.street_number].filter(Boolean).join(" ");
   const direccionCompleta = [direccion, pedido.apartment].filter(Boolean).join(" · ");
@@ -177,12 +185,12 @@ export async function enviarCorreoNuevaSolicitud({ pedido, fotos }) {
 
                 <!-- Tarjeta 1: La Obra y Mascota -->
                 ${tarjetaSeccion(
-                  "La Obra y Mascota",
+                  meme ? "La Obra" : "La Obra y Mascota",
                   "🎨",
-                  filaItem("Mascota(s)", pedido.pet_name || "Sin nombre indicado") +
-                  filaItem("Estilo / Técnica", pedido.style) +
-                  filaItem("Tamaño", pedido.size) +
-                  filaItem("Cantidad de mascotas", String(n), !pedido.description) +
+                  (meme ? "" : filaItem("Mascota(s)", pedido.pet_name || "Sin nombre indicado")) +
+                  filaItem("Estilo / Técnica", meme ? "Meme (acrílico)" : pedido.style, meme && !pedido.description) +
+                  (meme ? "" : filaItem("Tamaño", pedido.size) +
+                    filaItem("Cantidad de mascotas", String(n), !pedido.description)) +
                   (pedido.description
                     ? `<tr>
                         <td colspan="2" style="padding:10px 0 2px;">
@@ -305,9 +313,13 @@ export async function enviarCorreoNuevaSolicitud({ pedido, fotos }) {
     "OBRA",
     `Producto: ${pedido.product ?? "—"}`,
     `Estilo: ${pedido.style ?? "—"}`,
-    `Tamaño: ${pedido.size ?? "—"}`,
-    `Mascotas: ${n}`,
-    `Nombre de la mascota: ${pedido.pet_name ?? "—"}`,
+    ...(meme
+      ? []
+      : [
+          `Tamaño: ${pedido.size ?? "—"}`,
+          `Mascotas: ${n}`,
+          `Nombre de la mascota: ${pedido.pet_name ?? "—"}`,
+        ]),
     `Indicaciones: ${pedido.description ?? "—"}`,
     "",
     "PAGO",
@@ -326,7 +338,7 @@ export async function enviarCorreoNuevaSolicitud({ pedido, fotos }) {
   ].join("\n");
 
   const attachments = fotos.map((f, i) => ({
-    filename: f.nombre || `mascota-${i + 1}.${f.ext || "jpg"}`,
+    filename: f.nombre || `${meme ? "meme" : "mascota"}-${i + 1}.${f.ext || "jpg"}`,
     content: f.buffer,
     contentType: f.contentType,
   }));
@@ -366,12 +378,14 @@ export async function enviarCorreoClienteAbono({ pedido, paymentUrl }) {
             <td style="padding:24px 28px 12px;">
               <p style="margin:0 0 14px;color:#0f172a;font-size:16px;">¡Hola, <strong>${esc(pedido.customer_name)}</strong>!</p>
               <p style="margin:0 0 16px;color:#334155;font-size:14px;line-height:1.6;">
-                Revisamos la foto y detalles de <strong>${esc(pedido.pet_name || "tu mascota")}</strong> y nos encanta tu idea. Para comenzar a pintar tu cuadro personalizado, solo debes realizar el pago del abono inicial.
+                ${esPedidoMeme(pedido)
+                  ? "Revisamos <strong>tu meme</strong> y los detalles que nos diste, y nos encanta tu idea."
+                  : `Revisamos la foto y detalles de <strong>${esc(pedido.pet_name || "tu mascota")}</strong> y nos encanta tu idea.`} Para comenzar a pintar tu cuadro personalizado, solo debes realizar el pago del abono inicial.
               </p>
               
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px 16px;margin-bottom:20px;">
                 <tr><td style="padding:4px 0;color:#64748b;font-size:13px;">Técnica / Estilo:</td><td style="padding:4px 0;color:#0f172a;font-weight:600;font-size:13px;text-align:right;">${esc(pedido.style || "—")}</td></tr>
-                <tr><td style="padding:4px 0;color:#64748b;font-size:13px;">Tamaño:</td><td style="padding:4px 0;color:#0f172a;font-weight:600;font-size:13px;text-align:right;">${esc(pedido.size || "—")}</td></tr>
+                ${esPedidoMeme(pedido) && !pedido.size ? "" : `<tr><td style="padding:4px 0;color:#64748b;font-size:13px;">Tamaño:</td><td style="padding:4px 0;color:#0f172a;font-weight:600;font-size:13px;text-align:right;">${esc(pedido.size || "—")}</td></tr>`}
                 <tr><td style="padding:4px 0;color:#64748b;font-size:13px;">Monto total:</td><td style="padding:4px 0;color:#0f172a;font-weight:600;font-size:13px;text-align:right;">${clp(pedido.total_amount)}</td></tr>
                 <tr style="border-top:1px solid #e2e8f0;"><td style="padding:8px 0 4px;color:#2d6583;font-size:15px;font-weight:bold;">Abono a pagar (50%):</td><td style="padding:8px 0 4px;color:#2d6583;font-size:16px;font-weight:bold;text-align:right;">${clp(pedido.deposit_amount)}</td></tr>
               </table>
@@ -402,9 +416,9 @@ export async function enviarCorreoClienteAbono({ pedido, paymentUrl }) {
   const texto = [
     `¡Hola ${pedido.customer_name}!`,
     "",
-    `Tu solicitud #PP-${pedido.order_number} para ${pedido.pet_name || "tu mascota"} fue aceptada.`,
+    `Tu solicitud #PP-${pedido.order_number} para ${esPedidoMeme(pedido) ? "tu meme" : pedido.pet_name || "tu mascota"} fue aceptada.`,
     `Técnica: ${pedido.style || "—"}`,
-    `Tamaño: ${pedido.size || "—"}`,
+    ...(esPedidoMeme(pedido) && !pedido.size ? [] : [`Tamaño: ${pedido.size || "—"}`]),
     `Monto total: ${clp(pedido.total_amount)}`,
     `Abono a pagar (50%): ${clp(pedido.deposit_amount)}`,
     "",
@@ -442,14 +456,14 @@ export async function enviarCorreoClienteSaldo({ pedido, paymentUrl, saldoAmount
           <tr>
             <td style="background:#2d6583;padding:26px 28px;">
               <p style="margin:0;color:#ffffff;font-size:20px;font-weight:bold;">PintaPatitas</p>
-              <p style="margin:6px 0 0;color:#cfe3ec;font-size:14px;">¡La pintura de ${esc(pedido.pet_name || "tu mascota")} está lista!</p>
+              <p style="margin:6px 0 0;color:#cfe3ec;font-size:14px;">${esPedidoMeme(pedido) ? "¡Tu cuadro de meme está listo!" : `¡La pintura de ${esc(pedido.pet_name || "tu mascota")} está lista!`}</p>
             </td>
           </tr>
           <tr>
             <td style="padding:24px 28px 12px;">
               <p style="margin:0 0 14px;color:#0f172a;font-size:16px;">¡Hola, <strong>${esc(pedido.customer_name)}</strong>!</p>
               <p style="margin:0 0 16px;color:#334155;font-size:14px;line-height:1.6;">
-                Nos complace contarte que hemos terminado tu retrato personalizado. Para proceder con el despacho o entrega, solo resta saldar el monto pendiente.
+                Nos complace contarte que hemos terminado ${esPedidoMeme(pedido) ? "tu cuadro de meme" : "tu retrato personalizado"}. Para proceder con el despacho o entrega, solo resta saldar el monto pendiente.
               </p>
               
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px 16px;margin-bottom:20px;">
@@ -484,7 +498,7 @@ export async function enviarCorreoClienteSaldo({ pedido, paymentUrl, saldoAmount
   const texto = [
     `¡Hola ${pedido.customer_name}!`,
     "",
-    `La pintura de ${pedido.pet_name || "tu mascota"} está lista (Pedido #PP-${pedido.order_number}).`,
+    `${esPedidoMeme(pedido) ? "Tu cuadro de meme" : `La pintura de ${pedido.pet_name || "tu mascota"}`} está lista (Pedido #PP-${pedido.order_number}).`,
     `Saldo a pagar: ${clp(saldoAmount)}`,
     "",
     "Paga tu saldo a través de Mercado Pago en el siguiente enlace:",

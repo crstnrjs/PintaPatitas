@@ -1,5 +1,6 @@
 import { normalizarTelefono } from "./StepContacto";
 import { apiUrl } from "@/lib/api";
+import { esMeme } from "./meme";
 
 // Arma lo que recibirá el servidor. NO se envía el precio: lo calcula el servidor.
 export function armarFormData(datos, estilo) {
@@ -11,12 +12,16 @@ export function armarFormData(datos, estilo) {
     fd.append("width_cm", datos.formato.ancho);
     fd.append("height_cm", datos.formato.alto);
   }
-  fd.append("pet_count", datos.mascotas);
+  const meme = esMeme(estilo);
+  // El Meme es siempre un solo cuadro y no lleva nombres de mascotas
+  fd.append("pet_count", meme ? 1 : datos.mascotas);
   // Nombres de las mascotas (1 a 4), unidos con coma. Opcional.
-  const nombres = (datos.nombres ?? [])
-    .map((s) => (s ?? "").trim())
-    .filter(Boolean)
-    .join(", ");
+  const nombres = meme
+    ? ""
+    : (datos.nombres ?? [])
+        .map((s) => (s ?? "").trim())
+        .filter(Boolean)
+        .join(", ");
   fd.append("pet_name", nombres);
   fd.append("idea", datos.idea.trim());
 
@@ -30,7 +35,7 @@ export function armarFormData(datos, estilo) {
   for (const campo of camposDestino) fd.append(campo, c[campo].trim());
   fd.append("acepta_envio", datos.aceptaEnvio ? "true" : "false");
 
-  datos.fotos.forEach((f, i) => fd.append("fotos", f.blob, `mascota-${i + 1}.webp`));
+  datos.fotos.forEach((f, i) => fd.append("fotos", f.blob, `${meme ? "meme" : "mascota"}-${i + 1}.webp`));
   return fd;
 }
 

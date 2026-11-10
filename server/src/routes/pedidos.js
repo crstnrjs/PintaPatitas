@@ -41,14 +41,27 @@ function tipoReal(buf) {
 
 const texto = (v, max = 120) => (typeof v === "string" ? v.trim().slice(0, max) : "");
 
+// El estilo "Meme" (acrílico, un solo cuadro) no lleva cantidad ni nombres de mascotas
+export const SLUG_MEME = "meme";
+export const esMeme = (c) => c.technique_slug === SLUG_MEME;
+
+// Texto del producto que se guarda en el pedido y se muestra en correos y panel
+export function nombreProducto(c, n) {
+  if (esMeme(c)) return "Cuadro de meme";
+  return `Retrato de ${n} ${n === 1 ? "mascota" : "mascotas"}`;
+}
+
 export function leerCampos(b) {
+  const meme = texto(b.technique_slug, 60) === SLUG_MEME;
   return {
     technique_slug: texto(b.technique_slug, 60),
-    pet_count: typeof b.pet_count === "string" && /^\d+$/.test(b.pet_count) ? Number(b.pet_count) : NaN,
+    pet_count: meme
+      ? 1
+      : typeof b.pet_count === "string" && /^\d+$/.test(b.pet_count) ? Number(b.pet_count) : NaN,
     width_cm: b.width_cm ? (typeof b.width_cm === "string" && /^\d+$/.test(b.width_cm) ? Number(b.width_cm) : NaN) : null,
     height_cm: b.height_cm ? (typeof b.height_cm === "string" && /^\d+$/.test(b.height_cm) ? Number(b.height_cm) : NaN) : null,
     idea: texto(b.idea, 800),
-    pet_name: texto(b.pet_name, 160),
+    pet_name: meme ? "" : texto(b.pet_name, 160),
     nombre: texto(b.nombre, 60),
     apellido: texto(b.apellido, 60),
     correo: texto(b.correo, 120).toLowerCase(),
@@ -98,7 +111,9 @@ export function validar(c, fotos) {
     return "Indica la sucursal Starken donde lo retirarás.";
   }
   if (!c.acepta_envio) return "Debes aceptar que el envío se paga al recibir en Starken.";
-  if (fotos.length < 1) return "Sube al menos una foto de tu mascota.";
+  if (fotos.length < 1) {
+    return esMeme(c) ? "Sube la imagen de tu meme." : "Sube al menos una foto de tu mascota.";
+  }
   return null;
 }
 
@@ -148,7 +163,7 @@ router.post("/", limitador, upload.array("fotos", MAX_FOTOS), async (req, res) =
         pet_name: c.pet_name || null,
         total_amount: total,
         deposit_amount: abono,
-        product: `Retrato de ${n} ${n === 1 ? "mascota" : "mascotas"}`,
+        product: nombreProducto(c, n),
         style: opcion.technique_name,
         size: opcion.size_label,
         pet_count: n,
@@ -196,7 +211,7 @@ router.post("/", limitador, upload.array("fotos", MAX_FOTOS), async (req, res) =
         customer_name: `${c.nombre} ${c.apellido}`,
         customer_email: c.correo,
         customer_phone: c.telefono,
-        product: `Retrato de ${n} ${n === 1 ? "mascota" : "mascotas"}`,
+        product: nombreProducto(c, n),
         style: opcion.technique_name,
         size: opcion.size_label,
         pet_count: n,

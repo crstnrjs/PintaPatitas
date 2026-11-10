@@ -68,7 +68,11 @@ export default function ProductModal({ tecnicas, producto, onClose, onSaved }) {
 
   const opciones = tecnicas.filter((t) => t.is_active || t.id === producto?.technique_id);
   const tecnica = tecnicas.find((t) => t.id === tecnicaId);
-  const sinTamano = tecnica ? !tecnica.has_size : false;
+  // El estilo Meme es siempre un cuadro (1 imagen), sin cantidad de mascotas ni medidas
+  const esMeme = tecnica?.slug === "meme";
+  const sinTamano = esMeme || (tecnica ? !tecnica.has_size : false);
+  const cant = esMeme ? 1 : cantidad;
+  const desfase = esMeme ? 1 : 0; // sin el paso de cantidad, la numeración baja uno
 
   // Libera la vista previa anterior cuando cambia o al cerrar
   useEffect(() => {
@@ -157,7 +161,7 @@ export default function ProductModal({ tecnicas, producto, onClose, onSaved }) {
       const datos = {
         name: nombre.trim() || null,
         technique_id: tecnicaId,
-        pet_count: cantidad,
+        pet_count: cant,
         width_cm,
         height_cm,
         price,
@@ -209,7 +213,7 @@ export default function ProductModal({ tecnicas, producto, onClose, onSaved }) {
   const resumen = [
     nombre.trim() || null,
     tecnica?.name,
-    mascotas(cantidad),
+    esMeme ? null : mascotas(cant),
     !sinTamano && ancho && alto ? `${ancho} × ${alto} cm` : null,
     price > 0 ? `$${clp(price)}` : null,
   ]
@@ -254,7 +258,9 @@ export default function ProductModal({ tecnicas, producto, onClose, onSaved }) {
               onChange={(e) => setNombre(e.target.value)}
             />
             <span className="block text-xs text-tinta/55">
-              Si lo dejas vacío, se muestra «Retrato de N mascotas».
+              {esMeme
+                ? "Si lo dejas vacío, se muestra «Cuadro de meme»."
+                : "Si lo dejas vacío, se muestra «Retrato de N mascotas»."}
             </span>
           </label>
 
@@ -282,34 +288,38 @@ export default function ProductModal({ tecnicas, producto, onClose, onSaved }) {
             </div>
           </Paso>
 
-          <Paso n={2} titulo="Cantidad de mascotas">
-            <div className="grid grid-cols-4 gap-2">
-              {CANTIDADES.map((n) => (
-                <button
-                  type="button"
-                  key={n}
-                  onClick={() => setCantidad(n)}
-                  className={`rounded-2xl border-2 py-2 text-center transition ${
-                    cantidad === n
-                      ? "border-acento bg-acento/10 text-acento"
-                      : "border-tinta/10 bg-white text-tinta/70 hover:border-tinta/25"
-                  }`}
-                >
-                  <span className="block text-lg font-semibold">{n}</span>
-                  <span className="block text-[11px]">{n === 1 ? "mascota" : "mascotas"}</span>
-                </button>
-              ))}
-            </div>
-          </Paso>
+          {!esMeme && (
+            <Paso n={2} titulo="Cantidad de mascotas">
+              <div className="grid grid-cols-4 gap-2">
+                {CANTIDADES.map((n) => (
+                  <button
+                    type="button"
+                    key={n}
+                    onClick={() => setCantidad(n)}
+                    className={`rounded-2xl border-2 py-2 text-center transition ${
+                      cantidad === n
+                        ? "border-acento bg-acento/10 text-acento"
+                        : "border-tinta/10 bg-white text-tinta/70 hover:border-tinta/25"
+                    }`}
+                  >
+                    <span className="block text-lg font-semibold">{n}</span>
+                    <span className="block text-[11px]">{n === 1 ? "mascota" : "mascotas"}</span>
+                  </button>
+                ))}
+              </div>
+            </Paso>
+          )}
 
           <Paso
-            n={3}
+            n={3 - desfase}
             titulo="Tamaño del cuadro"
             ayuda={sinTamano ? null : "Elige un tamaño habitual o escribe las medidas en cm."}
           >
             {sinTamano ? (
               <p className="rounded-xl bg-bruma/60 px-4 py-3 text-sm text-tinta/55">
-                La pintura digital no lleva medidas, así que no hay nada que elegir aquí.
+                {esMeme
+                  ? "El cuadro de meme no lleva medidas ni cantidad de mascotas: siempre es un cuadro en acrílico."
+                  : "La pintura digital no lleva medidas, así que no hay nada que elegir aquí."}
               </p>
             ) : (
               <>
@@ -362,7 +372,7 @@ export default function ProductModal({ tecnicas, producto, onClose, onSaved }) {
             )}
           </Paso>
 
-          <Paso n={4} titulo="Precio">
+          <Paso n={4 - desfase} titulo="Precio">
             <div className="flex items-center gap-3">
               <div className="flex items-center rounded-xl border border-tinta/15 px-3">
                 <span className="text-tinta/40">$</span>
@@ -397,7 +407,7 @@ export default function ProductModal({ tecnicas, producto, onClose, onSaved }) {
           </Paso>
 
           <Paso
-            n={5}
+            n={5 - desfase}
             titulo="Foto del producto"
             ayuda="Opcional, pero recomendada: el cliente la ve como ejemplo al elegir su retrato y en la sección de estilos de la página de inicio. Si no hay foto, se muestra un ícono."
           >

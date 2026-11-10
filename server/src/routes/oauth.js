@@ -6,7 +6,11 @@ import {
   exchangeMarketplaceAuthorizationCode,
   getMarketplaceOAuthConfigurationStatus,
 } from "../lib/marketplaceOAuth.js";
-import { cargarCredencialesVendedor, saveMarketplaceSellerCredentials } from "../lib/marketplaceCredentials.js";
+import {
+  cargarCredencialesVendedor,
+  getMarketplaceSellerCredentials,
+  saveMarketplaceSellerCredentials,
+} from "../lib/marketplaceCredentials.js";
 import { getMarketplaceSellerStatus } from "../lib/marketplaceSeller.js";
 
 const router = Router();
@@ -140,7 +144,17 @@ router.get("/mercadopago/status", requireAdmin, async (_req, res) => {
   const config = getMarketplaceOAuthConfigurationStatus();
   // Misma regla que usan los cobros en orders.js
   const { ready, mode, sellerMode, modeMismatch } = getMarketplaceSellerStatus();
+  // Solo fechas, nunca tokens.
+  let credencial = null;
+  try {
+    credencial = getMarketplaceSellerCredentials();
+  } catch {
+    // Credencial ilegible (p. ej., cambió MP_TOKEN_ENCRYPTION_KEY): el panel la verá como no vinculada.
+  }
+  const fecha = (v) => (Number.isFinite(Number(v)) && Number(v) > 0 ? new Date(Number(v)).toISOString() : null);
   res.json({
+    expiresAt: fecha(credencial?.expires_at),
+    renewedAt: fecha(credencial?.renovado_en),
     connected: ready,
     testMode: config.diagnostics.oauthTestMode,
     mode,

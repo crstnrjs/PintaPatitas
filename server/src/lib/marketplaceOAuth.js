@@ -208,3 +208,35 @@ export async function exchangeMarketplaceAuthorizationCode(code, state, attemptI
 
   return result;
 }
+
+/**
+ * Renueva el access token de la cuenta vendedora con su refresh_token.
+ * Mercado Pago devuelve un access_token y un refresh_token nuevos (el anterior deja
+ * de servir), así que quien llama debe guardar ambos. No registra tokens.
+ */
+export async function refreshMarketplaceAccessToken(refreshToken, { fetchImpl = fetch } = {}) {
+  const clientId = process.env.MP_CLIENT_ID;
+  const clientSecret = process.env.MP_CLIENT_SECRET;
+  if (!clientId || !clientSecret) throw new Error("Faltan MP_CLIENT_ID o MP_CLIENT_SECRET para renovar el token");
+  if (!refreshToken) throw new Error("La credencial guardada no tiene refresh_token");
+
+  const response = await fetchImpl(TOKEN_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json" },
+    body: new URLSearchParams({
+      client_id: clientId,
+      client_secret: clientSecret,
+      grant_type: "refresh_token",
+      refresh_token: refreshToken,
+    }).toString(),
+  });
+
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const error = new Error(result.message || result.error || `Mercado Pago respondió ${response.status} al renovar el token`);
+    error.status = response.status;
+    error.code = result.error ?? null;
+    throw error;
+  }
+  return result;
+}

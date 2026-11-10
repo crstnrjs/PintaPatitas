@@ -235,6 +235,46 @@ export async function enviarAlertaPagoRechazado(
   });
 }
 
+/**
+ * Aviso interno cuando no se pudo renovar el token de Mercado Pago de la artista.
+ * Sin renovación, al vencer el token no se pueden cobrar abonos, saldos ni cuadros.
+ */
+export async function enviarAlertaTokenMercadoPago(
+  { venceEn, definitivo, motivo },
+  { destino = CORREO_RECHAZOS, enviar = enviarCorreo } = {},
+) {
+  const fecha = venceEn
+    ? new Date(venceEn).toLocaleDateString("es-CL", { day: "numeric", month: "long", year: "numeric", timeZone: "America/Santiago" })
+    : "fecha desconocida";
+  const accion = definitivo
+    ? "Mercado Pago rechazó la renovación (probablemente se revocó el permiso). Hay que volver a vincular la cuenta en Admin → Mercado Pago."
+    : "El sistema lo reintentará cada día. Si el aviso se repite, vuelve a vincular la cuenta en Admin → Mercado Pago.";
+  await enviar({
+    to: destino,
+    remitente: "soporte",
+    respaldo: false,
+    subject: "⚠ No se pudo renovar la conexión con Mercado Pago",
+    html: plantilla({
+      titulo: "Conexión con Mercado Pago por vencer",
+      subtitulo: `Vence: ${fecha}`,
+      cuerpo: `
+        <p style="margin:0 0 14px;color:#b45309;font-size:14px;line-height:1.6;">
+          No se pudo renovar la autorización de la cuenta de Mercado Pago de la artista. Cuando venza, los clientes
+          no podrán pagar abonos, saldos ni cuadros.
+        </p>
+        <p style="margin:0 0 14px;color:#334155;font-size:14px;line-height:1.6;">${esc(accion)}</p>
+        <p style="margin:0;color:#64748b;font-size:12px;">Detalle técnico: ${esc(motivo)}</p>`,
+    }),
+    text: [
+      "No se pudo renovar la autorización de la cuenta de Mercado Pago de la artista.",
+      `Vence: ${fecha}. Cuando venza, los clientes no podrán pagar abonos, saldos ni cuadros.`,
+      accion,
+      "",
+      `Detalle técnico: ${motivo}`,
+    ].join("\n"),
+  });
+}
+
 /** Envía el mensaje al equipo y una copia al cliente. La copia es opcional: si falla, no se reporta error. */
 export async function enviarMensajeSoporte(datos, { destino = CORREO_SOPORTE, enviar = enviarCorreo } = {}) {
   const motivo = MOTIVOS[datos.motivo];

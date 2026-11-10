@@ -54,9 +54,12 @@ app.use('/api/cuadros', cuadrosRouter)
 app.use('/api/soporte', soporteRouter)
 app.use('/api/configuracion', configuracionRouter)
 
-// La credencial de la cuenta vendedora vive en Supabase; se carga antes de atender cobros.
-const origenCredencial = await cargarCredencialesVendedor()
-console.info(`[MP OAuth] Credencial de la cuenta vendedora: ${origenCredencial}`)
+// La credencial de la cuenta vendedora vive en Supabase; se carga en segundo plano.
+// Sin await de nivel superior: el hosting carga este archivo con require(), que no
+// admite módulos con top-level await (la API no arrancaba).
+cargarCredencialesVendedor().then((origen) =>
+  console.info(`[MP OAuth] Credencial de la cuenta vendedora: ${origen}`),
+)
 
 const PORT = Number(process.env.PORT) || 3001
 app.listen(PORT, '0.0.0.0', () => {

@@ -11,6 +11,7 @@ const SobreNosotros = lazy(() => import("./pages/SobreNosotros"));
 const Contacto = lazy(() => import("./pages/Contacto"));
 const Soporte = lazy(() => import("./pages/Soporte"));
 const AdminLogin = lazy(() => import("./admin/auth/AdminLogin"));
+const CrearContrasena = lazy(() => import("./admin/auth/CrearContrasena"));
 const AdminRoute = lazy(() => import("./admin/auth/AdminRoute"));
 const AdminPanel = lazy(() => import("./admin/layout/AdminPanel"));
 const Dashboard = lazy(() => import("./admin/dashboard/Dashboard"));
@@ -40,6 +41,7 @@ const routes = [
     ],
   },
   { path: "/admin/login", element: <AdminLogin /> },
+  { path: "/admin/crear-contrasena", element: <CrearContrasena /> },
   {
     path: "/admin",
     element: (

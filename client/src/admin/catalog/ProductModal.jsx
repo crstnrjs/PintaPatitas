@@ -68,9 +68,9 @@ export default function ProductModal({ tecnicas, producto, onClose, onSaved }) {
 
   const opciones = tecnicas.filter((t) => t.is_active || t.id === producto?.technique_id);
   const tecnica = tecnicas.find((t) => t.id === tecnicaId);
-  // El estilo Meme es siempre un cuadro (1 imagen), sin cantidad de mascotas ni medidas
+  // El estilo Meme es siempre un cuadro (1 imagen): sin cantidad de mascotas, pero sí puede llevar medidas
   const esMeme = tecnica?.slug === "meme";
-  const sinTamano = esMeme || (tecnica ? !tecnica.has_size : false);
+  const sinTamano = tecnica ? !tecnica.has_size : false;
   const cant = esMeme ? 1 : cantidad;
   const desfase = esMeme ? 1 : 0; // sin el paso de cantidad, la numeración baja uno
 
@@ -318,7 +318,7 @@ export default function ProductModal({ tecnicas, producto, onClose, onSaved }) {
             {sinTamano ? (
               <p className="rounded-xl bg-bruma/60 px-4 py-3 text-sm text-tinta/55">
                 {esMeme
-                  ? "El cuadro de meme no lleva medidas ni cantidad de mascotas: siempre es un cuadro en acrílico."
+                  ? "Este estilo todavía no tiene medidas activadas."
                   : "La pintura digital no lleva medidas, así que no hay nada que elegir aquí."}
               </p>
             ) : (

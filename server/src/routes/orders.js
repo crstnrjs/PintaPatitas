@@ -4,6 +4,7 @@ import { requireAdmin } from "../middleware/requireAdmin.js";
 import { crearPreferenciaVendedor } from "../lib/mercadopago.js";
 import { getMarketplaceSellerStatus, urlDePago } from "../lib/marketplaceSeller.js";
 import { enviarCorreoClienteAbono, enviarCorreoClienteSaldo } from "../lib/mailer.js";
+import { enviarCorreosRechazo } from "../lib/soporte.js";
 import { reservarPago, completarReservaPago, eliminarReservaPago } from "./paymentIdempotency.js";
 
 const router = Router();
@@ -294,6 +295,66 @@ router.post("/:id/request-balance", requireAdmin, async (req, res) => {
     commission_rate: comisionPorcentaje,
     commission_amount: fee,
   });
+});
+
+// 3. Rechazar una solicitud: solicitud / pendiente_abono → rechazado
+// Solo si todavía no hay ningún pago aprobado (con un pago, el pedido ya está aceptado y en curso).
+// Guarda el motivo y avisa por correo al cliente y al buzón interno de respaldo.
+router.post("/:id/reject", requireAdmin, async (req, res) => {
+  const { id } = req.params;
+  if (!UUID.test(id)) return res.status(400).json({ error: "Identificador no válido." });
+
+  const motivo = typeof req.body?.rejection_reason === "string"
+    ? req.body.rejection_reason.replace(/\r\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim()
+    : "";
+  if (motivo.length < 10) {
+    return res.status(400).json({ error: "Escribe el motivo del rechazo (mínimo 10 caracteres)." });
+  }
+  if (motivo.length > 1000) {
+    return res.status(400).json({ error: "El motivo es demasiado largo (máximo 1000 caracteres)." });
+  }
+
+  const { data: order, error: errOrder } = await supabase
+    .from("orders").select("*").eq("id", id).maybeSingle();
+  if (errOrder) {
+    console.error("Error consultando solicitud:", errOrder);
+    return res.status(500).json({ error: "Error consultando la solicitud en la base de datos." });
+  }
+  if (!order) return res.status(404).json({ error: "La solicitud no existe." });
+  if (!["solicitud", "pendiente_abono"].includes(order.status)) {
+    return res.status(409).json({ error: "Esta solicitud ya no se puede rechazar." });
+  }
+
+  const { data: pagosAprobados, error: errPagos } = await supabase
+    .from("payments").select("id").eq("order_id", id).eq("status", "aprobado").limit(1);
+  if (errPagos) {
+    console.error("Error consultando pagos antes de rechazar:", errPagos);
+    return res.status(500).json({ error: "No se pudieron verificar los pagos de la solicitud." });
+  }
+  if (pagosAprobados?.length) {
+    return res.status(409).json({ error: "Esta solicitud ya tiene un pago aprobado, por lo que ya no se puede rechazar." });
+  }
+
+  // La condición sobre el estado evita pisar un cambio simultáneo (p. ej. el webhook del abono).
+  const { data: actualizado, error: errUpdate } = await supabase
+    .from("orders")
+    .update({ status: "rechazado", rejection_reason: motivo })
+    .eq("id", id)
+    .in("status", ["solicitud", "pendiente_abono"])
+    .select("status")
+    .maybeSingle();
+  if (errUpdate) {
+    console.error("Error rechazando solicitud:", errUpdate);
+    return res.status(500).json({ error: "No se pudo rechazar la solicitud." });
+  }
+  if (!actualizado) return res.status(409).json({ error: "La solicitud cambió de estado. Recarga la página." });
+
+  // En segundo plano: un fallo de correo no deshace el rechazo.
+  enviarCorreosRechazo({ pedido: order, motivo, estadoPrevio: order.status }).catch((err) => {
+    console.error("Error enviando correos de rechazo:", err);
+  });
+
+  return res.json({ ok: true, status: actualizado.status, rejection_reason: motivo });
 });
 
 export default router;

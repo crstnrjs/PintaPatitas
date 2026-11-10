@@ -81,6 +81,117 @@ function plantilla({ titulo, subtitulo, cuerpo }) {
 const bloqueMensaje = (mensaje) =>
   `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:14px 16px;color:#0f172a;font-size:14px;line-height:1.6;white-space:pre-wrap;">${esc(mensaje)}</div>`;
 
+// Correo interno de respaldo de pedidos rechazados: un filtro del buzón lo mueve a su carpeta.
+export const CORREO_RECHAZOS = "solicitudes@pintapatitas.com";
+
+const clp = (v) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? "$" + n.toLocaleString("es-CL") : "—";
+};
+
+/**
+ * Cuando la artista rechaza una solicitud: avisa al cliente con el motivo y manda un respaldo
+ * interno con asunto "Pedido rechazado #PP-N". Ambos salen desde soporte@ y sin copia oculta
+ * (el respaldo ya es la copia). Un fallo en uno no impide el otro; devuelve cuáles fallaron.
+ */
+export async function enviarCorreosRechazo(
+  { pedido, motivo, estadoPrevio },
+  { destinoRespaldo = CORREO_RECHAZOS, enviar = enviarCorreo } = {},
+) {
+  const codigo = `#PP-${pedido.order_number}`;
+  const mascota = pedido.pet_name || "tu mascota";
+  const conLinkVigente = estadoPrevio === "pendiente_abono";
+
+  const alCliente = enviar({
+    to: pedido.customer_email,
+    remitente: "soporte",
+    respaldo: false,
+    replyTo: CORREO_SOPORTE,
+    subject: `Tu solicitud ${codigo} fue rechazada — PintaPatitas`,
+    html: plantilla({
+      titulo: "Tu solicitud fue rechazada",
+      subtitulo: `Solicitud ${codigo}`,
+      cuerpo: `
+        <p style="margin:0 0 14px;color:#0f172a;font-size:16px;">¡Hola, <strong>${esc(pedido.customer_name)}</strong>!</p>
+        <p style="margin:0 0 16px;color:#334155;font-size:14px;line-height:1.6;">
+          Lamentamos contarte que no podremos realizar la solicitud ${esc(codigo)} para <strong>${esc(mascota)}</strong>.
+          Este es el motivo que nos dejó la artista:
+        </p>
+        ${bloqueMensaje(motivo)}
+        ${conLinkVigente
+          ? `<p style="margin:16px 0 0;color:#b45309;font-size:13px;line-height:1.6;"><strong>Importante:</strong> si te enviamos un enlace de pago para esta solicitud, por favor no lo uses.</p>`
+          : ""}
+        <p style="margin:16px 0 0;color:#64748b;font-size:13px;line-height:1.6;">
+          Si tienes dudas o quieres conversar otra idea, responde este correo y te ayudamos.
+        </p>`,
+    }),
+    text: [
+      `¡Hola ${pedido.customer_name}!`,
+      "",
+      `Lamentamos contarte que no podremos realizar la solicitud ${codigo} para ${mascota}.`,
+      "Este es el motivo que nos dejó la artista:",
+      "",
+      motivo,
+      "",
+      ...(conLinkVigente ? ["Importante: si te enviamos un enlace de pago para esta solicitud, por favor no lo uses.", ""] : []),
+      "Si tienes dudas o quieres conversar otra idea, responde este correo y te ayudamos.",
+      "",
+      "PintaPatitas",
+    ].join("\n"),
+  });
+
+  const respaldo = enviar({
+    to: destinoRespaldo,
+    remitente: "soporte",
+    respaldo: false,
+    replyTo: `"${String(pedido.customer_name ?? "").replaceAll('"', "")}" <${pedido.customer_email}>`,
+    subject: `Pedido rechazado ${codigo}`,
+    html: plantilla({
+      titulo: "Pedido rechazado",
+      subtitulo: `Solicitud ${codigo}`,
+      cuerpo: `
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:16px;">${[
+          fila("Pedido", codigo),
+          fila("Cliente", pedido.customer_name),
+          fila("Correo", pedido.customer_email),
+          fila("Celular", pedido.customer_phone || "—"),
+          fila("Mascota", pedido.pet_name || "—"),
+          fila("Estilo / tamaño", [pedido.style, pedido.size].filter(Boolean).join(" · ") || "—"),
+          fila("Total", clp(pedido.total_amount)),
+          fila("Estado anterior", estadoPrevio),
+        ].join("")}</table>
+        <p style="margin:0 0 8px;color:#64748b;font-size:13px;">Motivo enviado al cliente:</p>
+        ${bloqueMensaje(motivo)}`,
+    }),
+    text: [
+      `Pedido rechazado ${codigo}`,
+      "",
+      `Cliente: ${pedido.customer_name}`,
+      `Correo: ${pedido.customer_email}`,
+      `Celular: ${pedido.customer_phone || "—"}`,
+      `Mascota: ${pedido.pet_name || "—"}`,
+      `Estilo / tamaño: ${[pedido.style, pedido.size].filter(Boolean).join(" · ") || "—"}`,
+      `Total: ${clp(pedido.total_amount)}`,
+      `Estado anterior: ${estadoPrevio}`,
+      "",
+      "Motivo enviado al cliente:",
+      motivo,
+    ].join("\n"),
+  });
+
+  const [cliente, interno] = await Promise.allSettled([alCliente, respaldo]);
+  const fallos = [];
+  if (cliente.status === "rejected") {
+    fallos.push("cliente");
+    console.error(`[Rechazo] No se pudo avisar al cliente (${codigo}):`, cliente.reason?.message ?? cliente.reason);
+  }
+  if (interno.status === "rejected") {
+    fallos.push("respaldo");
+    console.error(`[Rechazo] No se pudo enviar el respaldo (${codigo}):`, interno.reason?.message ?? interno.reason);
+  }
+  return { fallos };
+}
+
 /** Envía el mensaje al equipo y una copia al cliente. La copia es opcional: si falla, no se reporta error. */
 export async function enviarMensajeSoporte(datos, { destino = CORREO_SOPORTE, enviar = enviarCorreo } = {}) {
   const motivo = MOTIVOS[datos.motivo];

@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+﻿import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Copy, Ellipsis, Eye, EyeOff, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import ProductModal from "./ProductModal";
@@ -27,6 +27,115 @@ function hace(fecha) {
 
 const BTN =
   "inline-flex min-h-10 items-center justify-center gap-1.5 rounded-full border border-tinta/12 bg-white px-3.5 text-sm font-medium text-acento-oscuro transition hover:bg-bruma/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento";
+
+// Tarjeta memoizada: abrir un modal o marcar otra tarjeta no la vuelve a renderizar.
+const TarjetaProducto = memo(function TarjetaProducto({
+  p, marcado, menuAbierto, comision, abono: abonoPct,
+  onSeleccion, onEditar, onDuplicar, onMenu, onAlternar, onBorrar,
+}) {
+  const foto = imagenUrl(p.image_path);
+  const c = colorDe(p.technique_slug);
+  // Mismos porcentajes con que cobra el servidor; sin ellos no se muestra la proyección.
+  const proyeccion = comision != null && abonoPct != null;
+  const abono = Math.round(p.price * (abonoPct ?? 0) / 100);
+  const saldo = p.price - abono;
+  const mpTotal = Math.round(abono * MP_PORCENTAJE / 100) + Math.round(saldo * MP_PORCENTAJE / 100);
+  const chris = Math.round(p.price * (comision ?? 0) / 100);
+  const amiga = Math.max(p.price - mpTotal - chris, 0);
+  return (
+      <li
+        className={`group flex flex-col rounded-[26px] bg-white/85 p-2.5 shadow-[0_18px_40px_-30px_rgb(19_48_61/0.55)] transition hover:-translate-y-0.5 hover:shadow-[0_24px_44px_-28px_rgb(19_48_61/0.6)] ${
+          marcado ? "ring-2 ring-acento" : "ring-1 ring-white/80"
+        } ${p.is_active ? "" : "opacity-85"}`}
+      >
+        <div className="relative overflow-hidden rounded-[20px] bg-bruma/60">
+          {foto ? (
+            <img
+              src={foto}
+              alt={`${p.name ? p.name + ", " : ""}${p.technique_name}${cantidadTxt(p, ", ")}`}
+              loading="lazy"
+              decoding="async"
+              className="aspect-[4/3] w-full object-cover"
+            />
+          ) : (
+            <div className="flex aspect-[4/3] items-center justify-center text-sm text-tinta/40">Sin foto</div>
+          )}
+          <label className="absolute top-2.5 left-2.5 grid size-9 cursor-pointer place-items-center rounded-xl bg-white/90 shadow-sm">
+            <input
+              type="checkbox"
+              className="size-4 accent-acento"
+              checked={marcado}
+              onChange={() => onSeleccion(p.id)}
+              aria-label={`Seleccionar ${p.name ? p.name + ", " : ""}${p.technique_name}${cantidadTxt(p, ", ")}`}
+            />
+          </label>
+          <span
+            className={`absolute top-2.5 right-2.5 rounded-full px-2.5 py-1 text-[10px] font-semibold tracking-wider ${
+              p.is_active ? "bg-[#e1f0e6] text-[#2d6844]" : "bg-white/90 text-tinta/60"
+            }`}
+          >
+            {p.is_active ? "ACTIVO" : "BORRADOR"}
+          </span>
+        </div>
+
+        <div className="flex flex-1 flex-col px-3 pt-4 pb-2">
+          <span className={`flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${c.pill}`}>
+            <span aria-hidden="true" className={`size-1.5 rounded-full ${c.dot}`} />
+            {p.technique_name}
+          </span>
+          <h3 className="mt-2.5 text-lg font-semibold text-tinta">{tituloDe(p)}</h3>
+          <p className="text-sm text-tinta/55">
+            {p.name && !esMemeP(p) ? `${mascotas(p.pet_count)} · ` : ""}
+            {p.size_label ?? "Sin medidas"}
+          </p>
+
+          <div className="mt-4 flex items-end justify-between gap-3">
+            <strong className="font-display text-2xl text-tinta">${clp(p.price)}</strong>
+            <small className="text-xs text-tinta/45">Actualizado {hace(p.updated_at)}</small>
+          </div>
+          {/* Proyección de lo que recibe la amiga */}
+          {proyeccion && (
+            <p className="mt-1 text-[11px] leading-tight text-tinta/45">
+              Recibes <span className="font-semibold text-[#2d6844]">${clp(amiga)}</span>
+              <span className="ml-1">(MP −${clp(mpTotal)} · Chris {porcentaje(comision)} −${clp(chris)})</span>
+            </p>
+          )}
+
+          <div className="relative mt-auto flex gap-2 pt-4">
+            <button className={`${BTN} flex-1`} onClick={() => onEditar(p)}>
+              <Pencil size={14} aria-hidden="true" /> Editar
+            </button>
+            <button className={`${BTN} flex-1`} onClick={() => onDuplicar(p)}>
+              <Copy size={14} aria-hidden="true" /> Duplicar
+            </button>
+            <button
+              className={BTN}
+              aria-label="Más acciones"
+              aria-expanded={menuAbierto}
+              onClick={() => onMenu(menuAbierto ? null : p.id)}
+            >
+              <Ellipsis size={16} aria-hidden="true" />
+            </button>
+
+            {menuAbierto && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => onMenu(null)} />
+                <div className="absolute right-0 bottom-full z-20 mb-2 w-52 rounded-2xl border border-tinta/10 bg-papel p-1.5 text-sm shadow-[0_20px_40px_-20px_rgb(19_48_61/0.6)] motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-95">
+                  <button className="flex min-h-10 w-full items-center gap-2 rounded-xl px-3 text-left hover:bg-bruma/50" onClick={() => onAlternar(p)}>
+                    {p.is_active ? <EyeOff size={15} aria-hidden="true" /> : <Eye size={15} aria-hidden="true" />}
+                    {p.is_active ? "Ocultar (borrador)" : "Mostrar en el sitio"}
+                  </button>
+                  <button className="flex min-h-10 w-full items-center gap-2 rounded-xl px-3 text-left text-[#963a31] hover:bg-[#f7e3e1]" onClick={() => onBorrar([p])}>
+                    <Trash2 size={15} aria-hidden="true" /> Eliminar
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </li>
+  );
+});
 
 export default function AdminCatalog() {
   const cobros = useCobros();
@@ -90,14 +199,14 @@ export default function AdminCatalog() {
   const seleccionados = items.filter((p) => seleccion.has(p.id));
   const todosMarcados = visibles.length > 0 && visibles.every((p) => seleccion.has(p.id));
 
-  function alternarSeleccion(id) {
+  const alternarSeleccion = useCallback((id) => {
     setSeleccion((prev) => {
       const nuevo = new Set(prev);
       if (nuevo.has(id)) nuevo.delete(id);
       else nuevo.add(id);
       return nuevo;
     });
-  }
+  }, []);
 
   function marcarTodos() {
     setSeleccion(todosMarcados ? new Set() : new Set(visibles.map((p) => p.id)));
@@ -145,6 +254,16 @@ export default function AdminCatalog() {
     setDestino("");
     setPct(0);
   }
+
+  // Callbacks estables para las tarjetas memoizadas: siempre llaman a la versión más reciente.
+  const acciones = useRef({});
+  useEffect(() => {
+    acciones.current = { alternar, borrar, abrirDuplicar };
+  });
+  const abrirEditar = useCallback((p) => setModal({ producto: p }), []);
+  const abrirDuplicarEst = useCallback((p) => acciones.current.abrirDuplicar(p), []);
+  const alternarEst = useCallback((p) => acciones.current.alternar(p), []);
+  const borrarEst = useCallback((lista) => acciones.current.borrar(lista), []);
 
   // Duplicar no copia la foto: el nuevo producto parte con la predeterminada
   async function duplicar(e) {
@@ -281,112 +400,22 @@ export default function AdminCatalog() {
         </Panel>
       ) : (
         <ul className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-          {visibles.map((p) => {
-            const foto = imagenUrl(p.image_path);
-            const c = colorDe(p.technique_slug);
-            const marcado = seleccion.has(p.id);
-            // Mismos porcentajes con que cobra el servidor; sin ellos no se muestra la proyección.
-            const proyeccion = cobros.comision != null && cobros.abono != null;
-            const abono = Math.round(p.price * (cobros.abono ?? 0) / 100);
-            const saldo = p.price - abono;
-            const mpTotal = Math.round(abono * MP_PORCENTAJE / 100) + Math.round(saldo * MP_PORCENTAJE / 100);
-            const chris = Math.round(p.price * (cobros.comision ?? 0) / 100);
-            const amiga = Math.max(p.price - mpTotal - chris, 0);
-            return (
-              <li
-                key={p.id}
-                className={`group flex flex-col rounded-[26px] bg-white/85 p-2.5 shadow-[0_18px_40px_-30px_rgb(19_48_61/0.55)] transition hover:-translate-y-0.5 hover:shadow-[0_24px_44px_-28px_rgb(19_48_61/0.6)] ${
-                  marcado ? "ring-2 ring-acento" : "ring-1 ring-white/80"
-                } ${p.is_active ? "" : "opacity-85"}`}
-              >
-                <div className="relative overflow-hidden rounded-[20px] bg-bruma/60">
-                  {foto ? (
-                    <img
-                      src={foto}
-                      alt={`${p.name ? p.name + ", " : ""}${p.technique_name}${cantidadTxt(p, ", ")}`}
-                      loading="lazy"
-                      decoding="async"
-                      className="aspect-[4/3] w-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex aspect-[4/3] items-center justify-center text-sm text-tinta/40">Sin foto</div>
-                  )}
-                  <label className="absolute top-2.5 left-2.5 grid size-9 cursor-pointer place-items-center rounded-xl bg-white/90 shadow-sm">
-                    <input
-                      type="checkbox"
-                      className="size-4 accent-acento"
-                      checked={marcado}
-                      onChange={() => alternarSeleccion(p.id)}
-                      aria-label={`Seleccionar ${p.name ? p.name + ", " : ""}${p.technique_name}${cantidadTxt(p, ", ")}`}
-                    />
-                  </label>
-                  <span
-                    className={`absolute top-2.5 right-2.5 rounded-full px-2.5 py-1 text-[10px] font-semibold tracking-wider ${
-                      p.is_active ? "bg-[#e1f0e6] text-[#2d6844]" : "bg-white/90 text-tinta/60"
-                    }`}
-                  >
-                    {p.is_active ? "ACTIVO" : "BORRADOR"}
-                  </span>
-                </div>
-
-                <div className="flex flex-1 flex-col px-3 pt-4 pb-2">
-                  <span className={`flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${c.pill}`}>
-                    <span aria-hidden="true" className={`size-1.5 rounded-full ${c.dot}`} />
-                    {p.technique_name}
-                  </span>
-                  <h3 className="mt-2.5 text-lg font-semibold text-tinta">{tituloDe(p)}</h3>
-                  <p className="text-sm text-tinta/55">
-                    {p.name && !esMemeP(p) ? `${mascotas(p.pet_count)} · ` : ""}
-                    {p.size_label ?? "Sin medidas"}
-                  </p>
-
-                  <div className="mt-4 flex items-end justify-between gap-3">
-                    <strong className="font-display text-2xl text-tinta">${clp(p.price)}</strong>
-                    <small className="text-xs text-tinta/45">Actualizado {hace(p.updated_at)}</small>
-                  </div>
-                  {/* Proyección de lo que recibe la amiga */}
-                  {proyeccion && (
-                    <p className="mt-1 text-[11px] leading-tight text-tinta/45">
-                      Recibes <span className="font-semibold text-[#2d6844]">${clp(amiga)}</span>
-                      <span className="ml-1">(MP −${clp(mpTotal)} · Chris {porcentaje(cobros.comision)} −${clp(chris)})</span>
-                    </p>
-                  )}
-
-                  <div className="relative mt-auto flex gap-2 pt-4">
-                    <button className={`${BTN} flex-1`} onClick={() => setModal({ producto: p })}>
-                      <Pencil size={14} aria-hidden="true" /> Editar
-                    </button>
-                    <button className={`${BTN} flex-1`} onClick={() => abrirDuplicar(p)}>
-                      <Copy size={14} aria-hidden="true" /> Duplicar
-                    </button>
-                    <button
-                      className={BTN}
-                      aria-label="Más acciones"
-                      aria-expanded={menu === p.id}
-                      onClick={() => setMenu(menu === p.id ? null : p.id)}
-                    >
-                      <Ellipsis size={16} aria-hidden="true" />
-                    </button>
-
-                    {menu === p.id && (
-                      <>
-                        <div className="fixed inset-0 z-10" onClick={() => setMenu(null)} />
-                        <div className="absolute right-0 bottom-full z-20 mb-2 w-52 rounded-2xl border border-tinta/10 bg-papel p-1.5 text-sm shadow-[0_20px_40px_-20px_rgb(19_48_61/0.6)] motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-95">
-                          <button className="flex min-h-10 w-full items-center gap-2 rounded-xl px-3 text-left hover:bg-bruma/50" onClick={() => alternar(p)}>
-                            {p.is_active ? <EyeOff size={15} aria-hidden="true" /> : <Eye size={15} aria-hidden="true" />}
-                            {p.is_active ? "Ocultar (borrador)" : "Mostrar en el sitio"}
-                          </button>
-                          <button className="flex min-h-10 w-full items-center gap-2 rounded-xl px-3 text-left text-[#963a31] hover:bg-[#f7e3e1]" onClick={() => borrar([p])}>
-                            <Trash2 size={15} aria-hidden="true" /> Eliminar
-                          </button>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </li>
-            );
-          })}
+          {visibles.map((p) => (
+            <TarjetaProducto
+              key={p.id}
+              p={p}
+              marcado={seleccion.has(p.id)}
+              menuAbierto={menu === p.id}
+              comision={cobros.comision}
+              abono={cobros.abono}
+              onSeleccion={alternarSeleccion}
+              onEditar={abrirEditar}
+              onDuplicar={abrirDuplicarEst}
+              onMenu={setMenu}
+              onAlternar={alternarEst}
+              onBorrar={borrarEst}
+            />
+          ))}
         </ul>
       )}
 

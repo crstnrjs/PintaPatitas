@@ -624,7 +624,7 @@ export default function RequestDetail() {
               <div className="flex justify-between gap-3 border-t border-tinta/8 pt-2 font-semibold text-[#2d6844]">
                 <span className="flex items-center gap-1.5">
                   <span className="size-2 shrink-0 rounded-full bg-[#5ea67a]" />
-                  Recibe tu amiga
+                  Recibes tu
                 </span>
                 <span>{money(recibeAmiga)}</span>
               </div>

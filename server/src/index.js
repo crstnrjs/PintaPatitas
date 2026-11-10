@@ -12,6 +12,8 @@ import soporteRouter from './routes/soporte.js'
 import configuracionRouter from './routes/configuracion.js'
 import { programarConservacion } from './lib/conservacion.js'
 import { cargarCredencialesVendedor } from './lib/marketplaceCredentials.js'
+import { programarRenovacionToken } from './lib/renovacionTokenMP.js'
+import { enviarAlertaTokenMercadoPago } from './lib/soporte.js'
 
 const app = express()
 app.use(helmet())
@@ -68,3 +70,6 @@ app.listen(PORT, '0.0.0.0', () => {
 
 // Borra fotos y datos personales pasado el plazo de conservación (una vez al día)
 programarConservacion()
+
+// Renueva el token de Mercado Pago de la artista antes de que venza (revisión diaria)
+programarRenovacionToken({ avisar: (datos) => enviarAlertaTokenMercadoPago(datos) })

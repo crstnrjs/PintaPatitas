@@ -5,6 +5,10 @@ import { PageHeader, btn } from "@/admin/shared/ui";
 import { supabase } from "@/lib/supabase";
 import { apiUrl } from "@/lib/api";
 
+function formatearFecha(iso) {
+  return new Date(iso).toLocaleDateString("es-CL", { day: "numeric", month: "long", year: "numeric" });
+}
+
 export default function MarketplaceSettings() {
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -86,6 +90,12 @@ export default function MarketplaceSettings() {
                 <span className={`mt-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${status.testMode ? "bg-[#faefd9] text-[#865710]" : "bg-[#e1f0e6] text-[#2d6844]"}`}>
                   {status.testMode ? "Modo de prueba OAuth" : "Modo de producción OAuth"}
                 </span>
+                {status.connected && status.expiresAt && (
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Autorización válida hasta el {formatearFecha(status.expiresAt)}. Se renueva sola 30 días antes
+                    {status.renewedAt ? ` (última renovación: ${formatearFecha(status.renewedAt)})` : ""}.
+                  </p>
+                )}
                 {status.modeMismatch && (
                   <p className="mt-2 text-xs text-[#963a31]">
                     Desajuste detectado. Reconecta para usar el modo actual.

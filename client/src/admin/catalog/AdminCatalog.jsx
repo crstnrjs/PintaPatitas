@@ -10,6 +10,8 @@ import { MP_PORCENTAJE, pct as porcentaje, useCobros } from "@/admin/shared/useC
 const clp = (n) => new Intl.NumberFormat("es-CL").format(n);
 const mascotas = (n) => `${n} ${n === 1 ? "mascota" : "mascotas"}`;
 const redondear = (n) => Math.round(n / 1000) * 1000;
+// Nombre puesto por la artista; si no hay, el título de siempre.
+const tituloDe = (p) => p.name || `Retrato de ${mascotas(p.pet_count)}`;
 const imagenUrl = (path) =>
   path ? supabase.storage.from("catalog").getPublicUrl(path).data.publicUrl : null;
 
@@ -43,7 +45,7 @@ export default function AdminCatalog() {
   }
 
   async function cargar() {
-    const [prods, tecs] = await Promise.all([
+    const [prods, tecs, nombres] = await Promise.all([
       supabase
         .from("admin_catalog_items")
         .select("*")
@@ -51,10 +53,14 @@ export default function AdminCatalog() {
         .order("pet_count")
         .order("price"),
       supabase.from("techniques").select("id, name, slug, has_size, is_active").order("sort_order"),
+      // La vista admin_catalog_items no incluye la columna name: se lee directo de price_list.
+      // Si la migración aún no está aplicada, falla y los productos se muestran sin nombre.
+      supabase.from("price_list").select("id, name"),
     ]);
     if (prods.error) avisar("error", prods.error.message);
     else {
-      setItems(prods.data);
+      const porId = new Map((nombres.data ?? []).map((n) => [n.id, n.name]));
+      setItems(prods.data.map((p) => ({ ...p, name: porId.get(p.id) ?? p.name ?? null })));
       const ids = new Set(prods.data.map((p) => p.id));
       setSeleccion((prev) => new Set([...prev].filter((id) => ids.has(id))));
     }
@@ -71,7 +77,7 @@ export default function AdminCatalog() {
     return items.filter((p) => {
       if (filtro !== "todos" && p.technique_id !== filtro) return false;
       if (!q) return true;
-      return `${p.technique_name} ${mascotas(p.pet_count)} ${p.size_label ?? ""}`
+      return `${p.name ?? ""} ${p.technique_name} ${mascotas(p.pet_count)} ${p.size_label ?? ""}`
         .toLowerCase()
         .includes(q);
     });
@@ -109,7 +115,7 @@ export default function AdminCatalog() {
     if (lista.length === 0) return;
     const texto =
       lista.length === 1
-        ? `¿Eliminar "${lista[0].technique_name} · ${mascotas(lista[0].pet_count)}${
+        ? `¿Eliminar "${lista[0].name ? lista[0].name + " · " : ""}${lista[0].technique_name} · ${mascotas(lista[0].pet_count)}${
             lista[0].size_label ? " · " + lista[0].size_label : ""
           }"?`
         : `¿Eliminar ${lista.length} productos?`;
@@ -141,6 +147,7 @@ export default function AdminCatalog() {
     e.preventDefault();
     if (!destino) return avisar("error", "Elige la técnica de destino");
     const { error } = await supabase.from("price_list").insert({
+      name: dup.name ?? null,
       technique_id: destino,
       pet_count: dup.pet_count,
       width_cm: dup.width_cm,
@@ -192,7 +199,7 @@ export default function AdminCatalog() {
           <Search size={18} className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-tinta/40" aria-hidden="true" />
           <input
             type="search"
-            placeholder="Buscar técnica, mascotas o medida"
+            placeholder="Buscar nombre, técnica, mascotas o medida"
             className={`${inputClass} pl-11`}
             value={busqueda}
             onChange={(e) => {
@@ -292,7 +299,7 @@ export default function AdminCatalog() {
                   {foto ? (
                     <img
                       src={foto}
-                      alt={`${p.technique_name}, ${mascotas(p.pet_count)}`}
+                      alt={`${p.name ? p.name + ", " : ""}${p.technique_name}, ${mascotas(p.pet_count)}`}
                       loading="lazy"
                       decoding="async"
                       className="aspect-[4/3] w-full object-cover"
@@ -306,7 +313,7 @@ export default function AdminCatalog() {
                       className="size-4 accent-acento"
                       checked={marcado}
                       onChange={() => alternarSeleccion(p.id)}
-                      aria-label={`Seleccionar ${p.technique_name}, ${mascotas(p.pet_count)}`}
+                      aria-label={`Seleccionar ${p.name ? p.name + ", " : ""}${p.technique_name}, ${mascotas(p.pet_count)}`}
                     />
                   </label>
                   <span
@@ -323,8 +330,11 @@ export default function AdminCatalog() {
                     <span aria-hidden="true" className={`size-1.5 rounded-full ${c.dot}`} />
                     {p.technique_name}
                   </span>
-                  <h3 className="mt-2.5 text-lg font-semibold text-tinta">Retrato de {mascotas(p.pet_count)}</h3>
-                  <p className="text-sm text-tinta/55">{p.size_label ?? "Sin medidas"}</p>
+                  <h3 className="mt-2.5 text-lg font-semibold text-tinta">{tituloDe(p)}</h3>
+                  <p className="text-sm text-tinta/55">
+                    {p.name ? `${mascotas(p.pet_count)} · ` : ""}
+                    {p.size_label ?? "Sin medidas"}
+                  </p>
 
                   <div className="mt-4 flex items-end justify-between gap-3">
                     <strong className="font-display text-2xl text-tinta">${clp(p.price)}</strong>
@@ -399,7 +409,7 @@ export default function AdminCatalog() {
         <div className={modalOverlay} onClick={(e) => e.target === e.currentTarget && setDup(null)}>
           <form onSubmit={duplicar} className={`max-w-md space-y-5 p-6 ${modalPanel}`}>
             <h2 className="font-display text-2xl text-tinta">
-              Duplicar {dup.technique_name} · {mascotas(dup.pet_count)}
+              Duplicar {dup.name ? `${dup.name} · ` : ""}{dup.technique_name} · {mascotas(dup.pet_count)}
               {dup.size_label ? ` · ${dup.size_label}` : ""}
             </h2>
             <label className="block text-sm text-tinta/75">

@@ -52,6 +52,7 @@ export default function ProductModal({ tecnicas, producto, onClose, onSaved }) {
   const editando = Boolean(producto);
   const cobros = useCobros();
 
+  const [nombre, setNombre] = useState(producto?.name ?? "");
   const [tecnicaId, setTecnicaId] = useState(producto?.technique_id ?? "");
   const [cantidad, setCantidad] = useState(producto?.pet_count ?? 1);
   const [ancho, setAncho] = useState(producto?.width_cm ?? "");
@@ -154,6 +155,7 @@ export default function ProductModal({ tecnicas, producto, onClose, onSaved }) {
 
       const image_path = fotoNueva ? subida : quitarFoto ? null : fotoActual;
       const datos = {
+        name: nombre.trim() || null,
         technique_id: tecnicaId,
         pet_count: cantidad,
         width_cm,
@@ -205,6 +207,7 @@ export default function ProductModal({ tecnicas, producto, onClose, onSaved }) {
   }
 
   const resumen = [
+    nombre.trim() || null,
     tecnica?.name,
     mascotas(cantidad),
     !sinTamano && ancho && alto ? `${ancho} × ${alto} cm` : null,
@@ -238,6 +241,23 @@ export default function ProductModal({ tecnicas, producto, onClose, onSaved }) {
         </div>
 
         <div className="space-y-6 overflow-y-auto px-6 py-5">
+          <label className="block space-y-2">
+            <span className="font-semibold text-tinta">
+              Nombre del producto <span className="text-sm font-normal text-tinta/50">(opcional)</span>
+            </span>
+            <input
+              type="text"
+              maxLength={80}
+              placeholder="Ej: Retrato clásico, Pack familia"
+              className="block w-full rounded-xl border border-tinta/15 p-2.5"
+              value={nombre}
+              onChange={(e) => setNombre(e.target.value)}
+            />
+            <span className="block text-xs text-tinta/55">
+              Si lo dejas vacío, se muestra «Retrato de N mascotas».
+            </span>
+          </label>
+
           <Paso n={1} titulo="Tipo de pintura">
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               {opciones.map((t) => {

@@ -46,6 +46,8 @@ export default function RequestDetail() {
   const [version, setVersion] = useState(0); // al cambiarlo, se recargan los datos
   const [tracking, setTracking] = useState("");
   const [copied, setCopied] = useState(false);
+  const [rejecting, setRejecting] = useState(false); // modal de rechazo abierto
+  const [rejectError, setRejectError] = useState("");
   const cobros = useCobros();
 
   useEffect(() => {
@@ -87,27 +89,6 @@ export default function RequestDetail() {
     };
   }, [id, version]);
 
-  // Cambios simples de estado (directo a Supabase, protegido por RLS)
-  async function changeStatus(next, confirmText) {
-    if (confirmText && !window.confirm(confirmText)) return;
-    setSaving(true);
-    setActionError("");
-
-    const { data, error } = await supabase
-      .from("orders")
-      .update({ status: next })
-      .eq("id", id)
-      .select("status");
-
-    setSaving(false);
-
-    if (error || !data?.length) {
-      setActionError("No se pudo actualizar el estado");
-      return;
-    }
-    setOrder((o) => ({ ...o, status: data[0].status }));
-  }
-
   // Aceptar la solicitud: lo hace el server (más adelante crea el link de pago y avisa al cliente)
   async function acceptRequest() {
     if (
@@ -132,6 +113,37 @@ export default function RequestDetail() {
       setVersion((v) => v + 1);
     } catch (err) {
       setActionError(
+        err instanceof TypeError
+          ? "No se pudo conectar con el servidor. Revisa que esté activo."
+          : err.message,
+      );
+    }
+    setSaving(false);
+  }
+
+  // Rechazar la solicitud: lo hace el server (guarda el motivo y avisa al cliente por correo)
+  async function rejectRequest(motivo) {
+    setSaving(true);
+    setRejectError("");
+
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const res = await fetch(apiUrl(`/api/orders/${id}/reject`), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ rejection_reason: motivo }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error ?? "No se pudo rechazar la solicitud.");
+      setRejecting(false);
+      setVersion((v) => v + 1);
+    } catch (err) {
+      setRejectError(
         err instanceof TypeError
           ? "No se pudo conectar con el servidor. Revisa que esté activo."
           : err.message,
@@ -333,8 +345,9 @@ export default function RequestDetail() {
     },
   ];
 
+  // Solo se puede rechazar mientras no haya ningún pago: con el abono pagado el pedido ya está aceptado.
   const canReject =
-    ["solicitud", "pendiente_abono", "en_proceso"].includes(order.status) && !saldoApproved;
+    ["solicitud", "pendiente_abono"].includes(order.status) && abonoPaid === 0 && !saldoApproved;
 
   // Tarjeta "Siguiente paso" según la etapa
   let nextStep = null;
@@ -457,20 +470,27 @@ export default function RequestDetail() {
         {canReject && (
           <button
             disabled={saving}
-            onClick={() =>
-              changeStatus(
-                "rechazado",
-                abonoPaid > 0
-                  ? "El abono no es reembolsable según los términos y condiciones. ¿Rechazar esta solicitud?"
-                  : "¿Rechazar esta solicitud? Todavía no hay ningún abono pagado.",
-              )
-            }
+            onClick={() => {
+              setRejectError("");
+              setRejecting(true);
+            }}
             className={btn.danger}
           >
             <CircleX size={16} aria-hidden="true" /> Rechazar
           </button>
         )}
       </header>
+
+      {rejecting && (
+        <ModalRechazo
+          codigo={orderCode(order.order_number)}
+          email={order.customer_email}
+          saving={saving}
+          error={rejectError}
+          onConfirm={rejectRequest}
+          onClose={() => setRejecting(false)}
+        />
+      )}
 
       {nextStep}
       {actionError && (
@@ -524,6 +544,11 @@ export default function RequestDetail() {
               {abonoPaid > 0
                 ? "Este pedido fue rechazado. El abono no es reembolsable."
                 : "Este pedido fue rechazado antes de recibir un abono."}
+              {order.rejection_reason && (
+                <span className="mt-2 block whitespace-pre-line">
+                  <strong>Motivo enviado al cliente:</strong> {order.rejection_reason}
+                </span>
+              )}
             </Aviso>
           )}
         </div>
@@ -608,6 +633,85 @@ export default function RequestDetail() {
         </aside>
       </div>
     </div>
+  );
+}
+
+const MOTIVO_MIN = 10;
+const MOTIVO_MAX = 1000;
+
+/* Modal para rechazar: el motivo es obligatorio y se envía al cliente por correo. */
+function ModalRechazo({ codigo, email, saving, error, onConfirm, onClose }) {
+  const dialogo = useRef(null);
+  const [motivo, setMotivo] = useState("");
+  const largo = motivo.trim().length;
+  const valido = largo >= MOTIVO_MIN && motivo.length <= MOTIVO_MAX;
+
+  useEffect(() => {
+    const d = dialogo.current;
+    if (d && !d.open) d.showModal();
+  }, []);
+
+  function enviar(e) {
+    e.preventDefault();
+    if (valido && !saving) onConfirm(motivo.trim());
+  }
+
+  return (
+    <dialog
+      ref={dialogo}
+      onClose={onClose}
+      onCancel={(e) => saving && e.preventDefault()}
+      onClick={(e) => e.target === dialogo.current && !saving && dialogo.current.close()}
+      aria-labelledby="titulo-rechazo"
+      className="m-auto w-[min(92vw,34rem)] rounded-3xl bg-white p-0 shadow-2xl backdrop:bg-tinta/60 backdrop:backdrop-blur-sm"
+    >
+      <form onSubmit={enviar} className="p-6 sm:p-7">
+        <h2 id="titulo-rechazo" className="font-display text-2xl text-tinta">
+          Rechazar solicitud {codigo}
+        </h2>
+        <p className="mt-2 text-sm leading-relaxed text-tinta/65">
+          Cuéntale al cliente por qué no podrás realizar este retrato. Este mensaje se enviará a{" "}
+          <strong className="break-all text-tinta">{email}</strong> desde soporte.
+        </p>
+
+        <label htmlFor="motivo-rechazo" className="mt-5 block text-sm font-medium text-tinta">
+          Motivo del rechazo
+        </label>
+        <textarea
+          id="motivo-rechazo"
+          value={motivo}
+          onChange={(e) => setMotivo(e.target.value)}
+          maxLength={MOTIVO_MAX}
+          rows={5}
+          required
+          autoFocus
+          disabled={saving}
+          placeholder="Ej.: Las fotos no tienen la calidad suficiente para trabajar el retrato. ¿Puedes enviarnos otras más nítidas?"
+          className="mt-2 w-full resize-y rounded-2xl border border-tinta/15 bg-papel px-4 py-3 text-sm text-tinta outline-none placeholder:text-tinta/35 focus:border-acento focus:ring-3 focus:ring-acento/25 disabled:opacity-60"
+        />
+        <p className="mt-1.5 flex justify-between gap-3 text-xs text-tinta/50">
+          <span>{largo < MOTIVO_MIN ? `Escribe al menos ${MOTIVO_MIN} caracteres.` : " "}</span>
+          <span>
+            {motivo.length}/{MOTIVO_MAX}
+          </span>
+        </p>
+
+        {error && (
+          <div className="mt-4">
+            <Aviso>{error}</Aviso>
+          </div>
+        )}
+
+        <div className="mt-6 flex flex-wrap justify-end gap-3">
+          <button type="button" disabled={saving} onClick={() => dialogo.current.close()} className={btn.secondary}>
+            Cancelar
+          </button>
+          <button type="submit" disabled={!valido || saving} className={`${btn.dangerSolid} disabled:cursor-not-allowed disabled:opacity-50`}>
+            <CircleX size={16} aria-hidden="true" /> {saving ? "Rechazando…" : "Rechazar y avisar"}
+          </button>
+        </div>
+      </form>
+    </dialog>
   );
 }
 

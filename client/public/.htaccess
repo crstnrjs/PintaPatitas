@@ -1,6 +1,29 @@
 Options -MultiViews -Indexes
 RewriteEngine On
 
+# Markdown para agentes: la portada responde con index.md si piden "Accept: text/markdown".
+# Va antes de la regla de archivos reales porque "/" es una carpeta y esa regla la dejaría pasar.
+RewriteCond %{HTTP:Accept} text/markdown [NC]
+RewriteRule ^$ index.md [L]
+
+# Alias en inglés para scanners de visibilidad (Hostinger, etc.)
+RewriteRule ^about/?$ /sobre-nosotros [R=301,L]
+RewriteRule ^terms/?$ /terminos [R=301,L]
+
+<IfModule mod_mime.c>
+  AddType "text/markdown; charset=utf-8" .md
+  AddType "text/plain; charset=utf-8" .txt
+</IfModule>
+
+<IfModule mod_headers.c>
+  # La portada anuncia llms.txt y su versión en Markdown (RFC 8288) y avisa a las cachés
+  # de que la respuesta cambia según Accept.
+  SetEnvIf Request_URI "^/(index\.html)?$" ES_PORTADA
+  Header append Link "</llms.txt>; rel=\"describedby\"; type=\"text/plain\"" env=ES_PORTADA
+  Header append Link "</index.md>; rel=\"alternate\"; type=\"text/markdown\"" env=ES_PORTADA
+  Header append Vary "Accept" env=ES_PORTADA
+</IfModule>
+
 # Una URL que no existe responde con estado 404 real (no 200). Se entrega la app igual,
 # para que React muestre la página "no encontrada" con el menú del sitio.
 ErrorDocument 404 /index.html

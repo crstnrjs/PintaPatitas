@@ -1,0 +1,29 @@
+# PintaPatitas
+
+> Retratos personalizados de mascotas en Chile. El cliente envía fotos de su perro o gato y su idea; una artista (Fernanda) la revisa y pinta un retrato único en la técnica y el tamaño elegidos (acrílico, lápiz o digital). Envío por Starken a todo Chile. También vende cuadros ya pintados, uno de cada uno.
+
+Cómo se paga: al enviar la solicitud no se paga nada. Si la artista la acepta, se paga un abono por Mercado Pago y el saldo cuando la obra está lista, antes del envío. El precio exacto se ve antes de enviar la solicitud. El envío es por pagar (se paga al recibir). El tiempo de trabajo es de alrededor de una semana y media.
+
+## Páginas principales
+
+- [Inicio](https://pintapatitas.com/): qué es el servicio, cómo funciona, estilos, galería y preguntas frecuentes
+- [Crear mi retrato](https://pintapatitas.com/catalogo): asistente para encargar un retrato (estilo, tamaño, fotos, datos de envío)
+- [Cuadros listos](https://pintapatitas.com/cuadros-listos): obras originales ya pintadas, disponibles para compra directa
+
+## Información y ayuda
+
+- [Sobre nosotros](https://pintapatitas.com/sobre-nosotros): quiénes somos y cómo trabajamos
+- [Contacto](https://pintapatitas.com/contacto): WhatsApp, correo e Instagram
+- [Soporte](https://pintapatitas.com/soporte): ayuda con un pedido existente
+- [Términos y condiciones](https://pintapatitas.com/terminos): pagos, cambios, envíos y conservación de datos
+
+## Contacto
+
+- WhatsApp: +56 9 5434 1467
+- Correo: pinta.patitas@gmail.com
+- Instagram: https://www.instagram.com/pintaa.patitas
+- Ubicación: La Serena, región de Coquimbo, Chile
+
+## Opcional
+
+- [Versión en Markdown de la portada](https://pintapatitas.com/index.md)

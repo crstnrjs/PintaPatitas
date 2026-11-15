@@ -15,7 +15,8 @@ Cómo se paga: al enviar la solicitud no se paga nada. Si la artista la acepta, 
 - [Sobre nosotros](https://pintapatitas.com/sobre-nosotros): quiénes somos y cómo trabajamos
 - [Contacto](https://pintapatitas.com/contacto): WhatsApp, correo e Instagram
 - [Soporte](https://pintapatitas.com/soporte): ayuda con un pedido existente
-- [Términos y condiciones](https://pintapatitas.com/terminos): pagos, cambios, envíos y conservación de datos
+- [Términos y condiciones](https://pintapatitas.com/terminos): pagos, cambios, retracto y envíos
+- [Política de privacidad](https://pintapatitas.com/privacidad): qué datos se recopilan, con quién se comparten y cómo ejercer tus derechos
 
 ## Contacto
 

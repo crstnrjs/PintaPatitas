@@ -1,6 +1,6 @@
 # PintaPatitas: retratos personalizados de mascotas en Chile
 
-Un retrato de tu mascota para tenerla siempre cerca. Nos envías sus fotos y una artista la retrata en el estilo que elijas: óleo, acrílico, lápiz o digital. Solo pagas si la artista acepta tu solicitud.
+Un retrato de tu mascota para tenerla siempre cerca. Nos envías sus fotos y una artista la retrata en la técnica que elijas (las disponibles están en el [catálogo](https://pintapatitas.com/catalogo)). Solo pagas si la artista acepta tu solicitud.
 
 [Crear mi retrato](https://pintapatitas.com/catalogo)
 

@@ -170,7 +170,7 @@ export default function FormularioCompra({ cuadro, onCancelar }) {
           <p>
             Puedes arrepentirte de esta compra sin dar motivo dentro de los <strong className="font-semibold text-tinta">10 días
             siguientes a recibir el cuadro</strong> (art. 3 bis, Ley 19.496). Escríbenos con tu número de compra, te indicamos
-            cómo devolverlo por Starken y te reembolsamos lo pagado por Mercado Pago.
+            cómo devolverlo por Starken (el envío de devolución lo pagas tú) y te reembolsamos lo pagado por Mercado Pago.
           </p>
           <p>
             Si llega dañado, escríbenos con fotos: tienes además <strong className="font-semibold text-tinta">garantía legal de 6 meses</strong>.

@@ -53,7 +53,7 @@ const fechaChile = (iso) =>
 
 // Derecho a retracto de los cuadros listos (art. 3 bis b, Ley 19.496): 10 días desde la recepción.
 const RETRACTO_TEXTO =
-  "Tienes 10 días desde que recibas el cuadro para arrepentirte de la compra sin dar motivo (art. 3 bis, Ley 19.496). Para hacerlo, responde a este correo o escribe a soporte@pintapatitas.com con tu número de compra: te indicaremos cómo devolverlo por Starken y te reembolsaremos lo pagado por Mercado Pago. Si llega dañado, escríbenos con fotos; además tienes garantía legal de 6 meses.";
+  "Tienes 10 días desde que recibas el cuadro para arrepentirte de la compra sin dar motivo (art. 3 bis, Ley 19.496). Para hacerlo, responde a este correo o escribe a soporte@pintapatitas.com con tu número de compra: te indicaremos cómo devolverlo por Starken (el costo del envío de devolución es de tu cargo) y te reembolsaremos lo pagado por Mercado Pago. Si llega dañado, escríbenos con fotos; además tienes garantía legal de 6 meses.";
 
 const bloqueRetracto = () => `
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#eff6f9;border:1px solid #cfe3ec;border-radius:12px;margin-bottom:18px;">

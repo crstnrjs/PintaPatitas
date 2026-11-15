@@ -2,6 +2,7 @@ import { lazy } from "react";
 import TiendaLayout from "./components/TiendaLayout";
 import LandingPage from "./pages/landingPage";
 import Terminos from "./pages/Terminos";
+import Privacidad from "./pages/Privacidad";
 const PedidoWizard = lazy(() => import("./pages/pedido/PedidoWizard"));
 const CuadrosListosPage = lazy(() => import("./pages/cuadros/CuadrosListosPage"));
 const CuadroDetalle = lazy(() => import("./pages/cuadros/CuadroDetalle"));
@@ -29,6 +30,7 @@ const routes = [
     children: [
       { path: "/catalogo", element: <PedidoWizard /> },
       { path: "/terminos", element: <Terminos /> },
+      { path: "/privacidad", element: <Privacidad /> },
       { path: "/sobre-nosotros", element: <SobreNosotros /> },
       { path: "/contacto", element: <Contacto /> },
       { path: "/soporte", element: <Soporte /> },

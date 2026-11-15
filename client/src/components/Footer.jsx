@@ -80,6 +80,9 @@ export default function Footer() {
             <Link to="/terminos" className="py-1 transition hover:text-white">
               Términos y condiciones
             </Link>
+            <Link to="/privacidad" className="py-1 transition hover:text-white">
+              Privacidad
+            </Link>
             <Link to="/admin/login" className="inline-flex items-center gap-1 py-1 transition hover:text-white">
               <Lock size={11} aria-hidden="true" />
               Administración

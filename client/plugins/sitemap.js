@@ -12,6 +12,7 @@ const PAGINAS = [
   { ruta: "/contacto", prioridad: "0.5", frecuencia: "monthly" },
   { ruta: "/soporte", prioridad: "0.4", frecuencia: "monthly" },
   { ruta: "/terminos", prioridad: "0.3", frecuencia: "yearly" },
+  { ruta: "/privacidad", prioridad: "0.3", frecuencia: "yearly" },
 ];
 
 const fecha = (d) => new Date(d).toISOString().slice(0, 10);

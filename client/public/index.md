@@ -37,5 +37,6 @@ Despachamos por Starken a tu domicilio o a la sucursal que elijas. El envío es 
 - [Contacto](https://pintapatitas.com/contacto)
 - [Soporte](https://pintapatitas.com/soporte)
 - [Términos y condiciones](https://pintapatitas.com/terminos)
+- [Política de privacidad](https://pintapatitas.com/privacidad)
 
 WhatsApp +56 9 5434 1467 · pinta.patitas@gmail.com · [Instagram](https://www.instagram.com/pintaa.patitas) · La Serena, región de Coquimbo

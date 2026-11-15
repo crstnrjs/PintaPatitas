@@ -18,7 +18,7 @@ function registrarWebMCP() {
       properties: {
         ruta: {
           type: "string",
-          enum: ["/", "/catalogo", "/cuadros-listos", "/sobre-nosotros", "/contacto", "/soporte", "/terminos"],
+          enum: ["/", "/catalogo", "/cuadros-listos", "/sobre-nosotros", "/contacto", "/soporte", "/terminos", "/privacidad"],
           description: "Ruta destino dentro de la app"
         }
       },
@@ -97,7 +97,8 @@ function registrarWebMCP() {
             inicio: "https://pintapatitas.com/",
             catalogo: "https://pintapatitas.com/catalogo",
             cuadrosListos: "https://pintapatitas.com/cuadros-listos",
-            terminos: "https://pintapatitas.com/terminos"
+            terminos: "https://pintapatitas.com/terminos",
+            privacidad: "https://pintapatitas.com/privacidad"
           }
         }
       };

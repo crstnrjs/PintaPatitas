@@ -186,7 +186,11 @@ export default function FormularioCompra({ cuadro, onCancelar }) {
           <Link to="/terminos" target="_blank" rel="noopener" className="font-semibold text-acento underline underline-offset-4">
             Términos y condiciones
           </Link>
-          , incluido el derecho a retracto de los cuadros listos.
+          , incluido el derecho a retracto de los cuadros listos, y leí la{" "}
+          <Link to="/privacidad" target="_blank" rel="noopener" className="font-semibold text-acento underline underline-offset-4">
+            Política de privacidad
+          </Link>
+          .
         </span>
       </label>
 

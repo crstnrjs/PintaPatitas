@@ -277,9 +277,9 @@ export default function Soporte() {
                 {enviando ? "Enviando…" : "Enviar mensaje"}
               </button>
               <p className="text-xs leading-relaxed text-tinta/50">
-                Usamos tus datos solo para responder tu consulta. Más detalles en los{" "}
-                <Link to="/terminos" className="underline underline-offset-2">
-                  Términos y condiciones
+                Usamos tus datos solo para responder tu consulta. Más detalles en la{" "}
+                <Link to="/privacidad" className="underline underline-offset-2">
+                  Política de privacidad
                 </Link>
                 .
               </p>

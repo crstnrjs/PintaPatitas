@@ -109,7 +109,7 @@ const secciones = [
         Para gestionar tu pedido, PintaPatitas recopila los siguientes datos: nombre, apellido, correo electrónico, celular, RUT, región, comuna y, según la entrega que elijas, calle, número y, opcionalmente, departamento o casa, o bien la sucursal Starken donde retirarás el cuadro. En los retratos también se recopilan las fotografías de las mascotas proporcionadas para la elaboración del retrato y la información necesaria para gestionar y completar el pedido.
       </p>
       <p>
-        Los datos personales y las fotografías proporcionadas se almacenan en sistemas de gestión de datos administrados mediante Supabase, y la artista recibe una copia por correo electrónico para preparar el encargo. Esta información se utiliza exclusivamente para gestionar el pedido, comunicarnos contigo, elaborar el retrato, coordinar su entrega y mantener un registro necesario para la prestación del servicio.
+        Los datos personales y las fotografías proporcionadas se almacenan en sistemas de gestión de datos administrados mediante Supabase, y la artista recibe una copia por correo electrónico para preparar el encargo. Esta información se utiliza exclusivamente para gestionar el pedido, comunicarnos contigo, elaborar el retrato, coordinar su entrega y mantener un registro necesario para la prestación del servicio. También los reciben, en lo necesario, Mercado Pago (pagos), Starken (despacho) y nuestros proveedores de alojamiento y correo; el detalle está en la <Link to="/privacidad">Política de privacidad</Link>.
       </p>
       <p>
         Las fotografías enviadas se utilizan únicamente como referencia para realizar el retrato y no serán publicadas en redes sociales, portafolio, publicidad u otros medios sin una autorización expresa y separada por parte del cliente.
@@ -118,10 +118,10 @@ const secciones = [
         El proceso de pago se realiza mediante Mercado Pago. PintaPatitas no solicita ni almacena los datos completos de las tarjetas utilizadas para efectuar el pago, siendo dicho proceso gestionado por la plataforma de Mercado Pago.
       </p>
       <p>
-        Los datos personales y las fotografías se conservan durante 6 meses desde la fecha de la solicitud o compra. Pasado ese plazo se eliminan de forma automática las fotografías y los datos de contacto y envío de los pedidos finalizados, rechazados o no pagados; solo se conservan el número de pedido, las fechas, el producto y los montos, como respaldo de las operaciones realizadas. Los pedidos que aún estén en elaboración se conservan hasta su término.
+        Los datos personales y las fotografías se conservan durante 6 meses desde la fecha de la solicitud o compra. Pasado ese plazo, el sistema elimina de forma automática las fotografías y los datos de contacto y envío de los pedidos finalizados, rechazados o no pagados; solo se conservan el número de pedido, las fechas, el producto, los montos y el número de seguimiento del envío, como respaldo de las operaciones realizadas. Los pedidos que aún estén en elaboración se conservan hasta su término. Las copias de los correos del pedido (incluido el que recibe la artista con las fotografías adjuntas) quedan en los buzones de correo y no se borran automáticamente; puedes pedir su eliminación.
       </p>
       <p>
-        Si deseas solicitar acceso, rectificación o eliminación de tus datos personales antes de ese plazo, puedes comunicarte con PintaPatitas a través de <a href="mailto:soporte@pintapatitas.com">soporte@pintapatitas.com</a>. Las solicitudes estarán sujetas a las obligaciones legales aplicables y a aquellos datos que resulte necesario conservar para cumplir obligaciones legales, resolver controversias o acreditar las operaciones realizadas.
+        Si deseas ejercer tus derechos de acceso, rectificación, supresión, oposición, portabilidad o bloqueo (ver la <Link to="/privacidad">Política de privacidad</Link>), puedes comunicarte con PintaPatitas a través de <a href="mailto:soporte@pintapatitas.com">soporte@pintapatitas.com</a>. Las solicitudes estarán sujetas a las obligaciones legales aplicables y a aquellos datos que resulte necesario conservar para cumplir obligaciones legales, resolver controversias o acreditar las operaciones realizadas.
       </p>
     </>
   ],

@@ -6,6 +6,7 @@ import { getMarketplaceSellerStatus, urlDePago } from "../lib/marketplaceSeller.
 import { enviarCorreoClienteAbono, enviarCorreoClienteSaldo } from "../lib/mailer.js";
 import { enviarCorreosRechazo } from "../lib/soporte.js";
 import { reservarPago, completarReservaPago, eliminarReservaPago } from "./paymentIdempotency.js";
+import { moverAPapelera, restaurarDePapelera } from "../lib/papelera.js";
 
 const router = Router();
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -359,6 +360,21 @@ router.post("/:id/reject", requireAdmin, async (req, res) => {
   });
 
   return res.json({ ok: true, status: actualizado.status, rejection_reason: motivo });
+});
+
+// 4. Papelera: mover un pedido finalizado o rechazado, o restaurarlo. No borra datos.
+router.post("/:id/trash", requireAdmin, async (req, res) => {
+  const { id } = req.params;
+  if (!UUID.test(id)) return res.status(400).json({ error: "Identificador no válido." });
+  const { status, body } = await moverAPapelera(supabase, id);
+  return res.status(status).json(body);
+});
+
+router.post("/:id/restore", requireAdmin, async (req, res) => {
+  const { id } = req.params;
+  if (!UUID.test(id)) return res.status(400).json({ error: "Identificador no válido." });
+  const { status, body } = await restaurarDePapelera(supabase, id);
+  return res.status(status).json(body);
 });
 
 export default router;

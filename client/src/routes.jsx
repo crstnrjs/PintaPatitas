@@ -20,6 +20,7 @@ const RequestDetail = lazy(() => import("./admin/requests/RequestDetail"));
 const AdminCatalog = lazy(() => import("./admin/catalog/AdminCatalog"));
 const CuadrosListos = lazy(() => import("./admin/cuadros/CuadrosListos"));
 const ContentEditor = lazy(() => import("./admin/content/ContentEditor"));
+const Papelera = lazy(() => import("./admin/requests/Papelera"));
 const MarketplaceSettings = lazy(() => import("./admin/settings/MarketplaceSettings"));
 
 const routes = [
@@ -53,6 +54,7 @@ const routes = [
       { index: true, element: <Dashboard /> },
       { path: "solicitudes", element: <Requests /> },
       { path: "solicitudes/:id", element: <RequestDetail /> },
+      { path: "papelera", element: <Papelera /> },
       { path: "catalogo", element: <AdminCatalog /> },
       { path: "cuadros-listos", element: <CuadrosListos /> },
       { path: "contenido", element: <ContentEditor /> },

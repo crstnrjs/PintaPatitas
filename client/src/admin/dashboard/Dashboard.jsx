@@ -19,6 +19,7 @@ export default function Dashboard() {
           .from("orders")
           .select("id, order_number, customer_name, pet_name, product, style, status, total_amount, created_at, updated_at")
           .neq("status", "pendiente_abono")
+          .is("deleted_at", null) // los pedidos en la papelera no cuentan
           .order("created_at", { ascending: false })
           .limit(500),
         supabase

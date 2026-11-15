@@ -75,6 +75,7 @@ export default function Requests() {
         .select(
           "id, order_number, customer_name, customer_email, pet_name, product, style, status, total_amount, created_at",
         )
+        .is("deleted_at", null) // los pedidos en la papelera no se muestran aquí
         .order("created_at", { ascending: false })
         .limit(500);
 

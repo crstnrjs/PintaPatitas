@@ -1,5 +1,6 @@
 // WebMCP tools para agentes en el navegador
 // Se registran en window.load para que estén disponibles tras hidratación
+import { obtenerTecnicasActivas } from "@/lib/tecnicas";
 
 function registrarWebMCP() {
   if (typeof navigator === "undefined" || !navigator.modelContext?.registerTool) {
@@ -74,12 +75,16 @@ function registrarWebMCP() {
     description: "Devuelve información básica de PintaPatitas: artista, técnicas, envío, contacto",
     inputSchema: { type: "object", properties: {} },
     execute: async () => {
+      // Solo técnicas con productos activos: si falla la consulta, se remite al catálogo.
+      const tecnicas = await obtenerTecnicasActivas()
+        .then((lista) => lista.map((t) => t.name))
+        .catch(() => "Ver el catálogo en https://pintapatitas.com/catalogo");
       return {
         ok: true,
         tienda: {
           nombre: "PintaPatitas",
           artista: "Fernanda",
-          tecnicas: ["óleo", "acrílico", "lápiz", "digital"],
+          tecnicas,
           envio: "Starken por pagar a todo Chile",
           tiempoProduccion: "alrededor de una semana y media",
           contacto: {

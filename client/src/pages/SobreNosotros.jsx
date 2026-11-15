@@ -4,6 +4,8 @@ import { MapPinIcon, PaintBrushIcon, TruckIcon } from "@heroicons/react/24/outli
 import { obras } from "@/pages/landing/contenido";
 import { BotonPedido, Encabezado, Huella, Imagen, Ramita } from "@/pages/landing/ui";
 import { CONTACTO } from "@/lib/contacto";
+import { textoTecnicas } from "@/lib/tecnicas";
+import { useCatalogoPublico } from "@/pages/pedido/useCatalogoPublico";
 
 const enfoque = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tinta";
 
@@ -15,6 +17,9 @@ const datos = [
 ];
 
 export default function SobreNosotros() {
+  // Solo las técnicas que hoy se pueden encargar (con productos activos en el catálogo).
+  const tecnicas = textoTecnicas(useCatalogoPublico().estilos);
+
   useEffect(() => {
     window.scrollTo({ top: 0 });
     const anterior = document.title;
@@ -36,8 +41,8 @@ export default function SobreNosotros() {
             <div className="mt-5 max-w-xl space-y-4 text-base leading-relaxed text-tinta/75 md:mt-7 md:text-lg">
               <p>
                 PintaPatitas nació para convertir a los perros y gatos de cada familia en una obra que se pueda colgar
-                en la pared. Trabajo en óleo, acrílico, lápiz y digital, siempre a partir de las fotos y la idea que me
-                envías.
+                en la pared. {tecnicas ? `Hoy puedes encargarme retratos en ${tecnicas}` : "Trabajo en distintas técnicas"},
+                siempre a partir de las fotos y la idea que me envías.
               </p>
               <p>
                 Reviso cada solicitud antes de aceptarla, para asegurarme de que las fotos sirven y de que el retrato

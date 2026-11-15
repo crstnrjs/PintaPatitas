@@ -1,6 +1,12 @@
 Options -MultiViews -Indexes
 RewriteEngine On
 
+# Una sola dirección: www.pintapatitas.com redirige a pintapatitas.com (conserva ruta y query;
+# el navegador conserva el #hash). Así los enlaces de Supabase Auth siempre vuelven al dominio
+# que está en su lista de Redirect URLs.
+RewriteCond %{HTTP_HOST} ^www\.pintapatitas\.com$ [NC]
+RewriteRule ^ https://pintapatitas.com%{REQUEST_URI} [R=301,L]
+
 # Markdown para agentes: la portada responde con index.md si piden "Accept: text/markdown".
 # Va antes de la regla de archivos reales porque "/" es una carpeta y esa regla la dejaría pasar.
 RewriteCond %{HTTP:Accept} text/markdown [NC]

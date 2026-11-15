@@ -66,4 +66,4 @@ Pendiente fuera del código:
 - Todas las ventas de cuadros pasan por la web, sin respaldo a Instagram (lo pidió el usuario para tener el historial).
 - Envío Starken **por pagar**: la comisión es solo sobre el precio del cuadro o retrato.
 - Cotización de la tarifa Starken: no implementada. No hay API pública oficial; hay que pedir acceso a Starken o usar un tercero.
-- En textos públicos: la artista es "Fernanda"; las técnicas ofrecidas son acrílico, lápiz y digital (sin óleo). No decir "todo pintado a mano", porque existe la técnica digital.
+- En textos públicos: la artista es "Fernanda"; las técnicas ofrecidas son óleo, acrílico, lápiz y digital (óleo se reactivó el 2026-11-15). No decir "todo pintado a mano", porque existe la técnica digital.

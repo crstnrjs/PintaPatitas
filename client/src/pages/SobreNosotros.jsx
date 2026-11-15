@@ -36,7 +36,7 @@ export default function SobreNosotros() {
             <div className="mt-5 max-w-xl space-y-4 text-base leading-relaxed text-tinta/75 md:mt-7 md:text-lg">
               <p>
                 PintaPatitas nació para convertir a los perros y gatos de cada familia en una obra que se pueda colgar
-                en la pared. Trabajo en acrílico, lápiz y digital, siempre a partir de las fotos y la idea que me
+                en la pared. Trabajo en óleo, acrílico, lápiz y digital, siempre a partir de las fotos y la idea que me
                 envías.
               </p>
               <p>

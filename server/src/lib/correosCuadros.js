@@ -1,4 +1,4 @@
-import { enviarCorreo } from "./mailer.js";
+import { TERMINOS_VIGENCIA, enviarCorreo, urlTerminos } from "./mailer.js";
 
 // Correos de la venta de cuadros listos. Mismo estilo que los correos de pedidos.
 
@@ -32,7 +32,7 @@ function plantilla({ titulo, subtitulo, cuerpo }) {
           <tr><td style="padding:24px 28px 12px;">${cuerpo}</td></tr>
           <tr>
             <td style="background:#f1f5f9;padding:16px 28px;border-top:1px solid #e2e8f0;">
-              <p style="margin:0;color:#64748b;font-size:12px;text-align:center;">PintaPatitas · Cuadros pintados a mano</p>
+              <p style="margin:0;color:#64748b;font-size:12px;text-align:center;">PintaPatitas · Obras originales de mascotas</p>
             </td>
           </tr>
         </table>
@@ -48,8 +48,25 @@ const fila = (etiqueta, valor) =>
 const tabla = (filas) =>
   `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px 16px;margin-bottom:18px;">${filas.join("")}</table>`;
 
-/** Confirmación al comprador. */
+const fechaChile = (iso) =>
+  new Date(iso ?? Date.now()).toLocaleString("es-CL", { timeZone: "America/Santiago", dateStyle: "long", timeStyle: "short" });
+
+// Derecho a retracto de los cuadros listos (art. 3 bis b, Ley 19.496): 10 días desde la recepción.
+const RETRACTO_TEXTO =
+  "Tienes 10 días desde que recibas el cuadro para arrepentirte de la compra sin dar motivo (art. 3 bis, Ley 19.496). Para hacerlo, responde a este correo o escribe a soporte@pintapatitas.com con tu número de compra: te indicaremos cómo devolverlo por Starken (el costo del envío de devolución es de tu cargo) y te reembolsaremos lo pagado por Mercado Pago. Si llega dañado, escríbenos con fotos; además tienes garantía legal de 6 meses.";
+
+const bloqueRetracto = () => `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#eff6f9;border:1px solid #cfe3ec;border-radius:12px;margin-bottom:18px;">
+      <tr><td style="padding:12px 16px;">
+        <p style="margin:0 0 6px;color:#1d4e68;font-size:15px;font-weight:bold;">Tu derecho a retracto</p>
+        <p style="margin:0;color:#334155;font-size:13px;line-height:1.55;">${esc(RETRACTO_TEXTO)}</p>
+      </td></tr>
+    </table>`;
+
+/** Confirmación al comprador (respaldo escrito de la compra y de los términos aceptados). */
 export async function enviarCorreoCompraCuadro(venta) {
+  const terminos = urlTerminos();
+  const aceptacion = `Al comprar el ${fechaChile(venta.created_at)} aceptaste los Términos y condiciones vigentes desde el ${TERMINOS_VIGENCIA}`;
   const asunto = `¡Compraste "${venta.cuadro_titulo}"! — Compra ${codigo(venta)}`;
   const cuerpo = `
     <p style="margin:0 0 14px;color:#0f172a;font-size:16px;">¡Hola, <strong>${esc(venta.comprador_nombre)}</strong>!</p>
@@ -66,6 +83,10 @@ export async function enviarCorreoCompraCuadro(venta) {
     <p style="margin:0 0 10px;color:#334155;font-size:14px;line-height:1.6;">
       <strong>El envío es por pagar:</strong> el costo de Starken lo pagas al recibir el cuadro.
       Te avisaremos cuando lo despachemos, con el número de seguimiento.
+    </p>
+    ${bloqueRetracto()}
+    <p style="margin:0;color:#64748b;font-size:12px;line-height:1.6;">
+      ${esc(aceptacion)}: <a href="${esc(terminos)}" style="color:#2d6583;font-weight:600;">ver términos</a>. Guarda este correo como respaldo de tu compra.
     </p>`;
 
   const texto = [
@@ -77,7 +98,13 @@ export async function enviarCorreoCompraCuadro(venta) {
     `Comuna: ${venta.comuna}, ${venta.region}`,
     "",
     "El envío es por pagar: el costo de Starken lo pagas al recibir el cuadro.",
-    "Te avisaremos cuando lo despachemos.",
+    "Te avisaremos cuando lo despachemos, con el número de seguimiento.",
+    "",
+    "TU DERECHO A RETRACTO",
+    RETRACTO_TEXTO,
+    "",
+    `${aceptacion}: ${terminos}`,
+    "Guarda este correo como respaldo de tu compra.",
     "PintaPatitas",
   ].join("\n");
 
@@ -149,11 +176,89 @@ export async function enviarCorreoAvisoVentaCuadro(venta, { devolucion = false }
   });
 }
 
+/** Aviso al comprador cuyo pago llegó cuando el cuadro ya estaba vendido. */
+export async function enviarCorreoPagoDuplicadoCuadro(venta) {
+  const asunto = `Tu pago por "${venta.cuadro_titulo}" será devuelto — Compra ${codigo(venta)}`;
+  const mensaje =
+    "Lamentablemente, cuando se aprobó tu pago el cuadro ya había sido vendido a otra persona. Vamos a devolverte el pago completo a través de Mercado Pago; no tienes que hacer nada. Si tienes dudas, responde a este correo o escribe a soporte@pintapatitas.com.";
+  const cuerpo = `
+    <p style="margin:0 0 14px;color:#0f172a;font-size:16px;">¡Hola, <strong>${esc(venta.comprador_nombre)}</strong>!</p>
+    <p style="margin:0 0 16px;color:#334155;font-size:14px;line-height:1.6;">${esc(mensaje)}</p>
+    ${tabla([
+      fila("Compra", codigo(venta)),
+      fila("Cuadro", venta.cuadro_titulo),
+      fila("Monto a devolver", clp(venta.monto)),
+      fila("Pago Mercado Pago", venta.mp_payment_id ?? "—"),
+    ])}`;
+  const texto = [
+    `¡Hola ${venta.comprador_nombre}!`,
+    "",
+    mensaje,
+    "",
+    `Compra: ${codigo(venta)} · Cuadro: ${venta.cuadro_titulo}`,
+    `Monto a devolver: ${clp(venta.monto)}`,
+    "PintaPatitas",
+  ].join("\n");
+
+  await enviarCorreo({
+    to: venta.comprador_email,
+    subject: asunto,
+    html: plantilla({ titulo: "PintaPatitas", subtitulo: "Devolución de tu pago", cuerpo }),
+    text: texto,
+  });
+}
+
+/** Aviso al comprador de que su cuadro fue despachado, con el número de seguimiento de Starken. */
+export async function enviarCorreoDespachoCuadro(venta) {
+  const asunto = `Tu cuadro "${venta.cuadro_titulo}" va en camino — Compra ${codigo(venta)}`;
+  const seguimiento = venta.seguimiento_starken;
+  const lineaSeguimiento = seguimiento
+    ? `Puedes seguir tu envío en starken.cl con el número de seguimiento ${seguimiento}.`
+    : "Si necesitas el número de seguimiento, responde a este correo y te lo enviamos.";
+  const cuerpo = `
+    <p style="margin:0 0 14px;color:#0f172a;font-size:16px;">¡Hola, <strong>${esc(venta.comprador_nombre)}</strong>!</p>
+    <p style="margin:0 0 16px;color:#334155;font-size:14px;line-height:1.6;">
+      Despachamos tu cuadro <strong>${esc(venta.cuadro_titulo)}</strong> por Starken. ${esc(lineaSeguimiento)}
+    </p>
+    ${tabla([
+      fila("Compra", codigo(venta)),
+      fila("Cuadro", venta.cuadro_titulo),
+      fila("Seguimiento Starken", seguimiento || "—"),
+      fila("Entrega", entrega(venta)),
+      fila("Comuna", `${venta.comuna}, ${venta.region}`),
+    ])}
+    <p style="margin:0 0 14px;color:#334155;font-size:14px;line-height:1.6;">
+      <strong>Recuerda:</strong> el envío es por pagar; el costo de Starken lo pagas al recibir el cuadro. Revísalo al recibirlo y, si notas algún daño, escríbenos con fotos del cuadro y del embalaje.
+    </p>
+    ${bloqueRetracto()}`;
+  const texto = [
+    `¡Hola ${venta.comprador_nombre}!`,
+    "",
+    `Despachamos tu cuadro "${venta.cuadro_titulo}" por Starken (compra ${codigo(venta)}).`,
+    lineaSeguimiento,
+    entrega(venta),
+    `Comuna: ${venta.comuna}, ${venta.region}`,
+    "",
+    "Recuerda: el envío es por pagar; el costo de Starken lo pagas al recibir el cuadro. Si llega con daños, escríbenos con fotos.",
+    "",
+    "TU DERECHO A RETRACTO",
+    RETRACTO_TEXTO,
+    "PintaPatitas",
+  ].join("\n");
+
+  await enviarCorreo({
+    to: venta.comprador_email,
+    subject: asunto,
+    html: plantilla({ titulo: "PintaPatitas", subtitulo: `Compra ${codigo(venta)} despachada`, cuerpo }),
+    text: texto,
+  });
+}
+
 /** Lo usa el webhook: nunca lanza, solo registra errores de envío. */
 export function notificarVentaCuadro({ tipo, venta }) {
   const tareas =
     tipo === "devolucion"
-      ? [enviarCorreoAvisoVentaCuadro(venta, { devolucion: true })]
+      ? [enviarCorreoAvisoVentaCuadro(venta, { devolucion: true }), enviarCorreoPagoDuplicadoCuadro(venta)]
       : [enviarCorreoCompraCuadro(venta), enviarCorreoAvisoVentaCuadro(venta)];
   for (const tarea of tareas) {
     tarea.catch((err) => console.error("[Cuadros] Error enviando correo de venta:", err));

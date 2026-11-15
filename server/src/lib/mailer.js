@@ -356,6 +356,231 @@ export async function enviarCorreoNuevaSolicitud({ pedido, fotos }) {
   });
 }
 
+// Fecha de la versión de los Términos que acepta el cliente (client/src/pages/Terminos.jsx).
+// Actualizarla cada vez que cambien los Términos publicados.
+export const TERMINOS_VIGENCIA = "15 de noviembre de 2026";
+
+export function urlTerminos() {
+  const base = (process.env.FRONTEND_URL || "https://pintapatitas.com").replace(/\/+$/, "");
+  return `${base}/terminos`;
+}
+
+// Aviso de exclusión del derecho a retracto (art. 3 bis b, Ley 19.496), en HTML y en texto plano.
+function avisoRetractoHTML(pedido) {
+  const obra = esPedidoMeme(pedido) ? "tu cuadro de meme" : "tu retrato";
+  return `
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;margin-bottom:18px;">
+                <tr><td style="padding:12px 16px;">
+                  <p style="margin:0 0 6px;color:#9a3412;font-size:15px;font-weight:bold;">Sin derecho a retracto</p>
+                  <p style="margin:0;color:#7c2d12;font-size:13px;line-height:1.55;">
+                    Como ${obra} se confecciona especialmente según tus especificaciones, <strong>no aplica el derecho a retracto</strong> (art. 3 bis, Ley 19.496): una vez pagado el abono no podrás arrepentirte sin expresión de causa. Mantienes la garantía legal de 6 meses si el cuadro llega con defectos o no corresponde a lo que pediste.
+                  </p>
+                </td></tr>
+              </table>`;
+}
+
+function avisoRetractoTexto(pedido) {
+  const obra = esPedidoMeme(pedido) ? "tu cuadro de meme" : "tu retrato";
+  return [
+    "SIN DERECHO A RETRACTO",
+    `Como ${obra} se confecciona especialmente según tus especificaciones, no aplica el derecho a retracto (art. 3 bis, Ley 19.496): una vez pagado el abono no podrás arrepentirte sin expresión de causa. Mantienes la garantía legal de 6 meses si el cuadro llega con defectos o no corresponde a lo que pediste.`,
+  ];
+}
+
+function porcentajeAbono(pedido) {
+  const total = Number(pedido.total_amount);
+  const abono = Number(pedido.deposit_amount);
+  return total > 0 && abono > 0 ? Math.round((abono / total) * 100) : null;
+}
+
+/**
+ * Confirmación al cliente al enviar su solicitud: resumen, aviso de retracto y enlace
+ * a los Términos que aceptó (respaldo escrito de las condiciones del pedido).
+ */
+export async function enviarCorreoClienteSolicitud({ pedido }) {
+  if (!pedido.customer_email) throw new Error("El pedido no tiene customer_email");
+
+  const meme = esPedidoMeme(pedido);
+  const terminos = urlTerminos();
+  const fecha = new Date(pedido.created_at ?? Date.now()).toLocaleString("es-CL", {
+    timeZone: "America/Santiago",
+    dateStyle: "long",
+    timeStyle: "short",
+  });
+  const entrega =
+    pedido.delivery_type === "sucursal"
+      ? `Retiro en sucursal Starken: ${pedido.starken_branch}, ${pedido.commune}, ${pedido.region}`
+      : `${pedido.street} ${pedido.street_number}${pedido.apartment ? `, ${pedido.apartment}` : ""}, ${pedido.commune}, ${pedido.region}`;
+  const mascotas = meme ? null : `${pedido.pet_count} ${pedido.pet_count === 1 ? "mascota" : "mascotas"}`;
+  const asunto = `Recibimos tu solicitud #PP-${pedido.order_number} — PintaPatitas`;
+
+  const filas = [
+    ["Producto", pedido.product],
+    ["Técnica / Estilo", pedido.style],
+    ...(meme && !pedido.size ? [] : [["Tamaño", pedido.size]]),
+    ...(mascotas ? [["Mascotas", mascotas]] : []),
+    ...(!meme && pedido.pet_name ? [["Nombre", pedido.pet_name]] : []),
+    ["Precio del cuadro", clp(pedido.total_amount)],
+    ["Envío", "Starken por pagar (lo pagas al recibir)"],
+    ["Entrega", entrega],
+  ];
+
+  const html = `<!doctype html>
+<html>
+  <body style="margin:0;background:#e8f0f3;font-family:Arial,Helvetica,sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#e8f0f3;padding:24px 0;">
+      <tr><td align="center">
+        <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background:#ffffff;border-radius:20px;border:1px solid #dbe7ee;overflow:hidden;">
+          <tr>
+            <td style="background:#2d6583;padding:26px 28px;">
+              <p style="margin:0;color:#ffffff;font-size:20px;font-weight:bold;">PintaPatitas</p>
+              <p style="margin:6px 0 0;color:#cfe3ec;font-size:14px;">Recibimos tu solicitud #PP-${esc(pedido.order_number)}</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:24px 28px 12px;">
+              <p style="margin:0 0 14px;color:#0f172a;font-size:16px;">¡Hola, <strong>${esc(pedido.customer_name)}</strong>!</p>
+              <p style="margin:0 0 16px;color:#334155;font-size:14px;line-height:1.6;">
+                Gracias por tu solicitud. La artista revisará ${meme ? "tu meme" : "las fotos"} y tus indicaciones. <strong>Todavía no tienes que pagar nada:</strong> si la acepta, te enviaremos por correo el enlace para pagar el abono; si no, te avisaremos y no se hará ningún cobro.
+              </p>
+
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px 16px;margin-bottom:18px;">
+                ${filas.map(([etiqueta, valor], i) => filaItem(etiqueta, valor, i === filas.length - 1)).join("")}
+              </table>
+
+              ${avisoRetractoHTML(pedido)}
+
+              <p style="margin:0 0 8px;color:#334155;font-size:13px;line-height:1.6;">
+                Al enviar tu solicitud el ${esc(fecha)} aceptaste los <a href="${esc(terminos)}" style="color:#2d6583;font-weight:600;">Términos y condiciones</a> vigentes desde el ${TERMINOS_VIGENCIA}. Guarda este correo como respaldo de tu solicitud.
+              </p>
+              <p style="margin:0;color:#64748b;font-size:12px;line-height:1.5;">
+                ¿Algo no está bien? Responde a este correo o escríbenos a soporte@pintapatitas.com cuanto antes.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background:#f1f5f9;padding:16px 28px;border-top:1px solid #e2e8f0;">
+              <p style="margin:0;color:#64748b;font-size:12px;text-align:center;">
+                PintaPatitas · Retratos de mascotas hechos con amor
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td></tr>
+    </table>
+  </body>
+</html>`;
+
+  const texto = [
+    `¡Hola ${pedido.customer_name}!`,
+    "",
+    `Recibimos tu solicitud #PP-${pedido.order_number}. La artista la revisará; todavía no tienes que pagar nada. Si la acepta, te enviaremos el enlace para pagar el abono.`,
+    "",
+    ...filas.map(([etiqueta, valor]) => `${etiqueta}: ${valor ?? "—"}`),
+    "",
+    ...avisoRetractoTexto(pedido),
+    "",
+    `Al enviar tu solicitud el ${fecha} aceptaste los Términos y condiciones vigentes desde el ${TERMINOS_VIGENCIA}: ${terminos}`,
+    "Guarda este correo como respaldo de tu solicitud.",
+    "PintaPatitas",
+  ].join("\n");
+
+  await obtenerTransport().sendMail({
+    from: `"PintaPatitas" <${obtenerFromAddress()}>`,
+    to: pedido.customer_email,
+    subject: asunto,
+    text: texto,
+    html,
+  });
+}
+
+/**
+ * Aviso al cliente de que su retrato fue despachado, con el número de seguimiento de Starken.
+ */
+export async function enviarCorreoClienteDespacho({ pedido }) {
+  if (!pedido.customer_email) throw new Error("El pedido no tiene customer_email");
+
+  const meme = esPedidoMeme(pedido);
+  const obra = meme ? "tu cuadro de meme" : "tu retrato";
+  const seguimiento = pedido.tracking_code;
+  const lineaSeguimiento = seguimiento
+    ? `Puedes seguir tu envío en starken.cl con el número de seguimiento ${seguimiento}.`
+    : "Si necesitas el número de seguimiento, responde a este correo y te lo enviamos.";
+  const entrega =
+    pedido.delivery_type === "sucursal"
+      ? `Retiro en sucursal Starken: ${pedido.starken_branch}, ${pedido.commune}, ${pedido.region}`
+      : `${pedido.street} ${pedido.street_number}${pedido.apartment ? `, ${pedido.apartment}` : ""}, ${pedido.commune}, ${pedido.region}`;
+  const asunto = `¡${meme ? "Tu cuadro" : "Tu retrato"} va en camino! — Pedido #PP-${pedido.order_number}`;
+  const filas = [
+    ["Pedido", `#PP-${pedido.order_number}`],
+    ["Producto", pedido.product],
+    ["Seguimiento Starken", seguimiento || "—"],
+    ["Entrega", entrega],
+  ];
+
+  const html = `<!doctype html>
+<html>
+  <body style="margin:0;background:#e8f0f3;font-family:Arial,Helvetica,sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#e8f0f3;padding:24px 0;">
+      <tr><td align="center">
+        <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background:#ffffff;border-radius:20px;border:1px solid #dbe7ee;overflow:hidden;">
+          <tr>
+            <td style="background:#2d6583;padding:26px 28px;">
+              <p style="margin:0;color:#ffffff;font-size:20px;font-weight:bold;">PintaPatitas</p>
+              <p style="margin:6px 0 0;color:#cfe3ec;font-size:14px;">Pedido #PP-${esc(pedido.order_number)} despachado</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:24px 28px 12px;">
+              <p style="margin:0 0 14px;color:#0f172a;font-size:16px;">¡Hola, <strong>${esc(pedido.customer_name)}</strong>!</p>
+              <p style="margin:0 0 16px;color:#334155;font-size:14px;line-height:1.6;">
+                ¡${esc(obra[0].toUpperCase() + obra.slice(1))} ya está listo y lo despachamos por Starken! ${esc(lineaSeguimiento)}
+              </p>
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px 16px;margin-bottom:18px;">
+                ${filas.map(([etiqueta, valor], i) => filaItem(etiqueta, valor, i === filas.length - 1)).join("")}
+              </table>
+              <p style="margin:0 0 10px;color:#334155;font-size:14px;line-height:1.6;">
+                <strong>Recuerda:</strong> el envío es por pagar; el costo de Starken lo pagas al recibir el cuadro. Revísalo al recibirlo y, si notas algún daño, escríbenos con fotos del cuadro y del embalaje: tienes garantía legal de 6 meses.
+              </p>
+              <p style="margin:0;color:#64748b;font-size:12px;line-height:1.5;">
+                ¡Gracias por confiar en PintaPatitas! Si tienes dudas, responde a este correo o escríbenos a soporte@pintapatitas.com.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background:#f1f5f9;padding:16px 28px;border-top:1px solid #e2e8f0;">
+              <p style="margin:0;color:#64748b;font-size:12px;text-align:center;">
+                PintaPatitas · Retratos de mascotas hechos con amor
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td></tr>
+    </table>
+  </body>
+</html>`;
+
+  const texto = [
+    `¡Hola ${pedido.customer_name}!`,
+    "",
+    `${obra[0].toUpperCase() + obra.slice(1)} ya está listo y lo despachamos por Starken (pedido #PP-${pedido.order_number}).`,
+    lineaSeguimiento,
+    `Entrega: ${entrega}`,
+    "",
+    "Recuerda: el envío es por pagar; el costo de Starken lo pagas al recibir el cuadro. Si llega con daños, escríbenos con fotos: tienes garantía legal de 6 meses.",
+    "PintaPatitas",
+  ].join("\n");
+
+  await obtenerTransport().sendMail({
+    from: `"PintaPatitas" <${obtenerFromAddress()}>`,
+    to: pedido.customer_email,
+    bcc: obtenerFromAddress(), // Copia oculta para respaldo, como los demás correos del pedido
+    subject: asunto,
+    text: texto,
+    html,
+  });
+}
+
 /**
  * Envía al cliente el correo con el link de pago del abono cuando la solicitud es aceptada.
  */
@@ -363,6 +588,9 @@ export async function enviarCorreoClienteAbono({ pedido, paymentUrl }) {
   if (!pedido.customer_email) throw new Error("El pedido no tiene customer_email");
 
   const asunto = `¡Solicitud aceptada! Paga tu abono para comenzar — Solicitud #PP-${pedido.order_number}`;
+  const terminos = urlTerminos();
+  const pct = porcentajeAbono(pedido);
+  const etiquetaAbono = pct ? `Abono a pagar (${pct}%)` : "Abono a pagar";
 
   const html = `<!doctype html>
 <html>
@@ -389,8 +617,14 @@ export async function enviarCorreoClienteAbono({ pedido, paymentUrl }) {
                 <tr><td style="padding:4px 0;color:#64748b;font-size:13px;">Técnica / Estilo:</td><td style="padding:4px 0;color:#0f172a;font-weight:600;font-size:13px;text-align:right;">${esc(pedido.style || "—")}</td></tr>
                 ${esPedidoMeme(pedido) && !pedido.size ? "" : `<tr><td style="padding:4px 0;color:#64748b;font-size:13px;">Tamaño:</td><td style="padding:4px 0;color:#0f172a;font-weight:600;font-size:13px;text-align:right;">${esc(pedido.size || "—")}</td></tr>`}
                 <tr><td style="padding:4px 0;color:#64748b;font-size:13px;">Monto total:</td><td style="padding:4px 0;color:#0f172a;font-weight:600;font-size:13px;text-align:right;">${clp(pedido.total_amount)}</td></tr>
-                <tr style="border-top:1px solid #e2e8f0;"><td style="padding:8px 0 4px;color:#2d6583;font-size:15px;font-weight:bold;">Abono a pagar (50%):</td><td style="padding:8px 0 4px;color:#2d6583;font-size:16px;font-weight:bold;text-align:right;">${clp(pedido.deposit_amount)}</td></tr>
+                <tr style="border-top:1px solid #e2e8f0;"><td style="padding:8px 0 4px;color:#2d6583;font-size:15px;font-weight:bold;">${esc(etiquetaAbono)}:</td><td style="padding:8px 0 4px;color:#2d6583;font-size:16px;font-weight:bold;text-align:right;">${clp(pedido.deposit_amount)}</td></tr>
               </table>
+
+              ${avisoRetractoHTML(pedido)}
+
+              <p style="margin:0 0 4px;color:#334155;font-size:13px;line-height:1.6;">
+                Al pagar el abono confirmas tu pedido conforme a los <a href="${esc(terminos)}" style="color:#2d6583;font-weight:600;">Términos y condiciones</a> vigentes desde el ${TERMINOS_VIGENCIA}, que aceptaste al enviar tu solicitud.
+              </p>
 
               <div style="text-align:center;padding:12px 0 20px;">
                 <a href="${esc(paymentUrl)}" style="display:inline-block;background:#009ee3;color:#ffffff;text-decoration:none;font-size:15px;font-weight:bold;padding:14px 28px;border-radius:999px;box-shadow:0 4px 10px rgba(0,158,227,0.3);">Pagar abono con Mercado Pago</a>
@@ -422,7 +656,11 @@ export async function enviarCorreoClienteAbono({ pedido, paymentUrl }) {
     `Técnica: ${pedido.style || "—"}`,
     ...(esPedidoMeme(pedido) && !pedido.size ? [] : [`Tamaño: ${pedido.size || "—"}`]),
     `Monto total: ${clp(pedido.total_amount)}`,
-    `Abono a pagar (50%): ${clp(pedido.deposit_amount)}`,
+    `${etiquetaAbono}: ${clp(pedido.deposit_amount)}`,
+    "",
+    ...avisoRetractoTexto(pedido),
+    "",
+    `Al pagar el abono confirmas tu pedido conforme a los Términos y condiciones vigentes desde el ${TERMINOS_VIGENCIA}: ${terminos}`,
     "",
     "Puedes realizar el pago del abono a través de Mercado Pago en el siguiente enlace:",
     paymentUrl,

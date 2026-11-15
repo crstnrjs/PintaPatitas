@@ -4,7 +4,7 @@ import rateLimit from "express-rate-limit";
 import { randomUUID } from "node:crypto";
 import { supabaseAdmin as supabase } from "../lib/supabase.js";
 import { resolvePrice } from "../pricing.js";
-import { enviarCorreoNuevaSolicitud } from "../lib/mailer.js";
+import { enviarCorreoClienteSolicitud, enviarCorreoNuevaSolicitud } from "../lib/mailer.js";
 import { normalizarRut } from "../lib/rut.js";
 
 const BUCKET = "pet-photos";
@@ -69,6 +69,7 @@ export function leerCampos(b) {
     entrega_tipo: b.entrega_tipo === "sucursal" ? "sucursal" : b.entrega_tipo === "domicilio" ? "domicilio" : "",
     sucursal: texto(b.sucursal, 160),
     acepta_envio: b.acepta_envio === "true",
+    acepta_terminos: b.acepta_terminos === "true",
     telefono: texto(b.telefono, 20),
     region: texto(b.region, 80),
     comuna: texto(b.comuna, 80),
@@ -111,6 +112,9 @@ export function validar(c, fotos) {
     return "Indica la sucursal Starken donde lo retirarás.";
   }
   if (!c.acepta_envio) return "Debes aceptar que el envío se paga al recibir en Starken.";
+  if (!c.acepta_terminos) {
+    return "Debes aceptar los Términos y condiciones, incluida la exclusión del derecho a retracto.";
+  }
   if (fotos.length < 1) {
     return esMeme(c) ? "Sube la imagen de tu meme." : "Sube al menos una foto de tu mascota.";
   }
@@ -193,6 +197,31 @@ router.post("/", limitador, upload.array("fotos", MAX_FOTOS), async (req, res) =
 
     // Respondemos YA (la solicitud está guardada). El correo va después, sin bloquear.
     res.status(201).json({ orderId: pedidoId, orderNumber: pedido.order_number });
+
+    // Confirmación al cliente: resumen, aviso de retracto y enlace a los términos aceptados.
+    // Con su propio catch: si falla, la solicitud ya quedó guardada igual.
+    enviarCorreoClienteSolicitud({
+      pedido: {
+        order_number: pedido.order_number,
+        created_at: pedido.created_at ?? new Date().toISOString(),
+        customer_name: `${c.nombre} ${c.apellido}`,
+        customer_email: c.correo,
+        product: nombreProducto(c, n),
+        style: opcion.technique_name,
+        size: opcion.size_label,
+        pet_count: n,
+        pet_name: c.pet_name || null,
+        total_amount: total,
+        region: c.region,
+        commune: c.comuna,
+        ...destinoEnvio(c),
+      },
+    }).catch((errCorreo) => {
+      console.error(
+        `No se pudo enviar la confirmación al cliente de la solicitud #PP-${pedido.order_number}:`,
+        errCorreo?.message ?? errCorreo,
+      );
+    });
 
     // Correo de respaldo a la amiga, en segundo plano.
     // Va FUERA del try/catch grande (que borra el pedido) y con su propio catch:

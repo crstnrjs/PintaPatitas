@@ -68,13 +68,40 @@ const secciones = [
     </>
   ],
 
-  ["2. Cómo se forma el pedido", <>Enviar el formulario es una solicitud, no una compra confirmada ni una obligación de pago. La artista revisa la propuesta, las fotografías y la disponibilidad, y puede aceptarla o rechazarla. Si se acepta, recibirás por correo los pasos para pagar el abono. El trabajo comienza una vez confirmado ese pago. La descripción, técnica, tamaño, cantidad de mascotas y precio del retrato aceptado quedarán asociados a tu solicitud.</>],
+  ["2. Cómo se forma el pedido", <>Para enviar una solicitud debes aceptar estos términos, incluida la exclusión del derecho a retracto de la sección 5. Al enviarla recibirás por correo un resumen de tu solicitud con un enlace a estos términos. Enviar el formulario es una solicitud, no una compra confirmada ni una obligación de pago. La artista revisa la propuesta, las fotografías y la disponibilidad, y puede aceptarla o rechazarla. Si se acepta, recibirás por correo los pasos para pagar el abono. El trabajo comienza una vez confirmado ese pago. La descripción, técnica, tamaño, cantidad de mascotas y precio del retrato aceptado quedarán asociados a tu solicitud.</>],
 
   ["3. Precio, abono y saldo", <>El precio del retrato se informa en pesos chilenos (CLP) antes de enviar la solicitud. El pago se divide en un abono, que es un porcentaje del precio, y un saldo. El monto exacto del abono se comunica al aceptar el pedido; el saldo se cobra cuando la obra está terminada y antes del despacho. El pago se procesa mediante Mercado Pago y queda sujeto también a sus condiciones. El envío no está incluido en el precio: se despacha por Starken con la modalidad «por pagar», es decir, pagas su costo directamente a Starken al recibir el cuadro en tu domicilio o al retirarlo en la sucursal que elijas. No pagues mediante enlaces distintos de los enviados por los canales oficiales.</>],
 
-  ["4. Cuadros listos", <>En la sección «Cuadros listos» se venden obras ya terminadas, con una sola unidad disponible por obra. Estas compras no requieren solicitud ni aprobación previa: se pagan en un solo pago por el precio total publicado, mediante Mercado Pago. Al iniciar la compra, el cuadro queda reservado durante 20 minutos para que completes el pago; si no se completa en ese plazo, la reserva se libera y la obra vuelve a estar disponible. Si por un problema técnico se recibe más de un pago por la misma obra, se devolverá el pago a quien no la obtenga. El envío se realiza por Starken con la modalidad «por pagar», igual que en los retratos.</>],
+  ["4. Cuadros listos",
+    <>
+      <p>
+        En la sección «Cuadros listos» se venden obras ya terminadas, con una sola unidad disponible por obra. Estas compras no requieren solicitud ni aprobación previa: se pagan en un solo pago por el precio total publicado, mediante Mercado Pago. Para comprar debes aceptar estos términos. Al iniciar la compra, el cuadro queda reservado durante 20 minutos para que completes el pago; si no se completa en ese plazo, la reserva se libera y la obra vuelve a estar disponible. Si por un problema técnico se recibe más de un pago por la misma obra, se devolverá el pago a quien no la obtenga y se le avisará por correo. El envío se realiza por Starken con la modalidad «por pagar», igual que en los retratos. Al confirmarse el pago recibirás por correo la confirmación de tu compra con un enlace a estos términos, y al despacharlo, un correo con el número de seguimiento de Starken.
+      </p>
+      <p>
+        <strong>Derecho a retracto:</strong> como los cuadros listos no son obras personalizadas, tienes derecho a retracto conforme al artículo 3 bis, letra b), de la Ley N° 19.496: puedes arrepentirte de la compra, sin expresar causa, dentro de los <strong>10 días siguientes a la recepción del cuadro</strong>. Para ejercerlo, escríbenos a <a href="mailto:soporte@pintapatitas.com">soporte@pintapatitas.com</a> o a través del formulario de <Link to="/soporte">Soporte</Link> indicando tu número de compra. Te indicaremos cómo devolverlo por Starken; <strong>el costo del envío de devolución es de cargo del comprador</strong>, igual que el envío original. El cuadro debe devolverse sin daños atribuibles al comprador y, en lo posible, con su embalaje original. Recibida la devolución, te reembolsaremos el precio pagado a través de Mercado Pago, en el plazo que establece la ley.
+      </p>
+      <p>
+        <strong>Daños en el transporte y garantía:</strong> te recomendamos revisar el cuadro al recibirlo y, si notas algún daño, escribirnos cuanto antes con fotos del cuadro y del embalaje. Esto no limita tu garantía legal: si el cuadro llega con defectos o dañado, dentro de los 6 meses siguientes a su recepción puedes elegir entre su reparación, su cambio, cuando sea posible tratándose de una obra única, o la devolución de lo pagado, conforme a la ley.
+      </p>
+    </>
+  ],
 
-  ["5. Cambios, cancelaciones y devoluciones", <>Cada retrato se crea a partir de las instrucciones, referencias y fotografías que entrega el cliente. Si necesitas corregir datos o pedir un cambio, comunícate cuanto antes y antes de que avance la obra; la posibilidad de modificarla dependerá de su etapa y de lo acordado por escrito. Si el cliente cancela, el tratamiento del abono dependerá del trabajo ya realizado, de los costos efectivamente incurridos y de los derechos irrenunciables que reconoce la legislación chilena. No se entenderá que esta cláusula elimina derechos legales a retracto, garantía, reparación o devolución cuando correspondan. Si PintaPatitas o la artista no pueden realizar un pedido aceptado, se informará al cliente y se devolverán los pagos correspondientes, salvo que acuerden expresamente una alternativa permitida por ley. Para un producto defectuoso, distinto de lo ofrecido o con problemas de entrega, escríbenos a <a href="mailto:soporte@pintapatitas.com">soporte@pintapatitas.com</a> para gestionar una solución conforme a la ley.</>],
+  ["5. Derecho a retracto, cambios, cancelaciones y devoluciones",
+    <>
+      <p>
+        <strong>Retratos personalizados: sin derecho a retracto.</strong> Cada retrato (incluidos los cuadros de meme) se confecciona especialmente conforme a las especificaciones del cliente: la técnica, el tamaño, la cantidad de mascotas, las fotografías de referencia y las indicaciones entregadas en la solicitud. Por eso, de acuerdo con el artículo 3 bis, letra b), de la Ley N° 19.496 y su reglamento de exclusiones, <strong>en los retratos personalizados no aplica el derecho a retracto</strong>: una vez pagado el abono no es posible terminar el contrato sin expresión de causa. Esta exclusión se informa antes de enviar la solicitud y antes de pagar, y debes aceptarla para continuar.
+      </p>
+      <p>
+        La exclusión no se aplica si el retrato no cumple las especificaciones acordadas (por ejemplo, otra técnica, otro tamaño u otra cantidad de mascotas). Tampoco afecta la <strong>garantía legal</strong>: si el cuadro llega con defectos, dañado o no corresponde a lo solicitado, tienes derecho, dentro de los 6 meses siguientes a su recepción, a elegir entre su reparación, su cambio o la devolución de lo pagado, conforme a la ley. La interpretación artística propia de una obra pintada (trazos, texturas y tonos aproximados a los de la fotografía) no constituye por sí sola un incumplimiento de las especificaciones.
+      </p>
+      <p>
+        <strong>Cuadros listos:</strong> no son obras personalizadas, por lo que en su compra se mantiene el derecho a retracto de 10 días desde la recepción, en los términos descritos en la sección 4.
+      </p>
+      <p>
+        <strong>Cambios y cancelaciones:</strong> si necesitas corregir datos o pedir un cambio, comunícate cuanto antes y antes de que avance la obra; la posibilidad de modificarla dependerá de su etapa y de lo acordado por escrito. Si el cliente cancela, el tratamiento del abono dependerá del trabajo ya realizado, de los costos efectivamente incurridos y de los derechos irrenunciables que reconoce la legislación chilena. Si PintaPatitas o la artista no pueden realizar un pedido aceptado, se informará al cliente y se devolverán los pagos correspondientes, salvo que acuerden expresamente una alternativa permitida por ley. Para un producto defectuoso, distinto de lo ofrecido o con problemas de entrega, escríbenos a <a href="mailto:soporte@pintapatitas.com">soporte@pintapatitas.com</a> para gestionar una solución conforme a la ley.
+      </p>
+    </>
+  ],
 
   ["6. Fotografías y datos personales",
     <>
@@ -101,7 +128,7 @@ const secciones = [
 
   ["7. Fotografías y derechos de uso", <>Declaras que tienes autorización para compartir las fotografías y que su uso para preparar el retrato no infringe derechos de terceros. Concedes a la artista permiso limitado para usar las imágenes como referencia y ejecutar el encargo. Ese permiso no transfiere la propiedad de tus fotografías ni autoriza otros usos. El retrato encargado es una obra personalizada; los derechos sobre la obra y cualquier reproducción se rigen por la legislación aplicable y por los acuerdos comunicados para cada pedido. La publicación de una obra encargada, fotografías del cliente o la mascota, el nombre de la mascota, un testimonio o imágenes del proceso en la galería, comparativas, redes sociales u otros medios promocionales requiere autorización previa, específica y separada del permiso necesario para realizar el pedido. La carga de esos materiales por el administrador no sustituye dicha autorización.</>],
 
-  ["8. Fotografías, producción y envío", <>Para completar la solicitud se requiere al menos una fotografía. Se aceptan archivos JPG, PNG o WebP, hasta 6 fotografías y 20 MB por archivo. Procura que las imágenes tengan buena luz y permitan distinguir la cara y los rasgos relevantes. El tiempo de producción informado en el sitio es estimado y puede variar según el pedido; el plazo de transporte se suma a ese tiempo. Los cuadros se envían dentro de Chile mediante Starken, de acuerdo con su cobertura, a domicilio o a la sucursal que elijas, y el costo del envío lo pagas a Starken al recibir. El cliente debe revisar que la dirección o sucursal y los datos de contacto estén correctos.</>],
+  ["8. Fotografías, producción y envío", <>Para completar la solicitud se requiere al menos una fotografía. Se aceptan archivos JPG, PNG o WebP, hasta 6 fotografías y 20 MB por archivo. Procura que las imágenes tengan buena luz y permitan distinguir la cara y los rasgos relevantes. El tiempo de producción informado en el sitio es estimado y puede variar según el pedido; el plazo de transporte se suma a ese tiempo. Los cuadros se envían dentro de Chile mediante Starken, de acuerdo con su cobertura, a domicilio o a la sucursal que elijas, y el costo del envío lo pagas a Starken al recibir. Al despachar el cuadro te enviaremos por correo el número de seguimiento de Starken. El cliente debe revisar que la dirección o sucursal y los datos de contacto estén correctos.</>],
 
   ["9. Comunicaciones y disponibilidad", <>Las actualizaciones del pedido se envían a la dirección de correo indicada. Revisa también las carpetas de spam o promociones. El sitio puede requerir pausas por mantenimiento o por causas ajenas a PintaPatitas; esto no afecta los derechos que la ley reconoce al consumidor.</>],
 
@@ -138,7 +165,7 @@ export default function Terminos() {
         <p className="mt-5 max-w-2xl text-base leading-7 text-tinta/70">
           Información para solicitar un retrato personalizado de tu mascota o comprar un cuadro listo. Léela antes de enviar una solicitud o realizar un pago.
         </p>
-        <p className="mt-4 text-sm text-tinta/60">Vigentes desde el 9 de noviembre de 2026</p>
+        <p className="mt-4 text-sm text-tinta/60">Vigentes desde el 15 de noviembre de 2026</p>
       </header>
 
       <div className="space-y-9">

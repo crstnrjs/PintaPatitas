@@ -34,6 +34,7 @@ export function armarFormData(datos, estilo) {
   const camposDestino = c.entrega_tipo === "sucursal" ? ["sucursal"] : ["calle", "numero", "depto"];
   for (const campo of camposDestino) fd.append(campo, c[campo].trim());
   fd.append("acepta_envio", datos.aceptaEnvio ? "true" : "false");
+  fd.append("acepta_terminos", datos.aceptaTerminos ? "true" : "false");
 
   datos.fotos.forEach((f, i) => fd.append("fotos", f.blob, `${meme ? "meme" : "mascota"}-${i + 1}.webp`));
   return fd;

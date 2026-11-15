@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { calcularComision, iniciarCompra, leerComprador, leerComisionPorcentaje, normalizarRut, procesarPagoCuadro } from "./ventasCuadros.js";
+import { calcularComision, descripcionCobro, iniciarCompra, leerComprador, leerComisionPorcentaje, normalizarRut, procesarPagoCuadro } from "./ventasCuadros.js";
 
 const AHORA = new Date("2026-11-07T15:00:00.000Z");
 
@@ -14,6 +14,7 @@ const comprador = {
   comuna: "Viña del Mar",
   direccion: "Av. Libertad 123, depto 4",
   acepta_envio: true,
+  acepta_terminos: true,
 };
 
 // Repositorio en memoria con el mismo contrato que crearRepoVentas.
@@ -104,6 +105,17 @@ test("exige los datos del comprador y aceptar el envío por pagar", () => {
   assert.match(leerComprador({ ...comprador, telefono: "912345678" }).error, /celular/);
   assert.match(leerComprador({ ...comprador, entrega_tipo: "dron" }).error, /domicilio o en una sucursal/);
   assert.match(leerComprador({ ...comprador, acepta_envio: "true" }).error, /envío se paga al recibir/);
+});
+
+test("la descripción del cobro no dice 'pintado a mano' para obras digitales", () => {
+  assert.match(descripcionCobro({ techniques: { slug: "acrilico" } }), /pintado a mano/);
+  assert.doesNotMatch(descripcionCobro({ techniques: { slug: "digital" } }), /pintado a mano/);
+  assert.doesNotMatch(descripcionCobro({}), /pintado a mano/);
+});
+
+test("exige aceptar los términos", () => {
+  assert.match(leerComprador({ ...comprador, acepta_terminos: false }).error, /Términos y condiciones/);
+  assert.match(leerComprador({ ...comprador, acepta_terminos: "true" }).error, /Términos y condiciones/);
 });
 
 test("usa la comisión de COMISION_PORCENTAJE y la redondea a pesos", () => {

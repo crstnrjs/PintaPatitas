@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { clp } from "./pasos";
 import { normalizarTelefono } from "./StepContacto";
 
@@ -36,6 +37,7 @@ export default function StepResumen({
   enviando,
   aviso,
   onAceptaEnvio,
+  onAceptaTerminos,
 }) {
   const c = datos.contacto;
   const tel = normalizarTelefono(c.telefono);
@@ -150,6 +152,27 @@ export default function StepResumen({
         </p>
       </div>
 
+      {/* Exclusión del derecho a retracto: el título queda siempre visible junto al precio
+          (lo exige el reglamento de exclusiones); el detalle se despliega para no recargar. */}
+      <details className="group rounded-2xl border border-acento/40 bg-lino">
+        <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-tinta marker:hidden focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tinta sm:text-base [&::-webkit-details-marker]:hidden">
+          <span>Sin derecho a retracto: {esMeme ? "tu cuadro se pinta a pedido" : "tu retrato se pinta a pedido"}</span>
+          <span aria-hidden="true" className="text-lg leading-none text-acento transition-transform group-open:rotate-45">+</span>
+        </summary>
+        <div className="space-y-2 px-4 pb-4 text-sm leading-relaxed text-tinta/75">
+          <p>
+            {esMeme ? "Tu cuadro" : "Tu retrato"} se confecciona especialmente según tus especificaciones (técnica,
+            tamaño, {esMeme ? "imagen" : "mascotas, fotos"} e indicaciones). Por eso{" "}
+            <strong className="font-semibold text-tinta">no aplica el derecho a retracto</strong> (art. 3 bis, Ley
+            19.496): una vez pagado el abono no podrás arrepentirte sin expresión de causa.
+          </p>
+          <p>
+            Mantienes la <strong className="font-semibold text-tinta">garantía legal de 6 meses</strong> si el cuadro
+            llega con defectos o no corresponde a lo que pediste.
+          </p>
+        </div>
+      </details>
+
       <label
         className={`flex cursor-pointer items-start gap-3 rounded-2xl border p-4 text-sm leading-snug transition ${
           datos.aceptaEnvio
@@ -168,6 +191,34 @@ export default function StepResumen({
         </span>
       </label>
 
+      <label
+        className={`flex cursor-pointer items-start gap-3 rounded-2xl border p-4 text-sm leading-snug transition ${
+          datos.aceptaTerminos
+            ? "border-acento bg-lino text-tinta"
+            : "border-tinta/15 bg-white text-tinta/80 hover:border-tinta/30"
+        }`}
+      >
+        <input
+          type="checkbox"
+          className="mt-0.5 size-5 shrink-0 accent-acento"
+          checked={datos.aceptaTerminos}
+          onChange={(e) => onAceptaTerminos(e.target.checked)}
+        />
+        <span>
+          Leí y acepto los{" "}
+          {/* Pestaña nueva: así no se pierde lo que lleva del pedido */}
+          <Link
+            to="/terminos"
+            target="_blank"
+            rel="noopener"
+            className="font-semibold text-acento underline underline-offset-4"
+          >
+            Términos y condiciones
+          </Link>
+          , incluida la exclusión del <strong>derecho a retracto</strong>.
+        </span>
+      </label>
+
       {aviso && (
         <p role="alert" className="rounded-xl bg-amber-50 p-3 text-sm text-amber-800">
           {aviso}
@@ -177,7 +228,7 @@ export default function StepResumen({
       <button
         type="button"
         onClick={onEnviar}
-        disabled={enviando || !datos.aceptaEnvio}
+        disabled={enviando || !datos.aceptaEnvio || !datos.aceptaTerminos}
         className="min-h-13 w-full rounded-full bg-acento px-6 text-base font-semibold text-white shadow-[0_5px_0_-1px_var(--color-acento-oscuro)] transition hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-[0_2px_0_-1px_var(--color-acento-oscuro)] focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-tinta disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-45 disabled:shadow-none"
       >
         {enviando ? "Enviando..." : "Enviar solicitud"}

@@ -26,6 +26,7 @@ export function leerComprador(body = {}) {
     comuna: texto(body.comuna, 80),
     direccion: texto(body.direccion, 200),
     acepta_envio: body.acepta_envio === true,
+    acepta_terminos: body.acepta_terminos === true,
   };
 
   let error = null;
@@ -38,6 +39,7 @@ export function leerComprador(body = {}) {
   else if (d.direccion.length < 3) {
     error = d.entrega_tipo === "sucursal" ? "Indica la sucursal Starken donde lo retirarás." : "Completa la dirección de envío.";
   } else if (!d.acepta_envio) error = "Debes aceptar que el envío se paga al recibir en Starken.";
+  else if (!d.acepta_terminos) error = "Debes aceptar los Términos y condiciones.";
 
   return { datos: d, error };
 }
@@ -60,7 +62,7 @@ export function crearRepoVentas(db) {
     async obtenerCuadro(slug) {
       const { data, error } = await db
         .from("cuadros_listos")
-        .select("id, slug, titulo, precio, estado, reservado_hasta, canal_venta")
+        .select("id, slug, titulo, precio, estado, reservado_hasta, canal_venta, techniques(slug)")
         .eq("slug", slug)
         .maybeSingle();
       if (error) throw error;
@@ -70,7 +72,7 @@ export function crearRepoVentas(db) {
     async obtenerCuadroPorId(id) {
       const { data, error } = await db
         .from("cuadros_listos")
-        .select("id, slug, titulo, precio, estado, reservado_hasta, canal_venta")
+        .select("id, slug, titulo, precio, estado, reservado_hasta, canal_venta, techniques(slug)")
         .eq("id", id)
         .maybeSingle();
       if (error) throw error;
@@ -185,6 +187,13 @@ export function crearRepoVentas(db) {
 // Mercado Pago pide la zona horaria explícita (2026-11-07T15:00:00.000+00:00).
 const fechaMP = (iso) => iso.replace(/Z$/, "+00:00");
 
+// Lo que ve el comprador en Mercado Pago: un cuadro digital no está "pintado a mano".
+// Sin técnica conocida se usa la descripción neutra.
+export function descripcionCobro(cuadro) {
+  const slug = cuadro?.techniques?.slug;
+  return slug && slug !== "digital" ? "Cuadro original pintado a mano · PintaPatitas" : "Obra original · PintaPatitas";
+}
+
 /**
  * Reserva el cuadro, registra la venta y crea el link de pago.
  * Devuelve { status, body } para que la ruta solo lo envíe.
@@ -268,7 +277,7 @@ export async function iniciarCompra({
         {
           id: `cuadro-${cuadro.id}`,
           title: `Cuadro "${cuadro.titulo}"`,
-          description: "Cuadro original pintado a mano · PintaPatitas",
+          description: descripcionCobro(cuadro),
           quantity: 1,
           unit_price: monto,
           currency_id: "CLP",

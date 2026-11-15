@@ -4,7 +4,7 @@ import express from "express";
 import { createHmac } from "node:crypto";
 process.env.SUPABASE_URL ||= "https://example.supabase.co";
 process.env.SUPABASE_SERVICE_ROLE_KEY ||= "test-service-role-key";
-const { firmaValida, crearRouterWebhooks } = await import("./webhooks.js");
+const { firmaValida, motivoFirmaInvalida, crearRouterWebhooks } = await import("./webhooks.js");
 const { crearSupabaseFalso } = await import("../test-utils/mockSupabase.js");
 
 const secret = "test-webhook-secret";
@@ -79,6 +79,17 @@ test("rechaza una firma inválida sin consultar Mercado Pago", async () => {
 test("rechaza el caso sin ID de pago cubierto por la firma", async () => {
   process.env.MP_WEBHOOK_SECRET = secret;
   assert.equal(firmaValida(makeReq({ queryId: true })), false);
+});
+
+test("explica por qué se rechaza la firma sin revelar la clave", () => {
+  assert.match(motivoFirmaInvalida(makeReq(), ""), /no está definida/);
+  assert.match(motivoFirmaInvalida(makeReq({ sig: false }), secret), /no coincide/);
+  assert.doesNotMatch(motivoFirmaInvalida(makeReq({ sig: false }), secret), new RegExp(secret));
+  assert.equal(motivoFirmaInvalida(makeReq(), secret), null);
+});
+
+test("acepta la clave aunque se haya pegado con espacios o salto de línea", () => {
+  assert.equal(firmaValida(makeReq(), `  ${secret}\n`), true);
 });
 
 test("aprueba pago válido y transiciona la orden", async () => {

@@ -6,12 +6,20 @@ import { crearRepoVentas, procesarPagoCuadro } from "../lib/ventasCuadros.js";
 import { notificarVentaCuadro } from "../lib/correosCuadros.js";
 import { enviarAlertaPagoRechazado } from "../lib/soporte.js";
 
-export function firmaValida(req, secretOverride = process.env.MP_WEBHOOK_SECRET) {
-  const secret = secretOverride;
+/**
+ * Devuelve null si la firma es válida o un motivo legible si no lo es.
+ * El motivo nunca incluye la clave ni la firma: solo sirve para diagnosticar en los logs.
+ */
+export function motivoFirmaInvalida(req, secretOverride = process.env.MP_WEBHOOK_SECRET) {
+  // Se recorta por si la variable se pegó con espacios o un salto de línea en el hosting.
+  const secret = String(secretOverride ?? "").trim();
   const signature = req.get("x-signature");
   const requestId = req.get("x-request-id");
   const dataId = String(req.query["data.id"] || req.body?.data?.id || "").toLowerCase();
-  if (!secret || !signature || !requestId || !dataId) return false;
+  if (!secret) return "MP_WEBHOOK_SECRET no está definida en el servidor";
+  if (!signature) return "la notificación llegó sin cabecera x-signature";
+  if (!requestId) return "la notificación llegó sin cabecera x-request-id";
+  if (!dataId) return "la notificación no trae data.id";
 
   const parts = Object.fromEntries(
     signature.split(",").map((part) => {
@@ -19,13 +27,20 @@ export function firmaValida(req, secretOverride = process.env.MP_WEBHOOK_SECRET)
       return index < 0 ? ["", ""] : [part.slice(0, index).trim(), part.slice(index + 1).trim()];
     }),
   );
-  if (!parts.ts || !parts.v1) return false;
+  if (!parts.ts || !parts.v1) return "la cabecera x-signature no trae ts y v1";
 
   const manifest = `id:${dataId};request-id:${requestId};ts:${parts.ts};`;
   const expected = createHmac("sha256", secret).update(manifest).digest("hex");
   const received = Buffer.from(parts.v1, "hex");
   const expectedBuffer = Buffer.from(expected, "hex");
-  return received.length === expectedBuffer.length && timingSafeEqual(received, expectedBuffer);
+  const coincide = received.length === expectedBuffer.length && timingSafeEqual(received, expectedBuffer);
+  return coincide
+    ? null
+    : `la firma no coincide con MP_WEBHOOK_SECRET (clave de ${secret.length} caracteres); revisa que sea la clave secreta de Webhooks del modo productivo`;
+}
+
+export function firmaValida(req, secretOverride = process.env.MP_WEBHOOK_SECRET) {
+  return motivoFirmaInvalida(req, secretOverride) === null;
 }
 
 const dineroCoincide = (a, b) => Math.round(Number(a) * 100) === Math.round(Number(b) * 100);
@@ -66,7 +81,10 @@ export function crearRouterWebhooks({
 
   // Webhook de Mercado Pago: recibe notificaciones de eventos (ej. pago aprobado)
   router.post("/mercadopago", async (req, res) => {
-    if (!firmaValida(req, webhookSecret ?? process.env.MP_WEBHOOK_SECRET)) {
+    const motivo = motivoFirmaInvalida(req, webhookSecret ?? process.env.MP_WEBHOOK_SECRET);
+    if (motivo) {
+      const avisoId = req.query["data.id"] || req.body?.data?.id || req.query.id || "sin id";
+      console.warn(`[Webhook MP] Firma rechazada (401) para el aviso ${avisoId}: ${motivo}.`);
       return res.status(401).json({ error: "Firma de webhook no válida." });
     }
 

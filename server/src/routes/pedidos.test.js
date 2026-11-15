@@ -23,6 +23,7 @@ const base = {
   depto: "4B",
   sucursal: "",
   acepta_envio: "true",
+  acepta_terminos: "true",
 };
 const foto = [{}];
 const error = (cambios) => validar(leerCampos({ ...base, ...cambios }), foto);
@@ -51,6 +52,11 @@ test("a domicilio pide calle y número; en sucursal pide la sucursal", () => {
 test("exige aceptar el envío por pagar", () => {
   assert.match(error({ acepta_envio: "" }), /envío se paga al recibir/);
   assert.match(error({ acepta_envio: "false" }), /envío se paga al recibir/);
+});
+
+test("exige aceptar los términos y la exclusión del retracto", () => {
+  assert.match(error({ acepta_terminos: "" }), /Términos y condiciones/);
+  assert.match(error({ acepta_terminos: "false" }), /derecho a retracto/);
 });
 
 test("guarda solo los datos del destino elegido", () => {

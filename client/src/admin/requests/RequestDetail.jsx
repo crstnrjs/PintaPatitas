@@ -9,6 +9,8 @@ import {
   CircleX,
   ExternalLink,
   MessageSquareQuote,
+  RotateCcw,
+  Trash2,
   X,
   ZoomIn,
   ClipboardCheck,
@@ -147,6 +149,43 @@ export default function RequestDetail() {
       setVersion((v) => v + 1);
     } catch (err) {
       setRejectError(
+        err instanceof TypeError
+          ? "No se pudo conectar con el servidor. Revisa que esté activo."
+          : err.message,
+      );
+    }
+    setSaving(false);
+  }
+
+  // Mover a la papelera o restaurar: lo hace el server (solo pedidos finalizados o rechazados)
+  async function cambiarPapelera(accion) {
+    if (
+      accion === "trash" &&
+      !window.confirm(
+        "La solicitud se moverá a la papelera y dejará de verse en Solicitudes y en el Dashboard. No se borra nada: puedes restaurarla cuando quieras. ¿Continuar?",
+      )
+    )
+      return;
+    setSaving(true);
+    setActionError("");
+
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const res = await fetch(apiUrl(`/api/orders/${id}/${accion}`), {
+        method: "POST",
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(
+          json.error ?? (accion === "trash" ? "No se pudo mover la solicitud a la papelera." : "No se pudo restaurar la solicitud."),
+        );
+      }
+      setVersion((v) => v + 1);
+    } catch (err) {
+      setActionError(
         err instanceof TypeError
           ? "No se pudo conectar con el servidor. Revisa que esté activo."
           : err.message,
@@ -360,6 +399,10 @@ export default function RequestDetail() {
   const canReject =
     ["solicitud", "pendiente_abono"].includes(order.status) && abonoPaid === 0 && !saldoApproved;
 
+  // Papelera: solo para pedidos cerrados. No borra nada; se puede restaurar.
+  const enPapelera = Boolean(order.deleted_at);
+  const canTrash = ["finalizado", "rechazado"].includes(order.status) && !enPapelera;
+
   // Tarjeta "Siguiente paso" según la etapa
   let nextStep = null;
 
@@ -456,10 +499,10 @@ export default function RequestDetail() {
   return (
     <div>
       <Link
-        to="/admin/solicitudes"
+        to={enPapelera ? "/admin/papelera" : "/admin/solicitudes"}
         className="mb-5 inline-flex min-h-10 items-center gap-2 rounded-full pr-3 text-sm font-medium text-tinta/55 transition hover:text-tinta focus-visible:outline-2 focus-visible:outline-acento"
       >
-        <ArrowLeft size={16} aria-hidden="true" /> Solicitudes
+        <ArrowLeft size={16} aria-hidden="true" /> {enPapelera ? "Papelera" : "Solicitudes"}
       </Link>
 
       <header className="mb-6 flex flex-wrap items-start justify-between gap-4">
@@ -491,7 +534,28 @@ export default function RequestDetail() {
             <CircleX size={16} aria-hidden="true" /> Rechazar
           </button>
         )}
+        {canTrash && (
+          <button disabled={saving} onClick={() => cambiarPapelera("trash")} className={btn.secondary}>
+            <Trash2 size={16} aria-hidden="true" /> Mover a papelera
+          </button>
+        )}
       </header>
+
+      {enPapelera && (
+        <div
+          role="status"
+          className="mb-5 flex flex-wrap items-center gap-3 rounded-2xl border border-tinta/10 bg-bruma/60 px-4 py-3 text-sm text-tinta/80"
+        >
+          <Trash2 size={18} className="shrink-0 text-tinta/50" aria-hidden="true" />
+          <p className="min-w-0 flex-1">
+            Esta solicitud está en la papelera desde el {formatDate(order.deleted_at)}. No aparece en Solicitudes ni en el
+            Dashboard. Al restaurarla vuelve a {order.status === "finalizado" ? "Finalizados" : "Rechazados"}.
+          </p>
+          <button disabled={saving} onClick={() => cambiarPapelera("restore")} className={btn.secondary}>
+            <RotateCcw size={16} aria-hidden="true" /> Restaurar
+          </button>
+        </div>
+      )}
 
       {rejecting && (
         <ModalRechazo

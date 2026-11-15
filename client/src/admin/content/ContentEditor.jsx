@@ -11,6 +11,13 @@ const TABS = [
 ];
 const mediaUrl = (path) => path ? supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl : "";
 
+// Autorización para publicar (Términos §6/§7). Sin ella, la landing no muestra el contenido.
+const TEXTO_AUTORIZACION = {
+  gallery_items: "La obra es mía (no es un encargo) o el cliente autorizó por escrito publicar su retrato.",
+  before_after_items: "El cliente autorizó por escrito publicar su foto y el retrato terminado.",
+  testimonials: "El cliente autorizó publicar este testimonio y los datos asociados.",
+};
+
 async function procesarImagen(file) {
   if (!file?.type.startsWith("image/")) throw new Error("Selecciona un archivo de imagen");
   if (file.size > 20 * 1024 * 1024) throw new Error("La imagen debe pesar menos de 20 MB");
@@ -59,9 +66,16 @@ export default function ContentEditor() {
   useEffect(() => { load(); }, [tab]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function toggle(item) {
-    const { error: err } = await supabase.from(tab).update({ is_visible: !item.is_visible }).eq("id", item.id);
+    const publicar = !item.is_visible || !item.consent_confirmed;
+    const cambios = { is_visible: !item.is_visible };
+    // Para publicar algo sin autorización registrada, primero hay que confirmarla.
+    if (publicar && !item.consent_confirmed) {
+      if (!confirm(`Para publicarlo necesitas autorización:\n\n${TEXTO_AUTORIZACION[tab]}\n\n¿Lo confirmas?`)) return;
+      Object.assign(cambios, { is_visible: true, consent_confirmed: true });
+    }
+    const { error: err } = await supabase.from(tab).update(cambios).eq("id", item.id);
     if (err) setError(`No se pudo cambiar la visibilidad: ${err.message}`);
-    else { setToast(item.is_visible ? "Contenido ocultado" : "Contenido publicado"); load(); }
+    else { setToast(cambios.is_visible ? "Contenido publicado" : "Contenido ocultado"); load(); }
   }
   async function remove(item) {
     if (!confirm("¿Eliminar este contenido? Esta acción no se puede deshacer.")) return;
@@ -101,7 +115,14 @@ export default function ContentEditor() {
         {paths.length > 1 ? <div className="grid grid-cols-2 gap-1">{paths.map((p) => <img key={p} src={mediaUrl(p)} alt="" className="aspect-square w-full rounded-xl object-cover" />)}</div> : paths.length ? <img src={mediaUrl(paths[0])} alt={item.alt ?? ""} className="aspect-[4/3] w-full rounded-xl object-cover" /> : null}
         <p className="mt-3 line-clamp-3 text-sm text-tinta/75">{text}</p>
         {item.author_name && <p className="mt-1 text-xs text-tinta/55">{item.author_name}{item.pet_name ? ` · ${item.pet_name}` : ""}</p>}
-        <div className="mt-3 flex items-center justify-between gap-2"><span className={`rounded-full px-3 py-1 text-xs font-semibold ${item.is_visible ? "bg-[#e1f0e6] text-[#2d6844]" : "bg-bruma text-tinta/60"}`}>{item.is_visible ? "Visible" : "Oculto"}</span><div className="flex gap-1"><button className={btn.secondary} aria-label={item.is_visible ? "Ocultar" : "Mostrar"} onClick={() => toggle(item)}>{item.is_visible ? <EyeOff size={16}/> : <Eye size={16}/>}</button><button className={btn.danger} aria-label="Eliminar" onClick={() => remove(item)}><Trash2 size={16}/></button></div></div>
+        {(() => {
+          // Visible en la landing solo si está marcado como visible Y tiene autorización.
+          const publicado = item.is_visible && item.consent_confirmed;
+          const pendiente = item.is_visible && !item.consent_confirmed;
+          const etiqueta = publicado ? "Visible" : pendiente ? "Falta autorización" : "Oculto";
+          const tono = publicado ? "bg-[#e1f0e6] text-[#2d6844]" : pendiente ? "bg-[#faefd9] text-[#865710]" : "bg-bruma text-tinta/60";
+          return <div className="mt-3 flex items-center justify-between gap-2"><span title={pendiente ? "No aparece en la landing hasta que confirmes la autorización" : undefined} className={`rounded-full px-3 py-1 text-xs font-semibold ${tono}`}>{etiqueta}</span><div className="flex gap-1"><button className={btn.secondary} aria-label={publicado ? "Ocultar" : "Publicar"} onClick={() => toggle(item)}>{publicado ? <EyeOff size={16}/> : <Eye size={16}/>}</button><button className={btn.danger} aria-label="Eliminar" onClick={() => remove(item)}><Trash2 size={16}/></button></div></div>;
+        })()}
       </li>;
     })}</ul>}
     {toast && <Toast onClose={() => setToast("")}>{toast}</Toast>}
@@ -144,7 +165,7 @@ function Formulario({ tipo, techniques, onClose, onSaved, onError }) {
     e.preventDefault(); onError("");
     if (tipo !== "testimonials" && !alt.trim()) return onError("Escribe una descripción accesible para las imágenes");
     if (tipo === "testimonials" && !quote.trim()) return onError("Escribe el testimonio real autorizado");
-    if (tipo === "testimonials" && visible && !consent) return onError("Confirma la autorización antes de publicar");
+    if (visible && !consent) return onError("Confirma la autorización antes de publicar");
     if (tipo !== "testimonials" && files.length !== (tipo === "before_after_items" ? 2 : 1)) return onError("Selecciona las imágenes requeridas");
     setBusy(true); const uploaded = [];
     try {
@@ -153,11 +174,11 @@ function Formulario({ tipo, techniques, onClose, onSaved, onError }) {
         const { error } = await supabase.storage.from(BUCKET).upload(path, file.blob, { contentType: "image/webp", cacheControl: "31536000" });
         if (error) throw error; uploaded.push(path);
       }
-      const base = { sort_order: 0, is_visible: visible };
+      const base = { sort_order: 0, is_visible: visible, consent_confirmed: consent };
       let row;
       if (tipo === "gallery_items") row = { ...base, image_path: uploaded[0], width: files[0].width, height: files[0].height, alt: alt.trim(), technique_id: technique || null };
       if (tipo === "before_after_items") row = { ...base, photo_path: uploaded[0], artwork_path: uploaded[1], width: files[1].width, height: files[1].height, alt: alt.trim(), technique_id: technique || null };
-      if (tipo === "testimonials") row = { ...base, quote: quote.trim(), author_name: author.trim() || null, pet_name: pet.trim() || null, image_path: uploaded[0] ?? null, consent_confirmed: consent };
+      if (tipo === "testimonials") row = { ...base, quote: quote.trim(), author_name: author.trim() || null, pet_name: pet.trim() || null, image_path: uploaded[0] ?? null };
       const { error } = await supabase.from(tipo).insert(row);
       if (error) throw error;
       onSaved();
@@ -168,7 +189,9 @@ function Formulario({ tipo, techniques, onClose, onSaved, onError }) {
   }
   return <div className="fixed inset-0 z-40 flex items-end justify-center bg-tinta/35 p-0 backdrop-blur-sm sm:items-center sm:p-4"><form onSubmit={submit} className="max-h-[94vh] w-full max-w-xl space-y-4 overflow-y-auto rounded-t-[28px] bg-papel p-5 shadow-2xl sm:rounded-[28px] sm:p-6">
     <div className="flex items-center justify-between"><h2 className="font-display text-2xl">{tipo === "gallery_items" ? "Nueva obra" : tipo === "before_after_items" ? "Nuevo par foto → obra" : "Nuevo testimonio"}</h2><button type="button" className={btn.secondary} onClick={onClose}>Cerrar</button></div>
-    {tipo === "testimonials" ? <><label className="block text-sm font-medium">Testimonio real<textarea className={`${inputClass} mt-1.5 h-28 py-3`} value={quote} onChange={(e) => setQuote(e.target.value)} required maxLength={1000}/></label><label className="block text-sm font-medium">Nombre del cliente (opcional)<input className={`${inputClass} mt-1.5`} value={author} onChange={(e) => setAuthor(e.target.value)}/></label><label className="block text-sm font-medium">Nombre de la mascota (opcional)<input className={`${inputClass} mt-1.5`} value={pet} onChange={(e) => setPet(e.target.value)}/></label><label className="block text-sm font-medium">Foto asociada (opcional)<input className={`${inputClass} mt-1.5 py-2`} type="file" accept="image/jpeg,image/png,image/webp" onChange={choose}/></label>{previews.length > 0 && <img src={previews[0]} alt="Vista previa" className="aspect-square w-32 rounded-xl object-cover"/>}<label className="flex min-h-11 items-center gap-3 text-sm"><input type="checkbox" className="size-5" checked={consent} onChange={(e) => setConsent(e.target.checked)}/>El cliente autorizó publicar este testimonio y los datos asociados.</label></> : <>{tipo === "before_after_items" ? <div className="grid gap-4 sm:grid-cols-2">{["Foto de la mascota", "Foto del cuadro terminado"].map((label, indice) => <label key={label} className="block text-sm font-medium">{label}<input className={`${inputClass} mt-1.5 py-2`} type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => choose(e, indice)}/>{previews[indice] ? <img src={previews[indice]} alt={`Vista previa: ${label.toLowerCase()}`} className="mt-2 aspect-square w-full rounded-xl object-cover"/> : <span className="mt-2 flex aspect-square items-center justify-center rounded-xl border border-dashed border-tinta/20 text-sm text-tinta/50">Selecciona una imagen</span>}</label>)}</div> : <><label className="block text-sm font-medium">Imagen de la obra<input className={`${inputClass} mt-1.5 py-2`} type="file" accept="image/jpeg,image/png,image/webp" onChange={choose}/></label>{previews.length > 0 && <img src={previews[0]} alt="Vista previa" className="aspect-square w-32 rounded-xl object-cover"/>}</>}<label className="block text-sm font-medium">Descripción accesible<textarea className={`${inputClass} mt-1.5 h-20 py-3`} value={alt} onChange={(e) => setAlt(e.target.value)} required maxLength={240}/></label><label className="block text-sm font-medium">Técnica (opcional)<select className={`${inputClass} mt-1.5`} value={technique} onChange={(e) => setTechnique(e.target.value)}><option value="">Sin técnica</option>{techniques.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</select></label></>}
+    {tipo === "testimonials" ? <><label className="block text-sm font-medium">Testimonio real<textarea className={`${inputClass} mt-1.5 h-28 py-3`} value={quote} onChange={(e) => setQuote(e.target.value)} required maxLength={1000}/></label><label className="block text-sm font-medium">Nombre del cliente (opcional)<input className={`${inputClass} mt-1.5`} value={author} onChange={(e) => setAuthor(e.target.value)}/></label><label className="block text-sm font-medium">Nombre de la mascota (opcional)<input className={`${inputClass} mt-1.5`} value={pet} onChange={(e) => setPet(e.target.value)}/></label><label className="block text-sm font-medium">Foto asociada (opcional)<input className={`${inputClass} mt-1.5 py-2`} type="file" accept="image/jpeg,image/png,image/webp" onChange={choose}/></label>{previews.length > 0 && <img src={previews[0]} alt="Vista previa" className="aspect-square w-32 rounded-xl object-cover"/>}</> : <>{tipo === "before_after_items" ? <div className="grid gap-4 sm:grid-cols-2">{["Foto de la mascota", "Foto del cuadro terminado"].map((label, indice) => <label key={label} className="block text-sm font-medium">{label}<input className={`${inputClass} mt-1.5 py-2`} type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => choose(e, indice)}/>{previews[indice] ? <img src={previews[indice]} alt={`Vista previa: ${label.toLowerCase()}`} className="mt-2 aspect-square w-full rounded-xl object-cover"/> : <span className="mt-2 flex aspect-square items-center justify-center rounded-xl border border-dashed border-tinta/20 text-sm text-tinta/50">Selecciona una imagen</span>}</label>)}</div> : <><label className="block text-sm font-medium">Imagen de la obra<input className={`${inputClass} mt-1.5 py-2`} type="file" accept="image/jpeg,image/png,image/webp" onChange={choose}/></label>{previews.length > 0 && <img src={previews[0]} alt="Vista previa" className="aspect-square w-32 rounded-xl object-cover"/>}</>}<label className="block text-sm font-medium">Descripción accesible<textarea className={`${inputClass} mt-1.5 h-20 py-3`} value={alt} onChange={(e) => setAlt(e.target.value)} required maxLength={240}/></label><label className="block text-sm font-medium">Técnica (opcional)<select className={`${inputClass} mt-1.5`} value={technique} onChange={(e) => setTechnique(e.target.value)}><option value="">Sin técnica</option>{techniques.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</select></label></>}
+    {/* Autorización para publicar: obligatoria para mostrarlo en la landing (Términos §6/§7). */}
+    <label className="flex min-h-11 items-start gap-3 rounded-2xl bg-lino p-3 text-sm"><input type="checkbox" className="mt-0.5 size-5 shrink-0" checked={consent} onChange={(e) => setConsent(e.target.checked)}/>{TEXTO_AUTORIZACION[tipo]}</label>
     <label className="flex min-h-11 items-center gap-3 text-sm"><input type="checkbox" className="size-5" checked={visible} onChange={(e) => setVisible(e.target.checked)}/>Mostrar en la landing</label>
     <div className="flex justify-end gap-2"><button type="button" className={btn.secondary} onClick={onClose} disabled={busy}>Cancelar</button><button className={btn.primary} disabled={busy}><Upload size={16}/>{busy ? "Guardando…" : "Guardar"}</button></div>
   </form></div>;

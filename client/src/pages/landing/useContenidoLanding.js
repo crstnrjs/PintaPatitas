@@ -11,8 +11,8 @@ export function useContenidoLanding() {
     let activo = true;
     async function cargar() {
       const [galeria, pares, resenas, ajustes] = await Promise.all([
-        supabase.from("gallery_items").select("image_path,width,height,alt,technique_id,techniques(slug)").eq("is_visible", true).order("sort_order"),
-        supabase.from("before_after_items").select("photo_path,artwork_path,width,height,alt,technique_id,techniques(slug)").eq("is_visible", true).order("sort_order"),
+        supabase.from("gallery_items").select("image_path,width,height,alt,technique_id,techniques(slug)").eq("is_visible", true).eq("consent_confirmed", true).order("sort_order"),
+        supabase.from("before_after_items").select("photo_path,artwork_path,width,height,alt,technique_id,techniques(slug)").eq("is_visible", true).eq("consent_confirmed", true).order("sort_order"),
         supabase.from("testimonials").select("id,quote,author_name,pet_name,image_path").eq("is_visible", true).eq("consent_confirmed", true).order("sort_order"),
         supabase.from("site_settings").select("key,value").in("key", ["instagram_url", "trust_phrase"]),
       ]);

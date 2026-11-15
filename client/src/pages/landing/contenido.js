@@ -15,7 +15,10 @@ export const INSTAGRAM_URL = "";
 // Tiempo de trabajo aproximado (no es una garantía).
 export const TIEMPO_PRODUCCION = "alrededor de una semana y media";
 
-// Obras terminadas. tecnica = slug del catálogo ("acrilico", "lapiz", "digital") o null si no se sabe.
+// Obras terminadas que se muestran si la galería del panel está vacía.
+// SOLO obras propias de la artista o con autorización escrita del cliente (Términos §6/§7):
+// estas no pasan por el control de autorización del panel.
+// tecnica = slug del catálogo ("acrilico", "lapiz", "digital") o null si no se sabe.
 // variantes: anchos de las copias livianas para móvil (archivo-480.webp, archivo-720.webp). Opcional.
 export const obras = [
   {

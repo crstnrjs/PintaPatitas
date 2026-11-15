@@ -79,7 +79,7 @@ function registrarWebMCP() {
         tienda: {
           nombre: "PintaPatitas",
           artista: "Fernanda",
-          tecnicas: ["acrílico", "lápiz", "digital"],
+          tecnicas: ["óleo", "acrílico", "lápiz", "digital"],
           envio: "Starken por pagar a todo Chile",
           tiempoProduccion: "alrededor de una semana y media",
           contacto: {

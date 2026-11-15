@@ -123,16 +123,20 @@ export default function MarketplaceSettings() {
         )}
 
         <div className="mt-6 rounded-2xl border border-tinta/8 bg-papel p-5 text-sm leading-6 text-tinta/65">
-          <p className="font-semibold text-(--deep)">Cómo autorizar la cuenta vendedora</p>
+          <p className="font-semibold text-(--deep)">Cómo vincular tu cuenta de Mercado Pago</p>
           <ol className="mt-2 list-decimal space-y-1 pl-5">
-            <li>Primero revisa el modo indicado arriba. En producción, debe ser live; en pruebas, debe ser de prueba.</li>
-            <li>Al continuar, inicia sesión con una cuenta vendedora de Mercado Pago que corresponda al modo indicado.</li>
-            <li>Revisa que el consentimiento sea para la aplicación Marketplace de PintaPatitas y acepta.</li>
-            <li>Mercado Pago volverá aquí y el servidor guardará los tokens sin mostrarlos; rechazará credenciales de un modo distinto.</li>
+            <li>Revisa que arriba diga <strong>Modo de producción OAuth</strong>. Si dice “Modo de prueba”, no sigas y avisa antes de continuar.</li>
+            <li>Toca el botón <strong>Vincular vendedor live</strong>. Se abrirá Mercado Pago.</li>
+            <li>Inicia sesión con tu cuenta de Mercado Pago, la misma en la que quieres recibir los pagos de tus retratos.</li>
+            <li>Mercado Pago te pedirá permiso para conectar tu cuenta con PintaPatitas. Revisa que sea para PintaPatitas y acepta.</li>
+            <li>Volverás sola a esta página y arriba verás <strong>“La cuenta está vinculada por OAuth”</strong>. Si no lo ves, toca <strong>Actualizar estado</strong>.</li>
           </ol>
+          <p className="mt-3">
+            Tu contraseña la escribes solo en Mercado Pago: nunca te la vamos a pedir aquí. Los datos de acceso se guardan cifrados y nadie puede verlos.
+          </p>
           {!loading && status && !status.testMode && (
             <p className="mt-4 rounded-xl border border-[#ecc8c2] bg-[#fbefed] p-3 text-xs text-[#963a31]">
-              <strong>Advertencia:</strong> Estás en modo live. Al autorizar conectarás una cuenta real de Mercado Pago. Este paso solo autoriza la plataforma; no crea cobros.
+              <strong>Importante:</strong> vas a vincular tu cuenta real de Mercado Pago. Vincularla no te cobra nada ni mueve dinero: solo permite que los pagos de tus clientes lleguen a tu cuenta.
             </p>
           )}
         </div>

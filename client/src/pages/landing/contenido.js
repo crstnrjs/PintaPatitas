@@ -51,6 +51,10 @@ export const estilosInfo = {
     sensacion: "Vibrante y cálido",
     rasgos: ["Color intenso", "Textura de pincel"],
   },
+  oleo: {
+    sensacion: "Clásico y profundo",
+    rasgos: ["Tonos ricos", "Acabado de óleo"],
+  },
   lapiz: {
     sensacion: "Delicado y atemporal",
     rasgos: ["Trazo fino", "Mucho detalle"],

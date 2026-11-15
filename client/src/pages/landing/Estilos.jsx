@@ -17,6 +17,39 @@ function Muestra({ slug }) {
       </svg>
     );
   }
+  if (slug === "oleo") {
+    // Empaste de óleo: tonos tierra, pinceladas cortas y superpuestas.
+    return (
+      <svg aria-hidden="true" viewBox="0 0 240 150" preserveAspectRatio="xMidYMid slice" className="h-full w-full">
+        <rect width="240" height="150" fill="#efe3cc" />
+        <path d="M-10 46c40-18 90-22 140-10s90 6 120-6" stroke="#b9772a" strokeWidth="30" strokeLinecap="round" fill="none" opacity=".85" />
+        <path d="M-10 96c50-16 100-10 150 2s70 4 110-8" stroke="#6b3f1d" strokeWidth="26" strokeLinecap="round" fill="none" opacity=".8" />
+        <path d="M20 132c40-10 90-10 140 0" stroke="#2e6a85" strokeWidth="14" strokeLinecap="round" fill="none" opacity=".7" />
+        {[
+          [38, 70, 22], [96, 64, 18], [150, 74, 24], [196, 60, 16], [70, 116, 14], [176, 114, 18],
+        ].map(([x, y, l]) => (
+          <path key={`${x}-${y}`} d={`M${x} ${y}l${l} -6`} stroke="#f6d9a3" strokeWidth="5" strokeLinecap="round" opacity=".75" />
+        ))}
+      </svg>
+    );
+  }
+  if (slug === "meme") {
+    // Estilo pop: trama de puntos y un globo de diálogo.
+    return (
+      <svg aria-hidden="true" viewBox="0 0 240 150" preserveAspectRatio="xMidYMid slice" className="h-full w-full">
+        <rect width="240" height="150" fill="#fbe9dc" />
+        {Array.from({ length: 9 }, (_, f) =>
+          Array.from({ length: 15 }, (_, c) => (
+            <circle key={`${f}-${c}`} cx={8 + c * 16 + (f % 2) * 8} cy={8 + f * 17} r={1.5 + (c / 14) * 3} fill="#d9763a" opacity=".35" />
+          )),
+        )}
+        <path d="M-10 112c60-28 130-32 260-10v58H-10z" fill="#2e6a85" opacity=".9" />
+        <rect x="70" y="38" width="100" height="44" rx="20" fill="#fbfaf7" stroke="#13303d" strokeWidth="3" />
+        <path d="M104 80l-6 16 20-14" fill="#fbfaf7" stroke="#13303d" strokeWidth="3" strokeLinejoin="round" />
+        <path d="M88 54h64M88 66h42" stroke="#13303d" strokeWidth="4" strokeLinecap="round" opacity=".7" />
+      </svg>
+    );
+  }
   if (slug === "digital") {
     return (
       <svg aria-hidden="true" viewBox="0 0 240 150" preserveAspectRatio="xMidYMid slice" className="h-full w-full">
@@ -74,18 +107,8 @@ export default function Estilos({ cargando, error, estilos, formatosDe }) {
                     // Móvil: tarjeta horizontal con la muestra a la izquierda. Desde md: vertical.
                     <li key={e.id} className="arcilla flex gap-4 rounded-[22px] p-2.5 md:flex-col md:gap-0 md:rounded-[28px] md:p-3">
                       <div className="w-24 shrink-0 overflow-hidden rounded-[16px] md:h-36 md:w-auto md:rounded-[20px]">
-                        {/* Foto real del catálogo si la artista subió una; si no, la muestra ilustrada. */}
-                        {e.foto ? (
-                          <img
-                            src={e.foto}
-                            alt={`Ejemplo de retrato en ${e.name}`}
-                            loading="lazy"
-                            decoding="async"
-                            className="h-full w-full object-cover"
-                          />
-                        ) : (
-                          <Muestra slug={e.slug} />
-                        )}
+                        {/* Referencia ilustrada de la técnica; las fotos reales se ven en la galería y al pedir. */}
+                        <Muestra slug={e.slug} />
                       </div>
                       <div className="flex min-w-0 flex-1 flex-col py-1.5 pr-1.5 md:px-4 md:pt-6 md:pb-4">
                         <div className="flex flex-col md:flex-row md:items-baseline md:justify-between md:gap-3">

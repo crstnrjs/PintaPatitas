@@ -17,7 +17,8 @@ export const TIEMPO_PRODUCCION = "alrededor de una semana y media";
 
 // Obras terminadas que se muestran si la galería del panel está vacía.
 // SOLO obras propias de la artista o con autorización escrita del cliente (Términos §6/§7):
-// estas no pasan por el control de autorización del panel.
+// estas no pasan por el control de autorización del panel. Las dos de abajo (banner y
+// Mqumascota) tienen autorización confirmada por el administrador el 15-11-2026.
 // tecnica = slug del catálogo ("acrilico", "lapiz", "digital") o null si no se sabe.
 // variantes: anchos de las copias livianas para móvil (archivo-480.webp, archivo-720.webp). Opcional.
 export const obras = [

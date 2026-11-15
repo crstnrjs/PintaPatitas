@@ -12,6 +12,7 @@ export const COMPRA_INICIAL = {
   comuna: "",
   direccion: "",
   acepta_envio: false,
+  acepta_terminos: false,
 };
 
 export { formatearRut };
@@ -28,6 +29,7 @@ export function validarCompra(c) {
     e.direccion = c.entrega_tipo === "sucursal" ? "Indica la sucursal Starken" : "Ingresa calle y número";
   }
   if (!c.acepta_envio) e.acepta_envio = "Confirma que pagarás el envío al recibir";
+  if (!c.acepta_terminos) e.acepta_terminos = "Acepta los Términos y condiciones para continuar";
   return e;
 }
 
@@ -46,6 +48,7 @@ export async function iniciarCompra(slug, c) {
       comuna: c.comuna.trim(),
       direccion: c.direccion.trim(),
       acepta_envio: c.acepta_envio,
+      acepta_terminos: c.acepta_terminos,
     }),
   });
   const json = await res.json().catch(() => ({}));

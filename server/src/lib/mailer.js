@@ -360,7 +360,7 @@ export async function enviarCorreoNuevaSolicitud({ pedido, fotos }) {
 // Actualizarla cada vez que cambien los Términos publicados.
 export const TERMINOS_VIGENCIA = "15 de noviembre de 2026";
 
-function urlTerminos() {
+export function urlTerminos() {
   const base = (process.env.FRONTEND_URL || "https://pintapatitas.com").replace(/\/+$/, "");
   return `${base}/terminos`;
 }
@@ -488,6 +488,93 @@ export async function enviarCorreoClienteSolicitud({ pedido }) {
   await obtenerTransport().sendMail({
     from: `"PintaPatitas" <${obtenerFromAddress()}>`,
     to: pedido.customer_email,
+    subject: asunto,
+    text: texto,
+    html,
+  });
+}
+
+/**
+ * Aviso al cliente de que su retrato fue despachado, con el número de seguimiento de Starken.
+ */
+export async function enviarCorreoClienteDespacho({ pedido }) {
+  if (!pedido.customer_email) throw new Error("El pedido no tiene customer_email");
+
+  const meme = esPedidoMeme(pedido);
+  const obra = meme ? "tu cuadro de meme" : "tu retrato";
+  const seguimiento = pedido.tracking_code;
+  const lineaSeguimiento = seguimiento
+    ? `Puedes seguir tu envío en starken.cl con el número de seguimiento ${seguimiento}.`
+    : "Si necesitas el número de seguimiento, responde a este correo y te lo enviamos.";
+  const entrega =
+    pedido.delivery_type === "sucursal"
+      ? `Retiro en sucursal Starken: ${pedido.starken_branch}, ${pedido.commune}, ${pedido.region}`
+      : `${pedido.street} ${pedido.street_number}${pedido.apartment ? `, ${pedido.apartment}` : ""}, ${pedido.commune}, ${pedido.region}`;
+  const asunto = `¡${meme ? "Tu cuadro" : "Tu retrato"} va en camino! — Pedido #PP-${pedido.order_number}`;
+  const filas = [
+    ["Pedido", `#PP-${pedido.order_number}`],
+    ["Producto", pedido.product],
+    ["Seguimiento Starken", seguimiento || "—"],
+    ["Entrega", entrega],
+  ];
+
+  const html = `<!doctype html>
+<html>
+  <body style="margin:0;background:#e8f0f3;font-family:Arial,Helvetica,sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#e8f0f3;padding:24px 0;">
+      <tr><td align="center">
+        <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background:#ffffff;border-radius:20px;border:1px solid #dbe7ee;overflow:hidden;">
+          <tr>
+            <td style="background:#2d6583;padding:26px 28px;">
+              <p style="margin:0;color:#ffffff;font-size:20px;font-weight:bold;">PintaPatitas</p>
+              <p style="margin:6px 0 0;color:#cfe3ec;font-size:14px;">Pedido #PP-${esc(pedido.order_number)} despachado</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:24px 28px 12px;">
+              <p style="margin:0 0 14px;color:#0f172a;font-size:16px;">¡Hola, <strong>${esc(pedido.customer_name)}</strong>!</p>
+              <p style="margin:0 0 16px;color:#334155;font-size:14px;line-height:1.6;">
+                ¡${esc(obra[0].toUpperCase() + obra.slice(1))} ya está listo y lo despachamos por Starken! ${esc(lineaSeguimiento)}
+              </p>
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px 16px;margin-bottom:18px;">
+                ${filas.map(([etiqueta, valor], i) => filaItem(etiqueta, valor, i === filas.length - 1)).join("")}
+              </table>
+              <p style="margin:0 0 10px;color:#334155;font-size:14px;line-height:1.6;">
+                <strong>Recuerda:</strong> el envío es por pagar; el costo de Starken lo pagas al recibir el cuadro. Revísalo al recibirlo y, si notas algún daño, escríbenos con fotos del cuadro y del embalaje: tienes garantía legal de 6 meses.
+              </p>
+              <p style="margin:0;color:#64748b;font-size:12px;line-height:1.5;">
+                ¡Gracias por confiar en PintaPatitas! Si tienes dudas, responde a este correo o escríbenos a soporte@pintapatitas.com.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background:#f1f5f9;padding:16px 28px;border-top:1px solid #e2e8f0;">
+              <p style="margin:0;color:#64748b;font-size:12px;text-align:center;">
+                PintaPatitas · Retratos de mascotas hechos con amor
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td></tr>
+    </table>
+  </body>
+</html>`;
+
+  const texto = [
+    `¡Hola ${pedido.customer_name}!`,
+    "",
+    `${obra[0].toUpperCase() + obra.slice(1)} ya está listo y lo despachamos por Starken (pedido #PP-${pedido.order_number}).`,
+    lineaSeguimiento,
+    `Entrega: ${entrega}`,
+    "",
+    "Recuerda: el envío es por pagar; el costo de Starken lo pagas al recibir el cuadro. Si llega con daños, escríbenos con fotos: tienes garantía legal de 6 meses.",
+    "PintaPatitas",
+  ].join("\n");
+
+  await obtenerTransport().sendMail({
+    from: `"PintaPatitas" <${obtenerFromAddress()}>`,
+    to: pedido.customer_email,
+    bcc: obtenerFromAddress(), // Copia oculta para respaldo, como los demás correos del pedido
     subject: asunto,
     text: texto,
     html,

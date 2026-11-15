@@ -215,27 +215,35 @@ export default function RequestDetail() {
     setSaving(false);
   }
 
+  // Lo hace el server: cambia el estado y envía al cliente el correo con el seguimiento de Starken.
   async function markShipped() {
-    setSaving(true);
-    setActionError("");
-
-    const { data, error } = await supabase
-      .from("orders")
-      .update({
-        status: "finalizado",
-        shipped_at: new Date().toISOString(),
-        tracking_code: tracking.trim() || null,
-      })
-      .eq("id", id)
-      .select("status, shipped_at, tracking_code");
-
-    setSaving(false);
-
-    if (error || !data?.length) {
-      setActionError("No se pudo marcar como enviado");
+    const codigo = tracking.trim();
+    if (!codigo && !window.confirm("No ingresaste el número de seguimiento de Starken. El cliente recibirá el aviso de despacho sin ese número. ¿Continuar?")) {
       return;
     }
-    setOrder((o) => ({ ...o, ...data[0] }));
+    setSaving(true);
+    setActionError("");
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const res = await fetch(apiUrl(`/api/orders/${id}/ship`), {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ tracking_code: codigo }),
+      });
+      const result = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(result.error ?? "No se pudo marcar como enviado.");
+      setOrder((o) => ({ ...o, status: result.status, shipped_at: result.shipped_at, tracking_code: result.tracking_code }));
+      if (result.correo_enviado === false) {
+        setActionError("El pedido quedó como enviado, pero no se pudo enviar el correo al cliente. Avísale por otro medio.");
+      }
+    } catch (err) {
+      setActionError(
+        err instanceof TypeError ? "No se pudo conectar con el servidor. Revisa que esté activo." : err.message,
+      );
+    }
+    setSaving(false);
   }
 
   async function copyLink(url) {
@@ -421,12 +429,13 @@ export default function RequestDetail() {
     );
   } else if (order.status === "en_proceso" && saldoApproved) {
     nextStep = (
-      <StepCard text="El saldo está pagado. Despacha el cuadro y marca el envío.">
+      <StepCard text="El saldo está pagado. Despacha el cuadro por Starken y marca el envío: el cliente recibirá un correo con el número de seguimiento.">
         <input
           value={tracking}
           onChange={(e) => setTracking(e.target.value)}
-          placeholder="Código de seguimiento (opcional)"
-          aria-label="Código de seguimiento"
+          placeholder="N° de seguimiento Starken"
+          aria-label="Número de seguimiento Starken"
+          maxLength={60}
           className="h-11 min-w-0 flex-1 rounded-full border border-white/30 bg-white/95 px-4 text-sm text-tinta outline-none focus:ring-3 focus:ring-white/40 sm:max-w-72"
         />
         <button disabled={saving} onClick={markShipped} className={primaryBtn}>

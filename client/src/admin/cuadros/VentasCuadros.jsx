@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { CircleAlert, Copy, MessageCircle, PackageCheck, Truck } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { apiUrl } from "@/lib/api";
 import { Aviso, EmptyState, Skeleton, Toast, btn, formatDate, inputClass, money } from "@/admin/shared/ui";
 
 const ENVIO = {
@@ -73,6 +74,35 @@ export default function VentasCuadros({ onCambio }) {
     onCambio?.();
   }
 
+  // Lo hace el server: guarda el seguimiento y envía al comprador el correo de despacho.
+  async function marcarEnviado(venta, seguimiento) {
+    setError("");
+    if (!seguimiento && !window.confirm("No ingresaste el número de seguimiento de Starken. El comprador recibirá el aviso de despacho sin ese número. ¿Continuar?")) {
+      return;
+    }
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const res = await fetch(apiUrl(`/api/cuadros/ventas/${venta.id}/enviado`), {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ seguimiento }),
+      });
+      const result = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(result.error ?? "No se pudo marcar la venta como enviada.");
+      if (result.correo_enviado === false) {
+        setError("La venta quedó como enviada, pero no se pudo enviar el correo al comprador. Avísale por otro medio.");
+      } else {
+        setToast("Venta marcada como enviada y comprador avisado por correo");
+      }
+      cargar();
+      onCambio?.();
+    } catch (err) {
+      setError(err instanceof TypeError ? "No se pudo conectar con el servidor. Revisa que esté activo." : err.message);
+    }
+  }
+
   async function copiar(venta) {
     try {
       await navigator.clipboard.writeText(datosStarken(venta));
@@ -105,13 +135,7 @@ export default function VentasCuadros({ onCambio }) {
               key={v.id}
               venta={v}
               onCopiar={() => copiar(v)}
-              onEnviado={(seguimiento) =>
-                actualizarEnvio(
-                  v,
-                  { estado_envio: "enviado", seguimiento_starken: seguimiento || null, enviado_en: new Date().toISOString() },
-                  "Venta marcada como enviada",
-                )
-              }
+              onEnviado={(seguimiento) => marcarEnviado(v, seguimiento)}
               onEntregado={() => actualizarEnvio(v, { estado_envio: "entregado" }, "Venta marcada como entregada")}
             />
           ))}
@@ -185,7 +209,7 @@ function TarjetaVenta({ venta: v, onCopiar, onEnviado, onEntregado }) {
           }}
         >
           <label className="block flex-1 text-sm font-medium text-tinta">
-            N° de seguimiento Starken (opcional)
+            N° de seguimiento Starken (se envía al comprador)
             <input className={`${inputClass} mt-1.5`} value={seguimiento} onChange={(e) => setSeguimiento(e.target.value)} maxLength={60} />
           </label>
           <button type="submit" className={btn.primary}>

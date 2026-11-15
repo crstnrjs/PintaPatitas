@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { LockClosedIcon } from "@heroicons/react/24/outline";
 import { REGIONES } from "@/pages/pedido/StepContacto";
 import { clp } from "@/pages/pedido/pasos";
@@ -158,6 +159,36 @@ export default function FormularioCompra({ cuadro, onCancelar }) {
         <div className="flex justify-between gap-3"><dt className="text-tinta/65">Envío Starken</dt><dd className="font-medium text-tinta">Por pagar al recibir</dd></div>
         <div className="flex justify-between gap-3 pt-1 text-base"><dt className="font-semibold text-tinta">Pagas ahora</dt><dd className="font-display text-2xl text-acento-oscuro">{clp(cuadro.precio)}</dd></div>
       </dl>
+
+      {/* Derecho a retracto: el título queda siempre visible; el detalle se despliega. */}
+      <details className="group rounded-2xl border border-acento/30 bg-white/70">
+        <summary className={`flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-tinta marker:hidden [&::-webkit-details-marker]:hidden ${enfoque}`}>
+          <span>Derecho a retracto: 10 días desde que lo recibes</span>
+          <span aria-hidden="true" className="text-lg leading-none text-acento transition-transform group-open:rotate-45">+</span>
+        </summary>
+        <div className="space-y-2 px-4 pb-4 text-sm leading-relaxed text-tinta/75">
+          <p>
+            Puedes arrepentirte de esta compra sin dar motivo dentro de los <strong className="font-semibold text-tinta">10 días
+            siguientes a recibir el cuadro</strong> (art. 3 bis, Ley 19.496). Escríbenos con tu número de compra, te indicamos
+            cómo devolverlo por Starken y te reembolsamos lo pagado por Mercado Pago.
+          </p>
+          <p>
+            Si llega dañado, escríbenos con fotos: tienes además <strong className="font-semibold text-tinta">garantía legal de 6 meses</strong>.
+          </p>
+        </div>
+      </details>
+
+      <label className={`flex items-start gap-3 rounded-2xl p-3 text-sm leading-snug ${errores.acepta_terminos ? "bg-[#fbefed] text-[#963a31]" : "bg-white/70 text-tinta/80"}`}>
+        <input name="acepta_terminos" type="checkbox" className="mt-0.5 size-5 shrink-0 accent-acento" checked={datos.acepta_terminos} onChange={cambiar("acepta_terminos")} />
+        <span>
+          Leí y acepto los{" "}
+          {/* Pestaña nueva: así no se pierden los datos del formulario */}
+          <Link to="/terminos" target="_blank" rel="noopener" className="font-semibold text-acento underline underline-offset-4">
+            Términos y condiciones
+          </Link>
+          , incluido el derecho a retracto de los cuadros listos.
+        </span>
+      </label>
 
       {errorGeneral && (
         <p role="alert" className="rounded-2xl bg-[#fbefed] px-4 py-3 text-sm text-[#963a31]">{errorGeneral}</p>

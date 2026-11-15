@@ -3,7 +3,7 @@ import { supabaseAdmin as supabase } from "../lib/supabase.js";
 import { requireAdmin } from "../middleware/requireAdmin.js";
 import { crearPreferenciaVendedor } from "../lib/mercadopago.js";
 import { getMarketplaceSellerStatus, urlDePago } from "../lib/marketplaceSeller.js";
-import { enviarCorreoClienteAbono, enviarCorreoClienteSaldo } from "../lib/mailer.js";
+import { enviarCorreoClienteAbono, enviarCorreoClienteDespacho, enviarCorreoClienteSaldo } from "../lib/mailer.js";
 import { enviarCorreosRechazo } from "../lib/soporte.js";
 import { reservarPago, completarReservaPago, eliminarReservaPago } from "./paymentIdempotency.js";
 
@@ -299,6 +299,53 @@ router.post("/:id/request-balance", requireAdmin, async (req, res) => {
     commission_rate: comisionPorcentaje,
     commission_amount: fee,
   });
+});
+
+// 2b. Marcar como enviado: en_proceso (saldo pagado) → finalizado
+// Lo hace el server para avisar al cliente por correo con el número de seguimiento de Starken.
+router.post("/:id/ship", requireAdmin, async (req, res) => {
+  const { id } = req.params;
+  if (!UUID.test(id)) return res.status(400).json({ error: "Identificador no válido." });
+  const seguimiento = typeof req.body?.tracking_code === "string" ? req.body.tracking_code.trim().slice(0, 60) : "";
+
+  const { data: order, error: errOrder } = await supabase
+    .from("orders").select("*").eq("id", id).eq("status", "en_proceso").maybeSingle();
+  if (errOrder) {
+    console.error("Error consultando el pedido a despachar:", errOrder);
+    return res.status(500).json({ error: "Error consultando el pedido en la base de datos." });
+  }
+  if (!order) return res.status(409).json({ error: "El pedido no está en proceso o ya fue enviado." });
+
+  const { data: payments, error: errPayments } = await supabase
+    .from("payments").select("type, status").eq("order_id", id);
+  if (errPayments) return res.status(500).json({ error: "Error al verificar los pagos del pedido." });
+  if (!(payments || []).some((p) => p.type === "saldo" && p.status === "aprobado")) {
+    return res.status(409).json({ error: "El saldo todavía no figura como pagado." });
+  }
+
+  const { data: actualizado, error: errUpdate } = await supabase
+    .from("orders")
+    .update({ status: "finalizado", shipped_at: new Date().toISOString(), tracking_code: seguimiento || null })
+    .eq("id", id)
+    .eq("status", "en_proceso")
+    .select("status, shipped_at, tracking_code")
+    .maybeSingle();
+  if (errUpdate) {
+    console.error("Error marcando el pedido como enviado:", errUpdate);
+    return res.status(500).json({ error: "No se pudo marcar como enviado." });
+  }
+  if (!actualizado) return res.status(409).json({ error: "El pedido cambió de estado. Recarga la página." });
+
+  // Se espera el correo para avisar en el panel si falló; el envío ya quedó registrado igual.
+  let correoEnviado = true;
+  try {
+    await enviarCorreoClienteDespacho({ pedido: { ...order, ...actualizado } });
+  } catch (err) {
+    correoEnviado = false;
+    console.error(`Error enviando el correo de despacho del pedido #PP-${order.order_number}:`, err?.message ?? err);
+  }
+
+  return res.json({ ok: true, ...actualizado, correo_enviado: correoEnviado });
 });
 
 // 3. Rechazar una solicitud: solicitud / pendiente_abono → rechazado
